@@ -1,163 +1,445 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import React, { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
-const ALL_PUJAS = [
-  'Navratri Puja',
-  'Durga Puja',
-  'Das Mahavidya Puja',
-  'Pitrupaksha Shradh Puja',
-  'Asthi Visarjan Puja',
-  'Varshik Shradh Puja',
-  'Tripindi Shradh Puja',
-  'Pind Daan Puja',
-  'Brahmin Bhojan',
-  'Griha Pravesh Puja',
-  'Mahamrityunjaya Jaap Puja',
-  'Namkaran Sanskar Puja',
-  'Satyanarayan Katha Puja',
-  'Akshaya Tritiya Puja',
-  'Annaprashan Sanskar Puja',
-  'Ganesh Chaturthi Puja',
-  'Ganesh Visarjan Puja',
-  'Kaal Sarp Dosh Nivaran Puja',
-  'Marriage (Vivah) Puja',
-  'Marriage Anniversary Puja',
-  'Navagraha Shanti Puja',
-  'Office / Shop Opening Puja',
-  'Godh Bharai (Simantonnayana) Puja',
-  'Mangal Dosh Nivaran Puja',
-  'Rahu Ketu Shanti Puja',
-  'Rin Mukti Puja',
-  'Rudra Abhishek Puja',
-  'Vastu Shanti Puja',
-  'Dhanteras Puja',
-  'Diwali Lakshmi Puja',
-  'Pitru Dosh Nivaran Puja',
-  'Shani Shanti Puja',
-  'Shuddhikaran Puja',
-  'Vishwakarma Puja',
-  'Karnavedha Sanskar',
-  'Yajnopavita (Janeu) Sanskar',
-  'Mundan Sanskar Puja',
-  'Ekadashi Udyapan Puja',
-  'Gauri Ganesh Hawan',
-  'Narayan Bali Puja',
-  'Terahvi / Shradh Sanskar Puja',
-  'Vehicle (Vahan) Puja',
-  'Vyapar Vriddhi Puja',
-  'Other Puja',
-];
+interface PujaItem {
+  id: string;
+  name: string;
+  category: string;
+  desc: string;
+  duration: string;
+  rating: string;
+  conductedCount: string;
+  tag: string;
+  img: string;
+}
 
-const ALL_LANGUAGES = [
-  { code: 'hi', label: 'Hindi (हिंदी)', isAvailable: true },
-  { code: 'mai', label: 'Maithili (मैथिली)', isAvailable: true },
-  { code: 'mr', label: 'Marathi (मराठी)', isAvailable: true },
-  { code: 'kn', label: 'Kannada (ಕನ್ನಡ)', isAvailable: true },
-  { code: 'ta', label: 'Tamil (தமிழ்)', isAvailable: true },
-  { code: 'te', label: 'Telugu (తెలుగు)', isAvailable: true },
-  { code: 'en', label: 'English', isAvailable: true },
-  { code: 'bho', label: 'Bhojpuri (भोजपुरी)', isAvailable: true },
-  { code: 'mag', label: 'Magahi (मगही)', isAvailable: false },
-  { code: 'bn', label: 'Bengali (বাংলা)', isAvailable: true },
-];
+export default function Home() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-export default function BookingPage() {
   const [formData, setFormData] = useState({
-    yajmanName: '',
-    phone: '',
-    pujaName: 'Griha Pravesh Puja',
-    customPujaName: '',
-    languageCode: 'hi',
-    area: '',
-    pincode: '',
-    houseAddress: '',
-    pujaDate: '',
-    timeSlot: 'Morning (08:00 AM - 11:00 AM)',
-    needSamagriArrangement: true,
+    name: "",
+    phone: "",
+    pujaName: "Griha Pravesh & Vastu Shanti Puja",
+    language: "Hindi",
+    area: "",
+    pincode: "",
+    address: "",
+    date: "",
+    timeSlot: "Morning (08:00 AM - 11:00 AM)",
+    samagri: true,
   });
 
-  const [pujaSearch, setPujaSearch] = useState('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const filteredPujas = useMemo(() => {
-    return ALL_PUJAS.filter((name) =>
-      name.toLowerCase().includes(pujaSearch.toLowerCase())
-    );
-  }, [pujaSearch]);
+  const categories = [
+    "All",
+    "Home & Workplace",
+    "Dev Anushthan & Hawan",
+    "Life Sanskars",
+    "Festivals",
+    "Dosh Nivaran",
+    "Shradh & Shanti",
+  ];
 
-  const selectedLanguage =
-    ALL_LANGUAGES.find((l) => l.code === formData.languageCode) || ALL_LANGUAGES[0];
+  const pujaList: PujaItem[] = [
+    // 1. Home & Workplace
+    {
+      id: "griha-pravesh",
+      name: "Griha Pravesh & Vastu Shanti Puja",
+      category: "Home & Workplace",
+      desc: "Sacred housewarming ritual with Kalash Sthapana, Vastu Purusha pujan, and Hawan for positivity and prosperity.",
+      duration: "3 - 4 Hours",
+      rating: "4.9",
+      conductedCount: "2,480+",
+      tag: "Most Popular",
+      img: "https://images.unsplash.com/photo-1567591414240-e2985fd2502f?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "vastu-shanti",
+      name: "Vastu Shanti & Hawan Ceremony",
+      category: "Home & Workplace",
+      desc: "Purification of home environment to neutralize directional doshas and invoke harmony, peace, and abundance.",
+      duration: "3 Hours",
+      rating: "4.9",
+      conductedCount: "1,420+",
+      tag: "Vastu Shastra",
+      img: "https://images.unsplash.com/photo-1609743522653-52354461cf27?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "bhoomi-pujan",
+      name: "Bhoomi Pujan (Groundbreaking Ceremony)",
+      category: "Home & Workplace",
+      desc: "Seeking divine blessings from Mother Earth and directional deities prior to new construction or agricultural milestones.",
+      duration: "2 - 3 Hours",
+      rating: "4.8",
+      conductedCount: "860+",
+      tag: "Sacred Foundation",
+      img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "office-opening",
+      name: "Office & Commercial Business Puja",
+      category: "Home & Workplace",
+      desc: "Auspicious inauguration ceremony for corporate offices, shops, and startups with Ganesha and Lakshmi-Kuber invocation.",
+      duration: "2 - 3 Hours",
+      rating: "4.9",
+      conductedCount: "1,120+",
+      tag: "Commercial Success",
+      img: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80",
+    },
+
+    // 2. Dev Anushthan & Hawan
+    {
+      id: "satyanarayan",
+      name: "Shri Satyanarayan Vrat Katha & Hawan",
+      category: "Dev Anushthan & Hawan",
+      desc: "Traditional narrative pooja dedicated to Lord Vishnu with Panchamrit prasad, family sankalp, and Mangal Aarti.",
+      duration: "2.5 Hours",
+      rating: "4.9",
+      conductedCount: "3,350+",
+      tag: "Universal Blessing",
+      img: "https://images.unsplash.com/photo-1621644827878-f68205aa1ff2?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "rudrabhishek",
+      name: "Maha Rudrabhishek & Laghu Rudra",
+      category: "Dev Anushthan & Hawan",
+      desc: "Sacred Vedic bathing of Shivling with Panchamrit, holy Gangajal, and Bilva leaves accompanied by Rudram chants.",
+      duration: "2.5 - 3 Hours",
+      rating: "5.0",
+      conductedCount: "2,190+",
+      tag: "Lord Shiva Grace",
+      img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "mahamrityunjaya",
+      name: "Mahamrityunjaya Jaap & Hawan",
+      category: "Dev Anushthan & Hawan",
+      desc: "Powerful healing Vedic chanting and sacrificial fire offering for longevity, good health, and spiritual protection.",
+      duration: "3 - 4 Hours",
+      rating: "4.9",
+      conductedCount: "940+",
+      tag: "Aayushya Raksha",
+      img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "ganesh-puja",
+      name: "Shri Ganesh Pujan & Modak Hawan",
+      category: "Dev Anushthan & Hawan",
+      desc: "Invocation of Lord Vighnaharta to eliminate all obstacles, bestow wisdom, and ensure smooth endeavors.",
+      duration: "2 Hours",
+      rating: "4.8",
+      conductedCount: "1,750+",
+      tag: "Obstacle Remover",
+      img: "https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "lakshmi-puja",
+      name: "Maha Lakshmi & Shri Suktam Hawan",
+      category: "Dev Anushthan & Hawan",
+      desc: "Rigvedic Shri Suktam recitation with pure ghee and lotus oblations for perpetual prosperity and wealth creation.",
+      duration: "2.5 Hours",
+      rating: "4.9",
+      conductedCount: "1,340+",
+      tag: "Wealth & Fortune",
+      img: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "kuber-puja",
+      name: "Lord Kuber Dhan Samriddhi Hawan",
+      category: "Dev Anushthan & Hawan",
+      desc: "Specialized Vedic oblations invoking the divine treasurer Kuber Dev for financial stability and enterprise growth.",
+      duration: "2.5 Hours",
+      rating: "4.8",
+      conductedCount: "620+",
+      tag: "Financial Harmony",
+      img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "navgrah-shanti",
+      name: "Navgrah Shanti & Maha Hawan",
+      category: "Dev Anushthan & Hawan",
+      desc: "Propitiation of the 9 cosmic energies through Samidha woods, special ahutis, and Shanti Mantras.",
+      duration: "3 Hours",
+      rating: "4.9",
+      conductedCount: "1,530+",
+      tag: "Cosmic Balance",
+      img: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80",
+    },
+
+    // 3. Life Sanskars
+    {
+      id: "vivah-sanskar",
+      name: "Vedic Vivah Sanskar (Marriage)",
+      category: "Life Sanskars",
+      desc: "Comprehensive Vedic wedding rituals: Kanyadaan, Saptapadi (Seven Vows), Mangalsutra Dharan, and sacred Agni Hawan.",
+      duration: "Full Ritual",
+      rating: "5.0",
+      conductedCount: "890+",
+      tag: "Sacred Matrimony",
+      img: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "sagai-ceremony",
+      name: "Sagai & Ring Engagement Ceremony",
+      category: "Life Sanskars",
+      desc: "Traditional pre-wedding auspicious ritual including Lagna Patrika recitation, family blessings, and sankalp.",
+      duration: "2 Hours",
+      rating: "4.8",
+      conductedCount: "710+",
+      tag: "Pre-Wedding",
+      img: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "namkaran-sanskar",
+      name: "Namkaran Sanskar (Naming Ceremony)",
+      category: "Life Sanskars",
+      desc: "First formal Vedic blessing for newborns calculating the auspicious Nakshatra name syllable with honey and ghee tasting.",
+      duration: "2 Hours",
+      rating: "4.9",
+      conductedCount: "1,260+",
+      tag: "Newborn Blessing",
+      img: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "mundan-sanskar",
+      name: "Mundan Sanskar (Chudakarana)",
+      category: "Life Sanskars",
+      desc: "Sacred first hair removal ritual purifying the child of previous life samskaras and promoting intellectual vibrancy.",
+      duration: "2 Hours",
+      rating: "4.8",
+      conductedCount: "980+",
+      tag: "Purification Rite",
+      img: "https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "janeu-sanskar",
+      name: "Janeu / Upanayana Sanskar",
+      category: "Life Sanskars",
+      desc: "Sacred thread investiture ceremony initiating young aspirants into Vedic studies, Gayatri Mantra, and Brahmacharya.",
+      duration: "4 - 5 Hours",
+      rating: "4.9",
+      conductedCount: "430+",
+      tag: "Spiritual Rebirth",
+      img: "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "karnavedha",
+      name: "Karnavedha Sanskar (Ear Piercing)",
+      category: "Life Sanskars",
+      desc: "Vedic ceremony for ear-piercing aimed at physical wellbeing, auditory sharpness, and mental acuity according to Sushruta.",
+      duration: "1.5 Hours",
+      rating: "4.7",
+      conductedCount: "350+",
+      tag: "Health & Sanskar",
+      img: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "godh-bharai",
+      name: "Godh Bharai / Seemantam Sanskar",
+      category: "Life Sanskars",
+      desc: "Joyous baby shower ritual blessing the expectant mother with Vedic chants, maternal health prayers, and auspicious gifts.",
+      duration: "2 - 3 Hours",
+      rating: "4.9",
+      conductedCount: "820+",
+      tag: "Maternal Blessing",
+      img: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80",
+    },
+
+    // 4. Festivals
+    {
+      id: "navratri-puja",
+      name: "Navratri Ghatasthapana & Pujan",
+      category: "Festivals",
+      desc: "Sacred Kalash installation on Pratipada followed by daily Devi aradhana, अखंड ज्योति, and Kanya Pujan rituals.",
+      duration: "3 Hours",
+      rating: "5.0",
+      conductedCount: "1,890+",
+      tag: "Navratri Special",
+      img: "https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "durga-saptashati",
+      name: "Durga Saptashati Path & Hawan",
+      category: "Festivals",
+      desc: "Authentic chanting of all 700 verses of the Devi Mahatmya with Kavach, Argala, and Kilak stotras for divine protection.",
+      duration: "4 - 5 Hours",
+      rating: "4.9",
+      conductedCount: "670+",
+      tag: "Shakti Upasana",
+      img: "https://images.unsplash.com/photo-1567591414240-e2985fd2502f?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "navchandi-yagya",
+      name: "Navchandi Mahayagya",
+      category: "Festivals",
+      desc: "Grand sacrificial yagya purifying the surroundings, dismantling planetary afflictions, and invoking universal benevolence.",
+      duration: "5 Hours",
+      rating: "5.0",
+      conductedCount: "310+",
+      tag: "Grand Anushthan",
+      img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "diwali-puja",
+      name: "Deepawali Lakshmi-Ganesh Pujan",
+      category: "Festivals",
+      desc: "Complete Amavasya evening Diwali ritual with Bahi-Khata poojan, silver coin abhishek, and 16-step Shodashopachara.",
+      duration: "2 - 3 Hours",
+      rating: "5.0",
+      conductedCount: "2,980+",
+      tag: "Festival of Lights",
+      img: "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "dhanteras-puja",
+      name: "Dhanteras & Lord Dhanvantari Puja",
+      category: "Festivals",
+      desc: "Auspicious invocation of Lord Dhanvantari for optimum longevity alongside Kubera deepa-daan ritual at twilight.",
+      duration: "2 Hours",
+      rating: "4.8",
+      conductedCount: "1,140+",
+      tag: "Health & Wealth",
+      img: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=800&auto=format&fit=crop&q=80",
+    },
+
+    // 5. Dosh Nivaran
+    {
+      id: "kaal-sarp",
+      name: "Kaal Sarp Dosh Nivaran Hawan",
+      category: "Dosh Nivaran",
+      desc: "Vedic Rahu-Ketu pacification ritual using silver Nag-Nagin pairs, special Samidha offerings, and Sarpa Suktam recitation.",
+      duration: "3 - 4 Hours",
+      rating: "4.9",
+      conductedCount: "1,210+",
+      tag: "Dosha Shanti",
+      img: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "mangal-dosh",
+      name: "Mangal Dosh Shanti & Hawan",
+      category: "Dosh Nivaran",
+      desc: "Pacification ritual honoring planet Mars (Angaraka) to resolve marital obstacles and foster peaceful family relationships.",
+      duration: "2.5 Hours",
+      rating: "4.8",
+      conductedCount: "1,450+",
+      tag: "Manglik Relief",
+      img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "pitra-dosh",
+      name: "Pitra Dosh Shanti & Tarpan Puja",
+      category: "Dosh Nivaran",
+      desc: "Special prayer ritual offering prayers and holy libations to appease departed ancestral spirits and restore family peace.",
+      duration: "3 Hours",
+      rating: "4.9",
+      conductedCount: "1,320+",
+      tag: "Ancestral Harmony",
+      img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+    },
+
+    // 6. Shradh & Shanti
+    {
+      id: "antim-sanskar",
+      name: "Antyesti / Last Rites Vedic Rituals",
+      category: "Shradh & Shanti",
+      desc: "Solemn scriptural cremation and transition guidance by experienced Purohits strictly according to Garuda Purana.",
+      duration: "As Prescribed",
+      rating: "5.0",
+      conductedCount: "580+",
+      tag: "Sacred Final Journey",
+      img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "pind-daan",
+      name: "Pind Daan & Shradh Tarpan Vidhi",
+      category: "Shradh & Shanti",
+      desc: "Sacred food offerings with barley flour balls, black sesame, and sacred Kusha grass for the peaceful liberation of ancestors.",
+      duration: "2.5 Hours",
+      rating: "4.9",
+      conductedCount: "1,670+",
+      tag: "Moksha Kripa",
+      img: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      id: "terahvin-shanti",
+      name: "Terahvin & Shanti Hawan Ceremony",
+      category: "Shradh & Shanti",
+      desc: "The thirteenth-day culmination ritual concluding mourning period with sacred hawan, Brahman Bhojan, and family blessings.",
+      duration: "3 Hours",
+      rating: "4.9",
+      conductedCount: "820+",
+      tag: "Parivarik Shanti",
+      img: "https://images.unsplash.com/photo-1609743522653-52354461cf27?w=800&auto=format&fit=crop&q=80",
+    },
+  ];
+
+  const filteredPujas = pujaList.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "All" || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleSelectPujaToBook = (pujaTitle: string) => {
+    setFormData((prev) => ({ ...prev, pujaName: pujaTitle }));
+    const element = document.getElementById("booking-section");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
-
-    // Bengaluru Pincode Strict Validation (560xxx)
-    if (!formData.pincode.startsWith('560') || formData.pincode.length !== 6) {
-      setMessage({
-        type: 'error',
-        text: 'Services are currently limited to Bengaluru region (Pincode must start with 560xxx).',
-      });
-      setLoading(false);
-      return;
-    }
-
-    const finalPujaName =
-      formData.pujaName === 'Other Puja'
-        ? formData.customPujaName.trim() || 'Custom Puja'
-        : formData.pujaName;
+    setStatusMsg(null);
 
     try {
-      const { error } = await supabase.from('bookings').insert([
+      const { error } = await supabase.from("bookings").insert([
         {
-          puja_id: finalPujaName.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-          puja_name: finalPujaName,
-          yajman_name: formData.yajmanName,
-          yajman_phone: formData.phone,
-          language_code: formData.languageCode,
-          city: 'Bengaluru',
-          pincode: formData.pincode,
+          name: formData.name,
+          phone: formData.phone,
+          puja_name: formData.pujaName,
+          language: formData.language,
           area: formData.area,
-          house_address: formData.houseAddress,
-          puja_date: formData.pujaDate,
+          pincode: formData.pincode,
+          address: formData.address,
+          date: formData.date,
           time_slot: formData.timeSlot,
-          with_samagri: formData.needSamagriArrangement,
-          total_price: null, // Finalized directly on discussion with Pandit ji
-          token_charge: 0,
-          status: 'OPEN',
+          samagri: formData.samagri,
         },
       ]);
 
       if (error) throw error;
 
-      setMessage({
-        type: 'success',
-        text: 'Booking request placed successfully! Verified Purohits are reviewing your request and will contact you shortly.',
+      setStatusMsg({
+        type: "success",
+        text: "🚩 Har Har Mahadev! Your sacred booking request has been successfully registered. A verified Vedic Purohit proficient in your language and locality will be assigned immediately.",
       });
 
       setFormData({
-        yajmanName: '',
-        phone: '',
-        pujaName: 'Griha Pravesh Puja',
-        customPujaName: '',
-        languageCode: 'hi',
-        area: '',
-        pincode: '',
-        houseAddress: '',
-        pujaDate: '',
-        timeSlot: 'Morning (08:00 AM - 11:00 AM)',
-        needSamagriArrangement: true,
+        name: "",
+        phone: "",
+        pujaName: "Griha Pravesh & Vastu Shanti Puja",
+        language: "Hindi",
+        area: "",
+        pincode: "",
+        address: "",
+        date: "",
+        timeSlot: "Morning (08:00 AM - 11:00 AM)",
+        samagri: true,
       });
-      setPujaSearch('');
     } catch (err: any) {
-      setMessage({
-        type: 'error',
-        text: err.message || 'Unable to place booking request at this moment.',
+      setStatusMsg({
+        type: "error",
+        text: "Booking submission failed: " + (err.message || "Please check your network and try again."),
       });
     } finally {
       setLoading(false);
@@ -165,231 +447,541 @@ export default function BookingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-md p-6 sm:p-8 border border-slate-100">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-amber-700">PurohitSetu</h1>
-          <p className="text-slate-600 mt-1">Book Verified Priests in Bengaluru</p>
+    <div className="min-h-screen bg-[#FFFDF7] text-slate-900 font-sans selection:bg-orange-600 selection:text-white">
+      {/* 1. TOP ANNOUNCEMENT TICKER (NO NUMBERS) */}
+      <div className="bg-gradient-to-r from-red-800 via-orange-600 to-amber-700 text-white text-xs sm:text-sm font-medium py-2 px-4 shadow-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2.5">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-400"></span>
+          </span>
+          <p className="tracking-wide text-center">
+            <strong>Auspicious Muhurat Allocation Active:</strong> Certified Vedic Acharyas available across all zones in Bengaluru • 100% Authentic Shastric Rituals
+          </p>
+        </div>
+      </div>
+
+      {/* 2. GRAND HEADER WITH HAMBURGER MENU */}
+      <header className="bg-white/95 backdrop-blur-md border-b border-amber-200 sticky top-8 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 flex justify-between items-center">
+          {/* Brand Logo & Name */}
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-red-600 flex items-center justify-center text-white text-2xl font-bold shadow-md shadow-orange-300">
+              ॐ
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <a href="#home-section" className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-700 via-orange-600 to-amber-700 tracking-tight">
+                  PurohitSetu
+                </a>
+                <span className="text-[11px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-amber-300">
+                  📍 Bengaluru
+                </span>
+              </div>
+              <p className="text-[10px] font-semibold text-amber-900 tracking-wider uppercase">
+                Sacred Vedic Rituals • Shastric Discipline
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-700">
+            <a href="#home-section" className="hover:text-orange-600 transition">Home</a>
+            <a href="#services-section" className="hover:text-orange-600 transition">Puja Services</a>
+            <a href="#about-section" className="hover:text-orange-600 transition">About Us</a>
+            <a href="#contact-section" className="hover:text-orange-600 transition">Contact Us</a>
+          </nav>
+
+          {/* Right Action & Mobile Menu Toggle */}
+          <div className="flex items-center gap-3">
+            <a
+              href="#booking-section"
+              className="hidden sm:inline-flex bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-md transition transform hover:scale-105"
+            >
+              Book Puja Now
+            </a>
+
+            {/* Three-Line Hamburger Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle Navigation Menu"
+              className="p-2 rounded-xl border border-amber-300 bg-amber-50 text-slate-800 hover:bg-amber-100 transition focus:outline-none"
+            >
+              <div className="w-6 h-4 flex flex-col justify-between">
+                <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "rotate-45 translate-y-1.5" : ""}`}></span>
+                <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "opacity-0" : ""}`}></span>
+                <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "-rotate-45 -translate-y-2" : ""}`}></span>
+              </div>
+            </button>
+          </div>
         </div>
 
-        {message && (
-          <div
-            className={`p-4 rounded-lg mb-6 text-sm font-medium ${
-              message.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
-            }`}
-          >
-            {message.text}
+        {/* Mobile Navigation Drawer / Dropdown */}
+        {isMenuOpen && (
+          <div className="bg-white border-b border-amber-200 shadow-xl px-6 py-5 animate-in fade-in duration-200">
+            <div className="flex flex-col gap-4 text-sm font-bold text-slate-800">
+              <a
+                href="#home-section"
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-orange-600 py-1 border-b border-amber-50 flex items-center justify-between"
+              >
+                <span>🏠 Home</span>
+                <span className="text-xs text-slate-400">→</span>
+              </a>
+              <a
+                href="#services-section"
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-orange-600 py-1 border-b border-amber-50 flex items-center justify-between"
+              >
+                <span>🪔 Vedic Puja Services</span>
+                <span className="text-xs text-slate-400">→</span>
+              </a>
+              <a
+                href="#about-section"
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-orange-600 py-1 border-b border-amber-50 flex items-center justify-between"
+              >
+                <span>📜 About PurohitSetu</span>
+                <span className="text-xs text-slate-400">→</span>
+              </a>
+              <a
+                href="#contact-section"
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-orange-600 py-1 flex items-center justify-between"
+              >
+                <span>✉️ Official Contact</span>
+                <span className="text-xs text-slate-400">→</span>
+              </a>
+              <a
+                href="#booking-section"
+                onClick={() => setIsMenuOpen(false)}
+                className="mt-2 text-center py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold"
+              >
+                Book a Vedic Puja Now
+              </a>
+            </div>
           </div>
         )}
+      </header>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Yajman Name</label>
+      {/* 3. HERO SECTION */}
+      <section id="home-section" className="bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-[#FFFDF7] pt-12 pb-14 px-4 text-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-950 border border-orange-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-5 shadow-sm">
+            <span>🪔</span> Authentic Vedic Tradition • Gurukul-Trained Acharyas
+          </div>
+
+          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 leading-tight mb-4 tracking-tight">
+            Perform Sacred Vedic Rituals At Home <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-red-600 to-amber-600">
+              With Reverence, Purity & Scriptural Precision
+            </span>
+          </h2>
+
+          <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
+            Bengaluru’s dedicated platform connecting devout Yajmans directly with verified Vedic Purohits. Zero superstitions, no commercial horoscopes — strictly pure, authentic Sanskars performed according to Shastras.
+          </p>
+
+          {/* Interactive Search Bar */}
+          <div className="relative max-w-2xl mx-auto mb-6 shadow-xl rounded-2xl">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 text-base">
+              🔍
+            </div>
             <input
               type="text"
-              required
-              placeholder="e.g. Rahul Sharma"
-              value={formData.yajmanName}
-              onChange={(e) => setFormData({ ...formData, yajmanName: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search pujas: 'Griha Pravesh', 'Rudrabhishek', 'Satyanarayan', 'Hawan'..."
+              className="w-full pl-12 pr-20 py-4 bg-white border-2 border-orange-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm placeholder:text-slate-400 font-medium"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-xs font-bold text-slate-400 hover:text-slate-700"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`text-xs font-bold px-4 py-2 rounded-full transition duration-200 ${
+                  selectedCategory === cat
+                    ? "bg-orange-600 text-white shadow-md shadow-orange-500/25"
+                    : "bg-white text-slate-700 border border-amber-200 hover:bg-amber-100/60"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. PUJA SERVICES DIRECTORY */}
+      <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 border-b border-amber-200/80 pb-4">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number</label>
-            <input
-              type="tel"
-              required
-              placeholder="10-digit mobile number"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
-            />
+            <span className="text-orange-600 font-extrabold uppercase tracking-widest text-xs">Sanatan Sanskar Suchi</span>
+            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+              Vedic Pujas & Hawan Ceremonies
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Select an auspicious ritual to view specifications and book an ordained Pandit Ji.
+            </p>
           </div>
+          <div className="mt-3 sm:mt-0">
+            <span className="text-xs font-bold text-orange-700 bg-orange-100 px-3 py-1.5 rounded-full border border-orange-300">
+              Showing {filteredPujas.length} Sacred Services
+            </span>
+          </div>
+        </div>
 
-          {/* Searchable Puja Dropdown */}
-          <div className="relative">
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Select Puja (Searchable)
-            </label>
+        {/* Puja Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredPujas.map((puja) => (
             <div
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full px-4 py-2 border rounded-lg bg-white cursor-pointer flex justify-between items-center text-slate-800"
+              key={puja.id}
+              className="group bg-white rounded-3xl border border-amber-200/90 overflow-hidden shadow-sm hover:shadow-xl hover:border-orange-400 transition-all duration-300 flex flex-col justify-between"
             >
-              <span>{formData.pujaName}</span>
-              <span className="text-xs text-slate-400">▼</span>
-            </div>
-
-            {isDropdownOpen && (
-              <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2">
-                <input
-                  type="text"
-                  placeholder="Type to search puja..."
-                  value={pujaSearch}
-                  onChange={(e) => setPujaSearch(e.target.value)}
-                  className="w-full px-3 py-1.5 border rounded mb-2 text-sm outline-none focus:border-amber-500"
-                  autoFocus
+              <div className="relative h-48 w-full bg-amber-50 overflow-hidden">
+                <img
+                  src={puja.img}
+                  alt={puja.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="space-y-1">
-                  {filteredPujas.map((name) => (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, pujaName: name });
-                        setIsDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-amber-50 text-slate-700 transition"
-                    >
-                      {name}
-                    </button>
-                  ))}
-                  {filteredPujas.length === 0 && (
-                    <p className="text-xs text-slate-400 px-3 py-2">No matching puja found</p>
-                  )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+                <span className="absolute top-3 left-3 bg-red-600/90 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow">
+                  {puja.tag}
+                </span>
+
+                <div className="absolute bottom-3 left-3 right-3 text-white flex justify-between items-end">
+                  <div className="text-xs font-bold flex items-center gap-1 text-yellow-300">
+                    ★ {puja.rating} <span className="text-slate-300 text-[10px]">({puja.conductedCount})</span>
+                  </div>
+                  <div className="text-[11px] bg-black/60 backdrop-blur-sm px-2.5 py-0.5 rounded-full text-white font-medium border border-white/20">
+                    ⏱ {puja.duration}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Manual input for 'Other Puja' */}
-          {formData.pujaName === 'Other Puja' && (
-            <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-lg">
-              <label className="block text-sm font-semibold text-amber-900 mb-1">
-                Enter Puja Name
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Satyanarayan Puja, Special Hawan"
-                value={formData.customPujaName}
-                onChange={(e) => setFormData({ ...formData, customPujaName: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800 bg-white"
-              />
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-extrabold text-orange-600 uppercase tracking-widest block mb-1">
+                    {puja.category}
+                  </span>
+                  <h4 className="font-black text-base text-slate-900 mb-2 group-hover:text-orange-600 transition">
+                    {puja.name}
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-4 line-clamp-3">
+                    {puja.desc}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => handleSelectPujaToBook(puja.name)}
+                  className="w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow transition-all duration-200 active:scale-95 flex items-center justify-center gap-1"
+                >
+                  Book Ritual Now →
+                </button>
+              </div>
             </div>
-          )}
+          ))}
+        </div>
+      </section>
 
-          {/* Language Selection */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Preferred Language for Ritual
-            </label>
-            <select
-              value={formData.languageCode}
-              onChange={(e) => setFormData({ ...formData, languageCode: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
-            >
-              {ALL_LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.label} {lang.isAvailable ? '' : '— [Currently unavailable: On request]'}
-                </option>
-              ))}
-            </select>
-            {!selectedLanguage.isAvailable && (
-              <p className="text-xs text-amber-700 mt-1 font-medium bg-amber-50 p-2 rounded border border-amber-200">
-                Notice: Dedicated verified Pandits for {selectedLanguage.label} are currently being onboarded in your area. We will assign a senior bilingual Purohit on priority.
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Bengaluru Area</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. HSR Layout, Whitefield"
-                value={formData.area}
-                onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Pincode (560xxx)</label>
-              <input
-                type="text"
-                required
-                maxLength={6}
-                placeholder="560102"
-                value={formData.pincode}
-                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Complete Address</label>
-            <textarea
-              required
-              rows={2}
-              placeholder="Flat no, apartment name, street & landmark"
-              value={formData.houseAddress}
-              onChange={(e) => setFormData({ ...formData, houseAddress: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Puja Date</label>
-              <input
-                type="date"
-                required
-                value={formData.pujaDate}
-                onChange={(e) => setFormData({ ...formData, pujaDate: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Time Slot</label>
-              <select
-                value={formData.timeSlot}
-                onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
-              >
-                <option value="Early Morning (06:00 AM - 08:00 AM)">Early Morning (06:00 AM - 08:00 AM)</option>
-                <option value="Morning (08:00 AM - 11:00 AM)">Morning (08:00 AM - 11:00 AM)</option>
-                <option value="Afternoon (11:30 AM - 02:30 PM)">Afternoon (11:30 AM - 02:30 PM)</option>
-                <option value="Evening (05:00 PM - 08:00 PM)">Evening (05:00 PM - 08:00 PM)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Samagri Arrangement Notice */}
-          <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="samagri"
-                checked={formData.needSamagriArrangement}
-                onChange={(e) =>
-                  setFormData({ ...formData, needSamagriArrangement: e.target.checked })
-                }
-                className="h-4 w-4 text-amber-600 rounded cursor-pointer"
-              />
-              <label htmlFor="samagri" className="text-sm font-medium text-slate-800 cursor-pointer">
-                Arrange complete Puja Samagri kit through Purohit
-              </label>
-            </div>
-            <p className="text-xs text-amber-800 mt-2 font-normal">
-              💡 <strong>Note:</strong> Samagri checklist and requirements will be discussed and finalized directly over phone with the Pandit ji based on ritual traditions.
+      {/* 5. ABOUT US SECTION */}
+      <section id="about-section" className="bg-gradient-to-br from-amber-100/40 via-orange-50/30 to-amber-100/50 py-16 px-4 sm:px-8 border-y border-amber-200 my-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-orange-600 font-extrabold uppercase text-xs tracking-widest">
+              Sanatan Heritage & Trust
+            </span>
+            <h3 className="text-2xl sm:text-4xl font-black text-slate-900 mt-2">
+              About PurohitSetu
+            </h3>
+            <p className="text-slate-600 text-xs sm:text-base max-w-2xl mx-auto mt-2 leading-relaxed">
+              Preserving Vedic authenticity and restoring the sacred sanctity of Hindu Sanskars for urban families across Bengaluru.
             </p>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-4 rounded-lg shadow transition disabled:opacity-50"
-          >
-            {loading ? 'Submitting Request...' : 'Confirm & Request Pandit Callback'}
-          </button>
-        </form>
-      </div>
-    </main>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <div className="bg-white p-7 rounded-3xl border border-amber-200 shadow-sm">
+              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl mb-4">
+                🌿
+              </div>
+              <h4 className="text-lg font-black text-slate-900 mb-2">Purity in Shastras, Zero Gimmicks</h4>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                PurohitSetu is solely dedicated to legitimate Vedic ceremonies and Hawans. We intentionally exclude speculative astrology, fortune telling, and commercial matchmaking to keep our worship pure and grounded in devotion.
+              </p>
+            </div>
+
+            <div className="bg-white p-7 rounded-3xl border border-amber-200 shadow-sm">
+              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl mb-4">
+                🕉
+              </div>
+              <h4 className="text-lg font-black text-slate-900 mb-2">Gurukul-Ordained Vedic Acharyas</h4>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Every Purohit Ji on our platform has verified credentials in Vedic pathshala traditions, ensuring precise Sanskrit mantra pronunciation, thorough vidhi knowledge, and utmost spiritual reverence.
+              </p>
+            </div>
+
+            <div className="bg-white p-7 rounded-3xl border border-amber-200 shadow-sm">
+              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl mb-4">
+                🗣
+              </div>
+              <h4 className="text-lg font-black text-slate-900 mb-2">Regional Languages & Traditions</h4>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Every family’s ancestral rituals are unique. We connect you with Purohits conversant in Hindi, Maithili, Bhojpuri, Sanskrit, Kannada, and Telugu so your family completely comprehends the sacred rites.
+              </p>
+            </div>
+
+            <div className="bg-white p-7 rounded-3xl border border-amber-200 shadow-sm">
+              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl mb-4">
+                🔥
+              </div>
+              <h4 className="text-lg font-black text-slate-900 mb-2">Complete Hawan Samagri Management</h4>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                No more running around finding specialized herbs and woods. Our ordained Purohits arrive on time equipped with authenticated puja kits, Gangajal, and Hawan essentials.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur rounded-2xl border border-amber-300 p-6 text-center max-w-3xl mx-auto shadow-sm">
+            <h5 className="font-black text-slate-900 text-sm sm:text-base mb-1">
+              "यतो धर्मस्ततो जयः — Where there is Dharma, there is Divine Victory"
+            </h5>
+            <p className="text-xs text-slate-600">
+              Our continuous goal is making high-standard Vedic rituals accessible, dignified, and uncomplicated for every home in Bengaluru.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. BOOKING FORM SECTION (DIRECT TO DATABASE & PANDIT APP) */}
+      <section id="booking-section" className="py-16 px-4">
+        <div className="max-w-3xl mx-auto bg-white rounded-3xl border-2 border-orange-300 shadow-2xl p-6 sm:p-10 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 via-orange-500 to-amber-500"></div>
+
+          <div className="text-center mb-8">
+            <span className="bg-orange-100 text-orange-900 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+              Yajman Ritual Request Portal
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+              Book a Certified Vedic Purohit
+            </h3>
+            <p className="text-slate-600 text-xs sm:text-sm mt-1">
+              Fill in your ritual details below. Your reservation is routed to our verified Pandit Ji system.
+            </p>
+          </div>
+
+          {statusMsg && (
+            <div
+              className={`p-4 rounded-2xl text-xs sm:text-sm font-semibold mb-6 ${
+                statusMsg.type === "success"
+                  ? "bg-green-100 text-green-950 border border-green-300"
+                  : "bg-red-100 text-red-950 border border-red-300"
+              }`}
+            >
+              {statusMsg.text}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Yajman Name (Full Name) *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Rahul Sharma"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Contact (WhatsApp Enabled) *</label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="10-digit mobile number"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Select Sacred Ritual / Puja *</label>
+                <select
+                  value={formData.pujaName}
+                  onChange={(e) => setFormData({ ...formData, pujaName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                >
+                  {pujaList.map((p) => (
+                    <option key={p.id} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                  <option value="Other Custom Vedic Ritual">Other Custom Vedic Ritual</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Purohit Preferred Language *</label>
+                <select
+                  value={formData.language}
+                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                >
+                  <option value="Hindi">Hindi</option>
+                  <option value="Maithili">Maithili</option>
+                  <option value="Bhojpuri">Bhojpuri</option>
+                  <option value="Sanskrit">Sanskrit (Pure Vedic)</option>
+                  <option value="Kannada">Kannada</option>
+                  <option value="Telugu">Telugu</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Bengaluru Zone / Locality *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. HSR Layout, Whitefield, Koramangala"
+                  value={formData.area}
+                  onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Bengaluru Pincode *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="560xxx"
+                  value={formData.pincode}
+                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Complete Address / Venue Details *</label>
+              <textarea
+                rows={2}
+                required
+                placeholder="Apartment/Villa No., Society Name, Landmark..."
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Puja Date (Auspicious Tithi) *</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Auspicious Time Slot *</label>
+                <select
+                  value={formData.timeSlot}
+                  onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                >
+                  <option value="Morning (06:00 AM - 09:00 AM)">Pratah Kaal (06:00 AM - 09:00 AM)</option>
+                  <option value="Morning (09:00 AM - 12:00 PM)">Morning (09:00 AM - 12:00 PM)</option>
+                  <option value="Afternoon (12:00 PM - 03:00 PM)">Afternoon (12:00 PM - 03:00 PM)</option>
+                  <option value="Evening (05:00 PM - 08:00 PM)">Sandhya / Evening (05:00 PM - 08:00 PM)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="samagri-box"
+                checked={formData.samagri}
+                onChange={(e) => setFormData({ ...formData, samagri: e.target.checked })}
+                className="w-4 h-4 accent-orange-600 rounded cursor-pointer"
+              />
+              <label htmlFor="samagri-box" className="text-xs sm:text-sm text-slate-800 font-medium cursor-pointer">
+                <strong>Include Complete Sacred Hawan & Puja Samagri Kit</strong> (Purohit Ji will carry all consecrated woods, herbs, Gangajal, and ritual items).
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-600 text-white font-black text-sm sm:text-base shadow-xl shadow-orange-500/25 hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
+            >
+              {loading ? "Registering Sacred Booking..." : "🚩 Confirm Booking & Request Pandit Ji"}
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* 7. OFFICIAL CONTACT US SECTION */}
+      <section id="contact-section" className="bg-white py-12 px-4 border-t border-amber-200">
+        <div className="max-w-4xl mx-auto text-center">
+          <span className="text-orange-600 font-extrabold uppercase text-xs tracking-widest">
+            Direct Coordination & Queries
+          </span>
+          <h3 className="text-2xl font-black text-slate-900 mt-1 mb-2">
+            Contact Official Support
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto mb-6">
+            For specific ritual customisations, special anushthan consultations, or booking status inquiries, reach out to our team.
+          </p>
+
+          <div className="inline-flex flex-col sm:flex-row items-center gap-3 bg-amber-50 border border-amber-300 px-6 py-4 rounded-2xl shadow-sm">
+            <span className="text-xl">✉️</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-700">Official Support Email:</span>
+            <a
+              href="mailto:support.purohitsetu@gmail.com"
+              className="text-xs sm:text-sm font-extrabold text-orange-700 hover:text-red-700 underline"
+            >
+              support.purohitsetu@gmail.com
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. FOOTER */}
+      <footer className="bg-slate-900 text-slate-400 py-10 px-4 text-center text-xs border-t-4 border-orange-500">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-500 text-lg">ॐ</span>
+            <span className="font-extrabold text-white text-sm">PurohitSetu Bengaluru</span>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Dedicated Vedic Puja Services • Authentic Tradition • No Astrological Gimmicks
+          </p>
+          <p>© {new Date().getFullYear()} PurohitSetu. Sarve Bhavantu Sukhinah.</p>
+        </div>
+      </footer>
+    </div>
   );
 }
