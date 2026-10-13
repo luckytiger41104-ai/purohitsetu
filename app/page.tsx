@@ -23,7 +23,7 @@ export default function Home() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    pujaName: "Griha Pravesh & Vastu Shanti Puja",
+    pujaName: "Vedic Vivah Sanskar (Marriage)",
     language: "Hindi",
     area: "",
     pincode: "",
@@ -38,344 +38,217 @@ export default function Home() {
 
   const categories = [
     "All",
-    "Home & Workplace",
-    "Dev Anushthan & Hawan",
     "Life Sanskars",
     "Festivals",
     "Dosh Nivaran",
-    "Shradh & Shanti",
+    "Antim Sanskar & Shradh",
   ];
 
   const pujaList: PujaItem[] = [
-    // 1. Home & Workplace
-    {
-      id: "griha-pravesh",
-      name: "Griha Pravesh & Vastu Shanti Puja",
-      category: "Home & Workplace",
-      desc: "Sacred housewarming ritual with Kalash Sthapana, Vastu Purusha pujan, and Hawan for positivity and prosperity.",
-      duration: "3 - 4 Hours",
-      rating: "4.9",
-      conductedCount: "2,480+",
-      tag: "Most Popular",
-      img: "https://images.unsplash.com/photo-1567591414240-e2985fd2502f?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "vastu-shanti",
-      name: "Vastu Shanti & Hawan Ceremony",
-      category: "Home & Workplace",
-      desc: "Purification of home environment to neutralize directional doshas and invoke harmony, peace, and abundance.",
-      duration: "3 Hours",
-      rating: "4.9",
-      conductedCount: "1,420+",
-      tag: "Vastu Shastra",
-      img: "https://images.unsplash.com/photo-1609743522653-52354461cf27?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "bhoomi-pujan",
-      name: "Bhoomi Pujan (Groundbreaking Ceremony)",
-      category: "Home & Workplace",
-      desc: "Seeking divine blessings from Mother Earth and directional deities prior to new construction or agricultural milestones.",
-      duration: "2 - 3 Hours",
-      rating: "4.8",
-      conductedCount: "860+",
-      tag: "Sacred Foundation",
-      img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "office-opening",
-      name: "Office & Commercial Business Puja",
-      category: "Home & Workplace",
-      desc: "Auspicious inauguration ceremony for corporate offices, shops, and startups with Ganesha and Lakshmi-Kuber invocation.",
-      duration: "2 - 3 Hours",
-      rating: "4.9",
-      conductedCount: "1,120+",
-      tag: "Commercial Success",
-      img: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80",
-    },
-
-    // 2. Dev Anushthan & Hawan
-    {
-      id: "satyanarayan",
-      name: "Shri Satyanarayan Vrat Katha & Hawan",
-      category: "Dev Anushthan & Hawan",
-      desc: "Traditional narrative pooja dedicated to Lord Vishnu with Panchamrit prasad, family sankalp, and Mangal Aarti.",
-      duration: "2.5 Hours",
-      rating: "4.9",
-      conductedCount: "3,350+",
-      tag: "Universal Blessing",
-      img: "https://images.unsplash.com/photo-1621644827878-f68205aa1ff2?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "rudrabhishek",
-      name: "Maha Rudrabhishek & Laghu Rudra",
-      category: "Dev Anushthan & Hawan",
-      desc: "Sacred Vedic bathing of Shivling with Panchamrit, holy Gangajal, and Bilva leaves accompanied by Rudram chants.",
-      duration: "2.5 - 3 Hours",
-      rating: "5.0",
-      conductedCount: "2,190+",
-      tag: "Lord Shiva Grace",
-      img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "mahamrityunjaya",
-      name: "Mahamrityunjaya Jaap & Hawan",
-      category: "Dev Anushthan & Hawan",
-      desc: "Powerful healing Vedic chanting and sacrificial fire offering for longevity, good health, and spiritual protection.",
-      duration: "3 - 4 Hours",
-      rating: "4.9",
-      conductedCount: "940+",
-      tag: "Aayushya Raksha",
-      img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "ganesh-puja",
-      name: "Shri Ganesh Pujan & Modak Hawan",
-      category: "Dev Anushthan & Hawan",
-      desc: "Invocation of Lord Vighnaharta to eliminate all obstacles, bestow wisdom, and ensure smooth endeavors.",
-      duration: "2 Hours",
-      rating: "4.8",
-      conductedCount: "1,750+",
-      tag: "Obstacle Remover",
-      img: "https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "lakshmi-puja",
-      name: "Maha Lakshmi & Shri Suktam Hawan",
-      category: "Dev Anushthan & Hawan",
-      desc: "Rigvedic Shri Suktam recitation with pure ghee and lotus oblations for perpetual prosperity and wealth creation.",
-      duration: "2.5 Hours",
-      rating: "4.9",
-      conductedCount: "1,340+",
-      tag: "Wealth & Fortune",
-      img: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "kuber-puja",
-      name: "Lord Kuber Dhan Samriddhi Hawan",
-      category: "Dev Anushthan & Hawan",
-      desc: "Specialized Vedic oblations invoking the divine treasurer Kuber Dev for financial stability and enterprise growth.",
-      duration: "2.5 Hours",
-      rating: "4.8",
-      conductedCount: "620+",
-      tag: "Financial Harmony",
-      img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "navgrah-shanti",
-      name: "Navgrah Shanti & Maha Hawan",
-      category: "Dev Anushthan & Hawan",
-      desc: "Propitiation of the 9 cosmic energies through Samidha woods, special ahutis, and Shanti Mantras.",
-      duration: "3 Hours",
-      rating: "4.9",
-      conductedCount: "1,530+",
-      tag: "Cosmic Balance",
-      img: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80",
-    },
-
-    // 3. Life Sanskars
+    // 1. Life Sanskars
     {
       id: "vivah-sanskar",
       name: "Vedic Vivah Sanskar (Marriage)",
       category: "Life Sanskars",
-      desc: "Comprehensive Vedic wedding rituals: Kanyadaan, Saptapadi (Seven Vows), Mangalsutra Dharan, and sacred Agni Hawan.",
+      desc: "Sacred matrimony rituals: Kanyadaan, Saptapadi (Seven Vows), Mangalsutra Dharan, and Vivah Hawan.",
       duration: "Full Ritual",
       rating: "5.0",
       conductedCount: "890+",
       tag: "Sacred Matrimony",
-      img: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/marriage ppoja.jpeg",
     },
     {
       id: "sagai-ceremony",
       name: "Sagai & Ring Engagement Ceremony",
       category: "Life Sanskars",
-      desc: "Traditional pre-wedding auspicious ritual including Lagna Patrika recitation, family blessings, and sankalp.",
+      desc: "Traditional pre-wedding auspicious ritual including Tilak, Lagna Patrika recitation, and family blessings.",
       duration: "2 Hours",
       rating: "4.8",
       conductedCount: "710+",
       tag: "Pre-Wedding",
-      img: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/engement pooja.jpeg",
     },
     {
-      id: "namkaran-sanskar",
-      name: "Namkaran Sanskar (Naming Ceremony)",
+      id: "annaprashan",
+      name: "Annaprashan Sanskar (First Rice Feeding)",
       category: "Life Sanskars",
-      desc: "First formal Vedic blessing for newborns calculating the auspicious Nakshatra name syllable with honey and ghee tasting.",
+      desc: "First solid food offering to the child with divine mantras, Panchamrit tasting, and longevity prayers.",
       duration: "2 Hours",
       rating: "4.9",
-      conductedCount: "1,260+",
-      tag: "Newborn Blessing",
-      img: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&auto=format&fit=crop&q=80",
+      conductedCount: "1,120+",
+      tag: "Child Milestone",
+      img: "/poojas/annaprasan sanskar pooja.jpeg",
     },
     {
       id: "mundan-sanskar",
       name: "Mundan Sanskar (Chudakarana)",
       category: "Life Sanskars",
-      desc: "Sacred first hair removal ritual purifying the child of previous life samskaras and promoting intellectual vibrancy.",
+      desc: "Sacred first hair removal ritual purifying the child of past life samskaras and promoting health and acuity.",
       duration: "2 Hours",
       rating: "4.8",
       conductedCount: "980+",
       tag: "Purification Rite",
-      img: "https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/mundan sanskar.jpeg",
     },
     {
-      id: "janeu-sanskar",
-      name: "Janeu / Upanayana Sanskar",
+      id: "upnayan-sanskar",
+      name: "Upanayana / Janeu Sanskar",
       category: "Life Sanskars",
-      desc: "Sacred thread investiture ceremony initiating young aspirants into Vedic studies, Gayatri Mantra, and Brahmacharya.",
+      desc: "Sacred thread investiture ceremony initiating youth into Gayatri Mantra upasana and Vedic student discipline.",
       duration: "4 - 5 Hours",
       rating: "4.9",
       conductedCount: "430+",
       tag: "Spiritual Rebirth",
-      img: "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/upnayan sanskar.jpeg",
     },
     {
       id: "karnavedha",
       name: "Karnavedha Sanskar (Ear Piercing)",
       category: "Life Sanskars",
-      desc: "Vedic ceremony for ear-piercing aimed at physical wellbeing, auditory sharpness, and mental acuity according to Sushruta.",
+      desc: "Vedic ceremony for ear-piercing aimed at holistic wellbeing, auditory vitality, and intellectual acuity.",
       duration: "1.5 Hours",
       rating: "4.7",
       conductedCount: "350+",
       tag: "Health & Sanskar",
-      img: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/karnbhed sanskar.jpeg",
     },
     {
       id: "godh-bharai",
       name: "Godh Bharai / Seemantam Sanskar",
       category: "Life Sanskars",
-      desc: "Joyous baby shower ritual blessing the expectant mother with Vedic chants, maternal health prayers, and auspicious gifts.",
+      desc: "Joyous Vedic blessing for expectant mothers ensuring spiritual protection and auspiciousness for mother and baby.",
       duration: "2 - 3 Hours",
       rating: "4.9",
       conductedCount: "820+",
       tag: "Maternal Blessing",
-      img: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/godbharai pooja.jpeg",
+    },
+    {
+      id: "birthday-aayushya",
+      name: "Janamdin & Aayushya Hawan",
+      category: "Life Sanskars",
+      desc: "Family birthday blessing invoking Markandeya Rishi and Chiranjeevi deities for robust health and long life.",
+      duration: "2 Hours",
+      rating: "4.9",
+      conductedCount: "1,450+",
+      tag: "Longevity & Health",
+      img: "/poojas/birthday.jpeg",
     },
 
-    // 4. Festivals
+    // 2. Festivals
     {
       id: "navratri-puja",
       name: "Navratri Ghatasthapana & Pujan",
       category: "Festivals",
-      desc: "Sacred Kalash installation on Pratipada followed by daily Devi aradhana, अखंड ज्योति, and Kanya Pujan rituals.",
+      desc: "Sacred Kalash installation on Pratipada followed by daily Devi aradhana, Akhand Jyot, and Kanya Pujan.",
       duration: "3 Hours",
       rating: "5.0",
       conductedCount: "1,890+",
       tag: "Navratri Special",
-      img: "https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/navratri pooja.jpeg",
     },
     {
       id: "durga-saptashati",
-      name: "Durga Saptashati Path & Hawan",
+      name: "Durga Saptashati Path & Pujan",
       category: "Festivals",
-      desc: "Authentic chanting of all 700 verses of the Devi Mahatmya with Kavach, Argala, and Kilak stotras for divine protection.",
+      desc: "Authentic recitation of the complete Devi Mahatmya along with Kavach, Argala, and Kilak stotras.",
       duration: "4 - 5 Hours",
       rating: "4.9",
       conductedCount: "670+",
       tag: "Shakti Upasana",
-      img: "https://images.unsplash.com/photo-1567591414240-e2985fd2502f?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/durgasaptsati.jpeg",
     },
     {
       id: "navchandi-yagya",
-      name: "Navchandi Mahayagya",
+      name: "Navchandi Mahayagya & Hawan",
       category: "Festivals",
-      desc: "Grand sacrificial yagya purifying the surroundings, dismantling planetary afflictions, and invoking universal benevolence.",
+      desc: "Grand sacrificial yagya purifying the atmosphere, dispelling adversities, and bestowing divine grace.",
       duration: "5 Hours",
       rating: "5.0",
       conductedCount: "310+",
       tag: "Grand Anushthan",
-      img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/navchandi hawan.jpeg",
     },
     {
       id: "diwali-puja",
       name: "Deepawali Lakshmi-Ganesh Pujan",
       category: "Festivals",
-      desc: "Complete Amavasya evening Diwali ritual with Bahi-Khata poojan, silver coin abhishek, and 16-step Shodashopachara.",
+      desc: "Complete Shodashopachara Lakshmi-Ganesha pujan with Bahi-Khata invocation, deepak daan, and Aarti.",
       duration: "2 - 3 Hours",
       rating: "5.0",
       conductedCount: "2,980+",
       tag: "Festival of Lights",
-      img: "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/diwali pooja.jpeg",
     },
     {
       id: "dhanteras-puja",
       name: "Dhanteras & Lord Dhanvantari Puja",
       category: "Festivals",
-      desc: "Auspicious invocation of Lord Dhanvantari for optimum longevity alongside Kubera deepa-daan ritual at twilight.",
+      desc: "Invocation of Lord Dhanvantari and Kuber Dev for health, physical healing, and financial harmony.",
       duration: "2 Hours",
       rating: "4.8",
       conductedCount: "1,140+",
       tag: "Health & Wealth",
-      img: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/dhanteras pooja.jpeg",
     },
 
-    // 5. Dosh Nivaran
+    // 3. Dosh Nivaran
     {
       id: "kaal-sarp",
       name: "Kaal Sarp Dosh Nivaran Hawan",
       category: "Dosh Nivaran",
-      desc: "Vedic Rahu-Ketu pacification ritual using silver Nag-Nagin pairs, special Samidha offerings, and Sarpa Suktam recitation.",
+      desc: "Vedic Rahu-Ketu pacification ritual using silver Nag-Nagin yantra, specialized herbs, and Sarpa Suktam ahutis.",
       duration: "3 - 4 Hours",
       rating: "4.9",
       conductedCount: "1,210+",
       tag: "Dosha Shanti",
-      img: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/kaalsarp dosh pooja.jpeg",
     },
     {
       id: "mangal-dosh",
       name: "Mangal Dosh Shanti & Hawan",
       category: "Dosh Nivaran",
-      desc: "Pacification ritual honoring planet Mars (Angaraka) to resolve marital obstacles and foster peaceful family relationships.",
+      desc: "Scriptural Mars pacification ceremony honoring Lord Angaraka to mitigate obstacles in marriage and career.",
       duration: "2.5 Hours",
       rating: "4.8",
       conductedCount: "1,450+",
       tag: "Manglik Relief",
-      img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/mangaldosh.jpeg",
     },
     {
       id: "pitra-dosh",
       name: "Pitra Dosh Shanti & Tarpan Puja",
       category: "Dosh Nivaran",
-      desc: "Special prayer ritual offering prayers and holy libations to appease departed ancestral spirits and restore family peace.",
+      desc: "Propitiation of ancestral spirits through Til-Tarpan and Brahmana Bhojan to bring peace and relief from doshas.",
       duration: "3 Hours",
       rating: "4.9",
       conductedCount: "1,320+",
       tag: "Ancestral Harmony",
-      img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/pitrishanti.jpeg",
     },
 
-    // 6. Shradh & Shanti
+    // 4. Antim Sanskar & Shradh
     {
       id: "antim-sanskar",
       name: "Antyesti / Last Rites Vedic Rituals",
-      category: "Shradh & Shanti",
-      desc: "Solemn scriptural cremation and transition guidance by experienced Purohits strictly according to Garuda Purana.",
+      category: "Antim Sanskar & Shradh",
+      desc: "Solemn scriptural cremation and Vedic transition guidance strictly in accordance with Garuda Purana rites.",
       duration: "As Prescribed",
       rating: "5.0",
       conductedCount: "580+",
       tag: "Sacred Final Journey",
-      img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "pind-daan",
-      name: "Pind Daan & Shradh Tarpan Vidhi",
-      category: "Shradh & Shanti",
-      desc: "Sacred food offerings with barley flour balls, black sesame, and sacred Kusha grass for the peaceful liberation of ancestors.",
-      duration: "2.5 Hours",
-      rating: "4.9",
-      conductedCount: "1,670+",
-      tag: "Moksha Kripa",
-      img: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/antaimsanskar.jpeg",
     },
     {
       id: "terahvin-shanti",
       name: "Terahvin & Shanti Hawan Ceremony",
-      category: "Shradh & Shanti",
-      desc: "The thirteenth-day culmination ritual concluding mourning period with sacred hawan, Brahman Bhojan, and family blessings.",
+      category: "Antim Sanskar & Shradh",
+      desc: "Thirteenth-day culmination ritual concluding mourning rites with Shanti Hawan and parivarik blessings.",
       duration: "3 Hours",
       rating: "4.9",
       conductedCount: "820+",
       tag: "Parivarik Shanti",
-      img: "https://images.unsplash.com/photo-1609743522653-52354461cf27?w=800&auto=format&fit=crop&q=80",
+      img: "/poojas/terhvi sradhy.jpeg",
     },
   ];
 
@@ -427,7 +300,7 @@ export default function Home() {
       setFormData({
         name: "",
         phone: "",
-        pujaName: "Griha Pravesh & Vastu Shanti Puja",
+        pujaName: "Vedic Vivah Sanskar (Marriage)",
         language: "Hindi",
         area: "",
         pincode: "",
@@ -448,7 +321,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-slate-900 font-sans selection:bg-orange-600 selection:text-white">
-      {/* 1. TOP ANNOUNCEMENT TICKER (NO NUMBERS) */}
+      {/* 1. TOP ANNOUNCEMENT TICKER */}
       <div className="bg-gradient-to-r from-red-800 via-orange-600 to-amber-700 text-white text-xs sm:text-sm font-medium py-2 px-4 shadow-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2.5">
           <span className="relative flex h-2.5 w-2.5">
@@ -591,7 +464,7 @@ export default function Home() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search pujas: 'Griha Pravesh', 'Rudrabhishek', 'Satyanarayan', 'Hawan'..."
+              placeholder="Search pujas: 'Vivah', 'Navratri', 'Dhanteras', 'Kaal Sarp'..."
               className="w-full pl-12 pr-20 py-4 bg-white border-2 border-orange-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm placeholder:text-slate-400 font-medium"
             />
             {searchQuery && (
@@ -764,7 +637,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. BOOKING FORM SECTION (DIRECT TO DATABASE & PANDIT APP) */}
+      {/* 6. BOOKING FORM SECTION */}
       <section id="booking-section" className="py-16 px-4">
         <div className="max-w-3xl mx-auto bg-white rounded-3xl border-2 border-orange-300 shadow-2xl p-6 sm:p-10 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 via-orange-500 to-amber-500"></div>
@@ -979,7 +852,7 @@ export default function Home() {
           <p className="text-[11px] text-slate-500">
             Dedicated Vedic Puja Services • Authentic Tradition • No Astrological Gimmicks
           </p>
-          <p>© {new Date().getFullYear()} PurohitSetu. Sarve Bhavantu Sukhinah.</p>
+          <p>© 2026 PurohitSetu. Sarve Bhavantu Sukhinah.</p>
         </div>
       </footer>
     </div>
