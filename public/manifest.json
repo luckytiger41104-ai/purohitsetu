@@ -1,0 +1,21 @@
+{
+  "name": "PurohitSetu - Pandit Portal",
+  "short_name": "PurohitSetu",
+  "description": "Dedicated Platform for Vedic Purohits & Acharyas",
+  "start_url": "/pandit/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#c2410c",
+  "icons": [
+    {
+      "src": "/logo.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
