@@ -439,7 +439,6 @@ export default function Home() {
 
       {/* 3. HERO SECTION */}
       <section id="home-section" className="bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-[#FFFDF7] pt-12 pb-14 px-4 text-center">
-      <main id="main-content">
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-950 border border-orange-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-5 shadow-sm">
             <span>🪔</span> Authentic Vedic Tradition • Gurukul-Trained Acharyas
@@ -856,7 +855,6 @@ export default function Home() {
           <p>© 2026 PurohitSetu. Sarve Bhavantu Sukhinah.</p>
         </div>
       </footer>
-      </main>
     </div>
   );
 }

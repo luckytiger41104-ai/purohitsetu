@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import AutoMusicPlayer from '@/components/AutoMusicPlayer';
@@ -6,37 +6,43 @@ import FloatingPaymentButton from '@/components/FloatingPaymentButton';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const viewport: Viewport = {
+  themeColor: '#ea580c',
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.purohitsetu.in'),
-  title: 'PurohitSetu | Book Verified Vedic Pandits in Bangalore',
-  description:
-    'Book authentic and verified Vedic Pandits for Griha Pravesh, Havan, Vivah, and sacred rituals in Bangalore with shastric purity.',
-  alternates: {
-    canonical: 'https://www.purohitsetu.in',
-  },
+  title: 'PurohitSetu | Book Verified Vedic Pandits & Purohits in Bengaluru',
+  description: 'Book authentic Vedic Pandits in Bengaluru for Griha Pravesh, Vivah, Navratri, Havan, and Sanskars. Strict Vedic rituals, transparent pricing, verified Acharyas.',
   keywords: [
     'Pandit in Bangalore',
     'Vedic Purohit Bangalore',
-    'Book Pandit Online',
     'Griha Pravesh Puja Bangalore',
     'North Indian Pandit in Bangalore',
+    'Bihari Pandit Bangalore',
+    'Maithil Pandit Bangalore',
+    'Havan and Puja Services'
   ],
+  alternates: {
+    canonical: 'https://www.purohitsetu.in',
+  },
   openGraph: {
-    title: 'PurohitSetu | Authentic Vedic Rituals & Certified Pandits',
-    description:
-      'Connecting devout Yajmans with authentic, verified Vedic Purohits in Bangalore.',
+    title: 'PurohitSetu | Book Verified Vedic Pandits in Bengaluru',
+    description: 'Book authentic Vedic Pandits in Bengaluru with verified credentials and transparent pricing.',
     url: 'https://www.purohitsetu.in',
     siteName: 'PurohitSetu',
-    images: [
-      {
-        url: '/logo.jpg',
-        width: 800,
-        height: 600,
-        alt: 'PurohitSetu Vedic Logo',
-      },
-    ],
     locale: 'en_IN',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PurohitSetu | Book Verified Vedic Pandits in Bengaluru',
+    description: 'Book authentic Vedic Pandits in Bengaluru with verified credentials.',
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -55,7 +61,9 @@ export default function RootLayout({
         <FloatingPaymentButton />
 
         {/* Page Views */}
-        {children}
+        <main id="main-content">
+          {children}
+        </main>
       </body>
     </html>
   );
