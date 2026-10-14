@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import AutoMusicPlayer from '@/components/AutoMusicPlayer';
+// import AutoMusicPlayer from '@/components/AutoMusicPlayer';
 import FloatingPaymentButton from '@/components/FloatingPaymentButton';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -33,7 +33,6 @@ export const metadata: Metadata = {
     url: 'https://www.purohitsetu.in',
     siteName: 'PurohitSetu',
     locale: 'en_IN',
-    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
@@ -54,8 +53,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-stone-50 text-gray-900 antialiased`}>
-        {/* Global Vedic Audio Background */}
-        <AutoMusicPlayer />
+        {/* Global Vedic Audio Background Disabled for Performance */}
+        {/* <AutoMusicPlayer /> */}
 
         {/* Permanent Optional Floating Payment / Dakshina Button */}
         <FloatingPaymentButton />
