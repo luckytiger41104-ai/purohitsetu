@@ -444,12 +444,12 @@ export default function Home() {
             <span>🪔</span> Authentic Vedic Tradition • Gurukul-Trained Acharyas
           </div>
 
-          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 leading-tight mb-4 tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 leading-tight mb-4 tracking-tight">
             Perform Sacred Vedic Rituals At Home <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-red-600 to-amber-600">
               With Reverence, Purity & Scriptural Precision
             </span>
-          </h2>
+          </h1>
 
           <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
             Bengaluru’s dedicated platform connecting devout Yajmans directly with verified Vedic Purohits. Zero superstitions, no commercial horoscopes — strictly pure, authentic Sanskars performed according to Shastras.

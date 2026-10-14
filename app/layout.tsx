@@ -7,9 +7,13 @@ import FloatingPaymentButton from '@/components/FloatingPaymentButton';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.purohitsetu.in'),
   title: 'PurohitSetu | Book Verified Vedic Pandits in Bangalore',
   description:
     'Book authentic and verified Vedic Pandits for Griha Pravesh, Havan, Vivah, and sacred rituals in Bangalore with shastric purity.',
+  alternates: {
+    canonical: 'https://www.purohitsetu.in',
+  },
   keywords: [
     'Pandit in Bangalore',
     'Vedic Purohit Bangalore',
