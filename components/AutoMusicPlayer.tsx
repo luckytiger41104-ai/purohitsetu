@@ -7,63 +7,37 @@ export default function AutoMusicPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.volume = 0.5;
-
-    // 1. Muted attempt to satisfy browser security
-    const attemptPlay = () => {
-      audio
-        .play()
-        .then(() => {
+    // Only attempt playback on first explicit user touch/click to prevent render blocking
+    const handleFirstInteraction = () => {
+      if (audioRef.current && !isPlaying) {
+        audioRef.current.play().then(() => {
           setIsPlaying(true);
-        })
-        .catch(() => {
-          // Fallback if blocked
-          setIsPlaying(false);
+        }).catch(() => {
+          // Autoplay policy fallback
         });
-    };
-
-    attemptPlay();
-
-    // 2. Unlock sound on user's first interaction anywhere on the screen
-    const unlockSound = () => {
-      if (audio) {
-        audio.muted = false;
-        audio
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch((err) => console.log('Audio unlock err:', err));
       }
-      window.removeEventListener('click', unlockSound);
-      window.removeEventListener('touchstart', unlockSound);
-      window.removeEventListener('scroll', unlockSound);
-      window.removeEventListener('keydown', unlockSound);
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
     };
 
-    window.addEventListener('click', unlockSound);
-    window.addEventListener('touchstart', unlockSound);
-    window.addEventListener('scroll', unlockSound);
-    window.addEventListener('keydown', unlockSound);
+    window.addEventListener('click', handleFirstInteraction, { once: true });
+    window.addEventListener('touchstart', handleFirstInteraction, { once: true });
 
     return () => {
-      window.removeEventListener('click', unlockSound);
-      window.removeEventListener('touchstart', unlockSound);
-      window.removeEventListener('scroll', unlockSound);
-      window.removeEventListener('keydown', unlockSound);
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, []);
+  }, [isPlaying]);
 
-  const toggleSound = () => {
+  const toggleMantra = () => {
     if (!audioRef.current) return;
-    if (audioRef.current.paused) {
-      audioRef.current.muted = false;
-      audioRef.current.play();
-      setIsPlaying(true);
-    } else {
+    if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(console.error);
     }
   };
 
@@ -71,22 +45,15 @@ export default function AutoMusicPlayer() {
     <>
       <audio
         ref={audioRef}
-        src="/bg-mantra.mp3"
+        src="/audio/mantra.mp3"
+        preload="none"
         loop
-        preload="auto"
-        autoPlay
-        playsInline
       />
-
-      {/* Floating Vedic Sound Toggle Button */}
-      <div className="fixed bottom-5 right-5 z-50">
+      <div className="fixed bottom-4 right-4 z-40">
         <button
-          onClick={toggleSound}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-bold shadow-2xl transition-all transform hover:scale-105 cursor-pointer text-xs border ${
-            isPlaying
-              ? 'bg-amber-500 text-gray-950 border-amber-300 animate-pulse'
-              : 'bg-gray-900/90 text-white border-gray-700'
-          }`}
+          onClick={toggleMantra}
+          aria-label={isPlaying ? 'Pause Vedic Mantra Audio' : 'Play Vedic Mantra Audio'}
+          className="bg-black/75 hover:bg-black/90 backdrop-blur-md text-white px-3.5 py-2 rounded-full text-xs font-semibold shadow-lg border border-white/20 flex items-center gap-2 transition cursor-pointer"
         >
           <span>{isPlaying ? '🔊' : '🔇'}</span>
           <span>{isPlaying ? 'Mantra Playing' : 'Tap for Mantra'}</span>
