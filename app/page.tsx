@@ -501,9 +501,9 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 border-b border-amber-200/80 pb-4">
           <div>
             <span className="text-orange-600 font-extrabold uppercase tracking-widest text-xs">Sanatan Sanskar Suchi</span>
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
               Vedic Pujas & Hawan Ceremonies
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Select an auspicious ritual to view specifications and book an ordained Pandit Ji.
             </p>
