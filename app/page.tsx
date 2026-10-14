@@ -766,22 +766,23 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Puja Date (Auspicious Tithi) *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
-                />
-              </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Puja Date (Auspicious Tithi) *</label>
+                  <input
+                    type="date"
+                    aria-label="Puja Date (Auspicious Tithi)"
+                    required
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Auspicious Time Slot *</label>
-                <select
-                  value={formData.timeSlot}
-                  onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Auspicious Time Slot *</label>
+                  <select
+                    aria-label="Auspicious Time Slot"
+                    value={formData.timeSlot}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
                 >
                   <option value="Morning (06:00 AM - 09:00 AM)">Pratah Kaal (06:00 AM - 09:00 AM)</option>
