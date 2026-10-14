@@ -692,40 +692,43 @@ export default function Home() {
                 />
               </div>
             </div>
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="puja-select-input" className="block text-xs font-bold text-slate-700 mb-1">Select Sacred Ritual / Puja *</label>
+                  <select
+                    id="puja-select-input"
+                    aria-label="Select Sacred Ritual / Puja"
+                    value={formData.pujaName}
+                    onChange={(e) => setFormData({ ...formData, pujaName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                  >
+                    {pujaList.map((p) => (
+                      <option key={p.id} value={p.name}>
+                        {p.name}
+                      </option>
+                    ))}
+                    <option value="Other Custom Vedic Ritual">Other Custom Vedic Ritual</option>
+                  </select>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Select Sacred Ritual / Puja *</label>
-                <select
-                  value={formData.pujaName}
-                  onChange={(e) => setFormData({ ...formData, pujaName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
-                >
-                  {pujaList.map((p) => (
-                    <option key={p.id} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-                  <option value="Other Custom Vedic Ritual">Other Custom Vedic Ritual</option>
-                </select>
+                <div>
+                  <label htmlFor="language-select-input" className="block text-xs font-bold text-slate-700 mb-1">Purohit Preferred Language *</label>
+                  <select
+                    id="language-select-input"
+                    aria-label="Select Language Preference"
+                    value={formData.language}
+                    onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                  >
+                    <option value="Hindi">Hindi</option>
+                    <option value="Maithili">Maithili</option>
+                    <option value="Bhojpuri">Bhojpuri</option>
+                    <option value="Sanskrit (Pure Vedic)">Sanskrit (Pure Vedic)</option>
+                    <option value="Kannada">Kannada</option>
+                    <option value="Telugu">Telugu</option>
+                  </select>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Purohit Preferred Language *</label>
-                <select
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
-                >
-                  <option value="Hindi">Hindi</option>
-                  <option value="Maithili">Maithili</option>
-                  <option value="Bhojpuri">Bhojpuri</option>
-                  <option value="Sanskrit">Sanskrit (Pure Vedic)</option>
-                  <option value="Kannada">Kannada</option>
-                  <option value="Telugu">Telugu</option>
-                </select>
-              </div>
-            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
