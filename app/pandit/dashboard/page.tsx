@@ -18,13 +18,59 @@ interface Lead {
   location: string;
   created_at: string;
   status: string;
-  accepted_via?: 'token' | 'free';
+  accepted_via?: 'token' | 'free' | 'admin_assigned';
+  accepted_by?: string;
+  assigned_to_phone?: string;
+  completion_otp?: string;
   cancellation_reason?: string;
 }
 
 const TOKEN_COST = 1;
 
-// Razorpay SDK Dynamic Loader
+// 15 Recharge Packs with Exact Bonus Calculations
+const TOKEN_PACKS = [
+  { name: 'Micro Trial', tokens: 35, amount: 50, tag: '' },
+  { name: 'Trial Pack', tokens: 75, amount: 100, tag: '' },
+  { name: 'Starter Pack', tokens: 110, amount: 150, tag: '' },
+  { name: 'Base Pack', tokens: 150, amount: 200, tag: 'Popular' },
+  { name: 'Purohit Plus', tokens: 225, amount: 300, tag: '' },
+  { name: 'Double Pack', tokens: 300, amount: 400, tag: '' },
+  { name: 'Bronze Acharya', tokens: 375, amount: 500, tag: '' },
+  { name: 'Silver Acharya', tokens: 450, amount: 600, tag: '' },
+  { name: 'Gold Acharya', tokens: 600, amount: 800, tag: '' },
+  {
+    name: 'Platinum Pack',
+    tokens: 800, // 750 base + 50 extra bonus
+    amount: 1000,
+    tag: '🎁 +50 Bonus',
+  },
+  { name: 'Diamond Shastri', tokens: 1125, amount: 1500, tag: '' },
+  {
+    name: 'Royal Shastri',
+    tokens: 1600, // 1500 base + 100 extra bonus
+    amount: 2000,
+    tag: '🎁 +100 Bonus',
+  },
+  {
+    name: 'Vedic Samrat',
+    tokens: 2400, // 2250 base + 150 extra bonus
+    amount: 3000,
+    tag: '🎁 +150 Bonus',
+  },
+  {
+    name: 'Brahmarishi Pack',
+    tokens: 3200, // 3000 base + 200 extra bonus
+    amount: 4000,
+    tag: '🎁 +200 Bonus',
+  },
+  {
+    name: 'Maharishi Crown',
+    tokens: 4050, // 3750 base + 300 extra bonus
+    amount: 5000,
+    tag: '👑 +300 Bonus Free',
+  },
+];
+
 const loadRazorpaySDK = (): Promise<boolean> => {
   return new Promise((resolve) => {
     if (typeof window !== 'undefined' && window.Razorpay) {
@@ -52,17 +98,14 @@ export default function PanditDashboardPage() {
   const [upiId, setUpiId] = useState<string>('');
   const [gallery, setGallery] = useState<string[]>([]);
 
-  // Balances & Standing
   const [tokenBalance, setTokenBalance] = useState<number>(0);
   const [earningsBalance, setEarningsBalance] = useState<number>(0);
   const [strikeCount, setStrikeCount] = useState<number>(0);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
 
-  // Tabs & Hydration Safe Time
   const [activeTab, setActiveTab] = useState<'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules'>('leads');
   const [currentTime, setCurrentTime] = useState<number>(0);
 
-  // Edit Profile States
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>(panditName);
   const [editCity, setEditCity] = useState<string>(baseCity);
@@ -70,25 +113,23 @@ export default function PanditDashboardPage() {
   const [editBio, setEditBio] = useState<string>(bio);
   const [editUpi, setEditUpi] = useState<string>(upiId);
 
-  // Recharge Modal State
   const [showRechargeModal, setShowRechargeModal] = useState<boolean>(false);
 
-  // PWA Install Prompt State
+  const [activeOtpLead, setActiveOtpLead] = useState<Lead | null>(null);
+  const [enteredOtp, setEnteredOtp] = useState<string>('');
+
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState<boolean>(false);
 
-  // Database Lists
   const [leads, setLeads] = useState<Lead[]>([]);
   const [confirmedBookings, setConfirmedBookings] = useState<Lead[]>([]);
   const [missingLeads, setMissingLeads] = useState<Lead[]>([]);
 
-  // Mask Phone for privacy on unaccepted leads
   const maskPhone = (rawPhone: string) => {
     if (!rawPhone || rawPhone.length < 6) return '••••••••••';
     return rawPhone.slice(0, 3) + '••••' + rawPhone.slice(-3);
   };
 
-  // Check login session
   useEffect(() => {
     const savedPhone = localStorage.getItem('pandit_phone');
     if (savedPhone) {
@@ -96,7 +137,6 @@ export default function PanditDashboardPage() {
     }
   }, []);
 
-  // PWA Install Event Listener
   useEffect(() => {
     const handler = (e: any) => {
       e.preventDefault();
@@ -118,14 +158,12 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // Live Timer Tick
   useEffect(() => {
     setCurrentTime(Math.floor(Date.now() / 1000));
     const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch Pandit Data & Bookings
   const loadDashboardData = async () => {
     try {
       if (phone) {
@@ -184,11 +222,33 @@ export default function PanditDashboardPage() {
           created_at: b.created_at || new Date().toISOString(),
           status: b.status || 'available',
           accepted_via: b.accepted_via,
+          accepted_by: b.accepted_by,
+          assigned_to_phone: b.assigned_to_phone,
+          completion_otp: b.completion_otp,
           cancellation_reason: b.cancellation_reason,
         }));
 
-        setLeads(formatted.filter((item) => item.status === 'available' || !item.status));
-        setConfirmedBookings(formatted.filter((item) => item.status === 'confirmed'));
+        setLeads(
+          formatted.filter(
+            (item) =>
+              item.status === 'available' ||
+              !item.status ||
+              item.status === 'pending' ||
+              item.status.toLowerCase() === 'pending'
+          )
+        );
+
+        setConfirmedBookings(
+          formatted.filter(
+            (item) =>
+              (item.status === 'confirmed' || item.status === 'in_progress') &&
+              (item.accepted_by === panditId ||
+                item.accepted_by === phone ||
+                item.assigned_to_phone === phone ||
+                !phone)
+          )
+        );
+
         setMissingLeads(
           formatted.filter(
             (item) => item.status === 'cancelled_by_yajman' || item.status === 'cancelled_by_pandit'
@@ -204,12 +264,13 @@ export default function PanditDashboardPage() {
     loadDashboardData();
   }, [phone]);
 
-  // Lead Acceptance Flow
   const handleAcceptLead = async (lead: Lead) => {
     if (isBlocked || strikeCount >= 2) {
       alert('Your account is currently suspended due to active strikes. Please resolve pending settlements to continue.');
       return;
     }
+
+    const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
     const createdSec = Math.floor(new Date(lead.created_at).getTime() / 1000);
     const elapsed = currentTime - createdSec;
@@ -233,6 +294,7 @@ export default function PanditDashboardPage() {
           status: 'confirmed',
           accepted_by: panditId || phone || 'Acharya',
           accepted_via: 'token',
+          completion_otp: generatedOtp,
         })
         .eq('id', lead.id);
 
@@ -250,6 +312,7 @@ export default function PanditDashboardPage() {
           status: 'confirmed',
           accepted_by: panditId || phone || 'Acharya',
           accepted_via: 'free',
+          completion_otp: generatedOtp,
         })
         .eq('id', lead.id);
 
@@ -263,7 +326,52 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // Razorpay Checkout
+  const handleVerifyCompletionOtp = async () => {
+    if (!activeOtpLead) return;
+
+    if (!enteredOtp || enteredOtp.trim() === '') {
+      alert('Please enter the 4-digit OTP provided by Yajman.');
+      return;
+    }
+
+    if (activeOtpLead.completion_otp && enteredOtp.trim() !== activeOtpLead.completion_otp) {
+      alert('Invalid OTP. Please ask Yajman for the correct 4-digit verification code.');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('bookings')
+      .update({
+        status: 'completed',
+      })
+      .eq('id', activeOtpLead.id);
+
+    if (error) {
+      alert('Error updating status: ' + error.message);
+    } else {
+      alert('Har Har Mahadev! Vedic Ceremony verified and completed successfully.');
+      setActiveOtpLead(null);
+      setEnteredOtp('');
+      loadDashboardData();
+    }
+  };
+
+  const recordTokenTransaction = async (packName: string, amount: number, tokensCount: number, razorpayId: string) => {
+    try {
+      await supabase.from('token_transactions').insert({
+        pandit_id: panditId || 'unknown',
+        pandit_phone: phone || 'unknown',
+        pandit_name: panditName || 'Acharya Ji',
+        pack_name: packName,
+        amount: amount,
+        tokens_credited: tokensCount,
+        razorpay_payment_id: razorpayId,
+      });
+    } catch (err) {
+      console.error('Error logging token transaction:', err);
+    }
+  };
+
   const handleBuyTokens = async (packName: string, amount: number, tokensCount: number) => {
     const isLoaded = await loadRazorpaySDK();
 
@@ -285,6 +393,7 @@ export default function PanditDashboardPage() {
         if (panditId) {
           await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('id', panditId);
         }
+        await recordTokenTransaction(packName, amount, tokensCount, response?.razorpay_payment_id || 'RZP_SUCCESS');
         setShowRechargeModal(false);
         alert(`Har Har Mahadev! Payment Verified (${response.razorpay_payment_id || 'Success'}). ${tokensCount} tokens credited.`);
         loadDashboardData();
@@ -311,12 +420,46 @@ export default function PanditDashboardPage() {
       if (panditId) {
         await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('id', panditId);
       }
+      await recordTokenTransaction(packName, amount, tokensCount, 'DIRECT_OFFLINE');
       setShowRechargeModal(false);
       alert(`Tokens Credited: ${tokensCount} tokens added to wallet.`);
     }
   };
 
-  // Profile Save
+  const handleRequestPayout = async () => {
+    if (earningsBalance <= 0) {
+      alert('No withdrawable ceremony earnings available right now.');
+      return;
+    }
+    if (!upiId) {
+      alert('Please configure your Settlement UPI ID in your Profile first.');
+      setActiveTab('profile');
+      return;
+    }
+
+    const confirmReq = confirm(`Request payout of ₹${earningsBalance} to UPI: ${upiId}?`);
+    if (!confirmReq) return;
+
+    try {
+      const { error } = await supabase.from('withdrawals').insert({
+        pandit_id: panditId || 'unknown',
+        pandit_name: panditName || 'Acharya Ji',
+        pandit_phone: phone || 'unknown',
+        upi_id: upiId,
+        amount: earningsBalance,
+        status: 'pending',
+      });
+
+      if (error) {
+        alert('Could not submit payout request: ' + error.message);
+      } else {
+        alert(`Payout request for ₹${earningsBalance} submitted successfully! Admin will transfer to ${upiId} within 3-4 hours.`);
+      }
+    } catch (err: any) {
+      alert('Error requesting payout: ' + err.message);
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (panditId) {
       const { error } = await supabase.from('pandits').update({
@@ -343,7 +486,6 @@ export default function PanditDashboardPage() {
     alert('Profile updated successfully!');
   };
 
-  // Avatar Upload Handler
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -360,7 +502,6 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // Puja Gallery Image Upload Handler
   const handleAddGalleryImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -378,7 +519,6 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // Delete Gallery Image
   const handleDeleteGalleryImage = async (indexToDelete: number) => {
     if (confirm('Are you sure you want to remove this puja photo?')) {
       const updatedGallery = gallery.filter((_, idx) => idx !== indexToDelete);
@@ -389,7 +529,6 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // Logout Handler
   const handleLogout = () => {
     if (confirm('Are you sure you want to log out from Acharya Portal?')) {
       localStorage.removeItem('pandit_phone');
@@ -399,7 +538,6 @@ export default function PanditDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 font-sans text-gray-900 relative">
-      {/* Account Warning Banner */}
       {strikeCount > 0 && (
         <div className="bg-red-600 text-white px-4 py-2.5 text-center text-xs font-semibold flex items-center justify-center gap-2">
           <span>⚠️</span>
@@ -407,7 +545,6 @@ export default function PanditDashboardPage() {
         </div>
       )}
 
-      {/* Header */}
       <header className="bg-gradient-to-r from-orange-700 via-amber-700 to-orange-800 text-white shadow-lg sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
@@ -417,13 +554,9 @@ export default function PanditDashboardPage() {
                 alt="PurohitSetu Logo"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  if (target.src.endsWith('/logo.jpg')) {
-                    target.src = '/logo.jpeg';
-                  } else if (target.src.endsWith('/logo.jpeg')) {
-                    target.src = '/logo.png';
-                  } else {
-                    target.src = '/logo';
-                  }
+                  if (target.src.endsWith('/logo.jpg')) target.src = '/logo.jpeg';
+                  else if (target.src.endsWith('/logo.jpeg')) target.src = '/logo.png';
+                  else target.src = '/logo';
                 }}
                 className="w-full h-full object-contain"
               />
@@ -466,7 +599,6 @@ export default function PanditDashboardPage() {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="max-w-6xl mx-auto px-4 bg-black/20 backdrop-blur border-t border-white/10 flex overflow-x-auto gap-2 py-1.5">
           <button
             onClick={() => setActiveTab('leads')}
@@ -519,7 +651,6 @@ export default function PanditDashboardPage() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
         {/* TAB 1: NEW LEADS */}
         {activeTab === 'leads' && (
@@ -631,7 +762,7 @@ export default function PanditDashboardPage() {
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
               <h2 className="text-lg font-bold text-gray-900">Confirmed Bookings</h2>
               <p className="text-xs text-gray-500">
-                You have accepted these ceremonies. Direct Yajman contact details are unlocked.
+                You have accepted these ceremonies. Direct Yajman contact is unlocked. Verify completion via OTP.
               </p>
             </div>
             {confirmedBookings.length === 0 ? (
@@ -641,19 +772,37 @@ export default function PanditDashboardPage() {
             ) : (
               confirmedBookings.map((b) => (
                 <div key={b.id} className="bg-white p-6 rounded-2xl border border-green-200 shadow-sm space-y-4">
-                  <h3 className="text-xl font-bold text-gray-900">{b.puja_name}</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-bold text-gray-900">{b.puja_name}</h3>
+                    {b.accepted_via === 'admin_assigned' && (
+                      <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                        Admin Assigned
+                      </span>
+                    )}
+                  </div>
+
                   <div className="bg-green-50/60 p-4 rounded-xl border border-green-100 space-y-1.5 text-sm">
                     <p className="text-gray-800">👤 <strong>Yajman Name:</strong> {b.yajman_name}</p>
                     <p className="text-green-800 font-bold">📞 <strong>Direct Phone:</strong> {b.phone}</p>
                     <p className="text-gray-700">📍 <strong>Address:</strong> {b.location}</p>
                     <p className="text-gray-700">🕒 <strong>Timing:</strong> {b.event_date}</p>
                   </div>
-                  <a
-                    href={`tel:${b.phone}`}
-                    className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition shadow-md"
-                  >
-                    📞 Call Yajman Directly
-                  </a>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <a
+                      href={`tel:${b.phone}`}
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs transition shadow-md flex items-center gap-1.5"
+                    >
+                      📞 Call Yajman Directly
+                    </a>
+
+                    <button
+                      onClick={() => setActiveOtpLead(b)}
+                      className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
+                    >
+                      ✓ Complete Puja & Verify OTP
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -684,7 +833,7 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 4: WALLET & 10 RECHARGE PACKS */}
+        {/* TAB 4: WALLET & 15 RECHARGE PACKS WITH BONUSES */}
         {activeTab === 'wallet' && (
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-green-800 text-white p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -694,11 +843,11 @@ export default function PanditDashboardPage() {
                 </span>
                 <h3 className="text-4xl font-extrabold mt-3">₹{earningsBalance}</h3>
                 <p className="text-xs text-emerald-100 mt-2">
-                  Payout SLA: Dispatched within 3-4 hours directly to your designated UPI.
+                  Payout SLA: Dispatched within 3-4 hours directly to your designated UPI ({upiId || 'Configure in profile'}).
                 </p>
               </div>
               <button
-                onClick={() => alert('Withdrawal request submitted.')}
+                onClick={handleRequestPayout}
                 className="bg-white text-emerald-900 font-bold px-6 py-3 rounded-2xl text-sm shadow-lg hover:bg-emerald-50 transition cursor-pointer self-start md:self-auto"
               >
                 Request Payout
@@ -712,7 +861,7 @@ export default function PanditDashboardPage() {
                 </span>
                 <h3 className="text-4xl font-extrabold mt-3">🪙 {tokenBalance} Tokens</h3>
                 <p className="text-xs text-amber-100 mt-2">
-                  Rate: 150 Tokens = ₹200. Used to unlock high-value ceremony leads during priority window.
+                  Standard Rate: 150 Tokens = ₹200. High-value recharges include extra bonus tokens!
                 </p>
               </div>
               <button
@@ -723,14 +872,14 @@ export default function PanditDashboardPage() {
               </button>
             </div>
 
-            {/* RECHARGE PACKS MODAL - 10 PRICE TAGS */}
+            {/* 15 RECHARGE PACKS MODAL (UP TO ₹5000 WITH BONUSES) */}
             {showRechargeModal && (
               <div className="bg-white p-6 md:p-8 rounded-3xl border border-orange-200 shadow-2xl space-y-5">
                 <div className="flex justify-between items-center border-b pb-4">
                   <div>
                     <h3 className="text-xl font-extrabold text-gray-900">Choose Priority Token Pack</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Standard Rate: ₹200 = 150 Tokens. Instant activation via Razorpay / UPI.
+                      15 packs from ₹50 up to ₹5,000. Big savings with extra bonus tokens!
                     </p>
                   </div>
                   <button
@@ -741,168 +890,60 @@ export default function PanditDashboardPage() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-                  {/* Pack 1 */}
-                  <div className="border border-gray-200 p-4 rounded-2xl text-center space-y-2 hover:border-orange-400 transition bg-white shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Trial Pack</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">75 Tokens</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹100</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Trial Pack', 100, 75)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer"
-                    >
-                      Pay ₹100
-                    </button>
-                  </div>
-
-                  {/* Pack 2 */}
-                  <div className="border border-gray-200 p-4 rounded-2xl text-center space-y-2 hover:border-orange-400 transition bg-white shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Base Pack</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">150 Tokens</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹200</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Base Pack', 200, 150)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer"
-                    >
-                      Pay ₹200
-                    </button>
-                  </div>
-
-                  {/* Pack 3 */}
-                  <div className="border border-gray-200 p-4 rounded-2xl text-center space-y-2 hover:border-orange-400 transition bg-white shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Double Pack</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">300 Tokens</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹400</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Double Pack', 400, 300)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer"
-                    >
-                      Pay ₹400
-                    </button>
-                  </div>
-
-                  {/* Pack 4 */}
-                  <div className="border border-gray-200 p-4 rounded-2xl text-center space-y-2 hover:border-orange-400 transition bg-white shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Bronze Acharya</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">450 Tokens</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹600</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Bronze Acharya', 600, 450)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer"
-                    >
-                      Pay ₹600
-                    </button>
-                  </div>
-
-                  {/* Pack 5 */}
-                  <div className="border border-gray-200 p-4 rounded-2xl text-center space-y-2 hover:border-orange-400 transition bg-white shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Silver Acharya</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">600 Tokens</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹800</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Silver Acharya', 800, 600)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer"
-                    >
-                      Pay ₹800
-                    </button>
-                  </div>
-
-                  {/* Pack 6 */}
-                  <div className="border border-gray-200 p-4 rounded-2xl text-center space-y-2 hover:border-orange-400 transition bg-white shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Gold Purohit</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">750 Tokens</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹1,000</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Gold Purohit', 1000, 750)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer"
-                    >
-                      Pay ₹1,000
-                    </button>
-                  </div>
-
-                  {/* Pack 7 */}
-                  <div className="border border-gray-200 p-4 rounded-2xl text-center space-y-2 hover:border-orange-400 transition bg-white shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Platinum Purohit</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">900 Tokens</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹1,200</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Platinum Purohit', 1200, 900)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer"
-                    >
-                      Pay ₹1,200
-                    </button>
-                  </div>
-
-                  {/* Pack 8 */}
-                  <div className="border border-gray-200 p-4 rounded-2xl text-center space-y-2 hover:border-orange-400 transition bg-white shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Diamond Anushthan</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">1,200 Tokens</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹1,600</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Diamond Anushthan', 1600, 1200)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer"
-                    >
-                      Pay ₹1,600
-                    </button>
-                  </div>
-
-                  {/* Pack 9 (Save ₹50) */}
-                  <div className="border-2 border-amber-500 bg-amber-50/40 p-4 rounded-2xl text-center space-y-2 relative shadow-md flex flex-col justify-between">
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                      Save ₹50
-                    </span>
-                    <div className="pt-1">
-                      <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">Royal Shastri</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">1,500 Tokens</p>
-                      <div className="flex items-center justify-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-gray-400 line-through">₹2,000</span>
-                        <span className="text-sm font-black text-gray-900">₹1,950</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 max-h-[65vh] overflow-y-auto p-1">
+                  {TOKEN_PACKS.map((pack, idx) => {
+                    const isTopTier = pack.amount === 5000;
+                    const hasBonus = pack.tag.includes('Bonus');
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-2xl text-center space-y-2 hover:border-orange-500 transition shadow-sm flex flex-col justify-between relative ${
+                          isTopTier
+                            ? 'border-2 border-orange-600 bg-gradient-to-b from-orange-50/80 to-amber-50/40 shadow-md ring-2 ring-orange-400/30'
+                            : hasBonus
+                            ? 'border-2 border-amber-300 bg-amber-50/30'
+                            : 'border border-gray-200 bg-white'
+                        }`}
+                      >
+                        {pack.tag && (
+                          <span
+                            className={`absolute -top-2.5 right-2 text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-xs ${
+                              isTopTier
+                                ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white animate-pulse'
+                                : hasBonus
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-orange-100 text-orange-900'
+                            }`}
+                          >
+                            {pack.tag}
+                          </span>
+                        )}
+                        <div>
+                          <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider block">
+                            {pack.name}
+                          </span>
+                          <p className={`text-xl font-black mt-1 ${isTopTier ? 'text-orange-700' : hasBonus ? 'text-emerald-700' : 'text-orange-600'}`}>
+                            {pack.tokens} Tokens
+                          </p>
+                          <p className="text-sm font-extrabold text-gray-900">
+                            ₹{pack.amount.toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleBuyTokens(pack.name, pack.amount, pack.tokens)}
+                          className={`w-full font-bold py-2 rounded-xl text-xs transition cursor-pointer text-white shadow-xs ${
+                            isTopTier
+                              ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:brightness-110 font-black'
+                              : hasBonus
+                              ? 'bg-emerald-600 hover:bg-emerald-700'
+                              : 'bg-orange-600 hover:bg-orange-700'
+                          }`}
+                        >
+                          Pay ₹{pack.amount.toLocaleString('en-IN')}
+                        </button>
                       </div>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Royal Shastri Pack', 1950, 1500)}
-                      className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer shadow"
-                    >
-                      Pay ₹1,950
-                    </button>
-                  </div>
-
-                  {/* Pack 10 (Special ₹80 OFF) */}
-                  <div className="border-2 border-orange-600 bg-orange-50/60 p-4 rounded-2xl text-center space-y-2 relative shadow-lg flex flex-col justify-between">
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
-                      Special ₹80 OFF
-                    </span>
-                    <div className="pt-1">
-                      <span className="text-[11px] font-bold text-orange-900 uppercase tracking-wider">Maha Purohit VIP</span>
-                      <p className="text-2xl font-black text-orange-600 mt-1">2,250 Tokens</p>
-                      <div className="flex items-center justify-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-gray-400 line-through">₹3,000</span>
-                        <span className="text-sm font-black text-gray-900">₹2,920</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleBuyTokens('Maha Purohit VIP Pack', 2920, 2250)}
-                      className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:brightness-110 text-white font-extrabold py-2 rounded-xl text-xs transition cursor-pointer shadow-md"
-                    >
-                      Pay ₹2,920
-                    </button>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -977,7 +1018,7 @@ export default function PanditDashboardPage() {
               </div>
             </div>
 
-            {/* Puja Anushthan Photo Gallery */}
+            {/* Puja Gallery */}
             <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
                 <div>
@@ -1006,9 +1047,6 @@ export default function PanditDashboardPage() {
                 <div className="p-10 text-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 space-y-2">
                   <span className="text-4xl block">🖼️</span>
                   <p className="text-sm font-bold text-gray-700">No Puja Photos Uploaded Yet</p>
-                  <p className="text-xs text-gray-400 max-w-md mx-auto">
-                    Click <strong>"+ Add Puja Photo"</strong> to showcase your authentic Vedic rituals to incoming Yajmans.
-                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -1051,8 +1089,8 @@ export default function PanditDashboardPage() {
                 <p className="text-xs text-gray-600">After 60s, open to all with standard 30% Platform Commission.</p>
               </div>
               <div className="p-5 rounded-2xl border border-blue-200 bg-blue-50/40">
-                <h4 className="font-bold text-gray-900 mb-1">3. Cancellation Policy</h4>
-                <p className="text-xs text-gray-600">Yajman cancels = 100% token refund. Acharya cancels = Non-refundable.</p>
+                <h4 className="font-bold text-gray-900 mb-1">3. Completion Verification</h4>
+                <p className="text-xs text-gray-600">Always collect 4-digit OTP from Yajman upon completion.</p>
               </div>
               <div className="p-5 rounded-2xl border border-red-200 bg-red-50/40">
                 <h4 className="font-bold text-gray-900 mb-1">4. Settlement Windows & Admin Strikes</h4>
@@ -1062,6 +1100,46 @@ export default function PanditDashboardPage() {
           </div>
         )}
       </main>
+
+      {/* OTP VERIFICATION MODAL */}
+      {activeOtpLead && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
+            <span className="text-3xl block">🪔</span>
+            <h3 className="text-lg font-bold text-gray-900">Verify Puja Completion</h3>
+            <p className="text-xs text-gray-500">
+              Please enter the 4-digit OTP sent to Yajman <strong>{activeOtpLead.yajman_name}</strong>.
+            </p>
+
+            <input
+              type="text"
+              maxLength={4}
+              value={enteredOtp}
+              onChange={(e) => setEnteredOtp(e.target.value)}
+              placeholder="e.g. 4821"
+              className="w-full text-center font-mono text-2xl tracking-widest border-2 border-orange-400 rounded-2xl py-3 focus:outline-none focus:border-orange-600"
+            />
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setActiveOtpLead(null);
+                  setEnteredOtp('');
+                }}
+                className="flex-1 border text-gray-600 font-bold py-2.5 rounded-xl text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVerifyCompletionOtp}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-xs shadow cursor-pointer transition"
+              >
+                Confirm & Finish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* EDIT PROFILE MODAL */}
       {isEditing && (
@@ -1110,6 +1188,7 @@ export default function PanditDashboardPage() {
                 <input
                   type="text"
                   value={editUpi}
+                  placeholder="e.g. 7667984349@upi"
                   onChange={(e) => setEditUpi(e.target.value)}
                   className="w-full border rounded-xl px-3 py-2 text-sm"
                 />

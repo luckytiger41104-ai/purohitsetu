@@ -3,215 +3,706 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
-interface SettlementRecord {
-  id: string; // pandit_id
-  name: string;
+interface Pandit {
+  id: string;
   phone: string;
-  strikeCount: number;
-  isBlocked: boolean;
-  latestPujaName?: string;
-  conductedOn?: string;
-  deadlineHours?: number;
-  commissionStatus?: string;
+  full_name: string;
+  city?: string;
+  experience?: string;
+  bio?: string;
+  upi_id?: string;
+  wallet_balance?: number;
+  earnings_balance?: number;
+  strike_count?: number;
+  is_blocked?: boolean;
+  is_verified?: boolean;
+  avatar_url?: string;
+  created_at?: string;
 }
 
-export default function AdminSettlementsPage() {
-  const [records, setRecords] = useState<SettlementRecord[]>([]);
+interface BookingLead {
+  id: number;
+  name: string;
+  phone: string;
+  puja_name: string;
+  event_date: string;
+  location: string;
+  pincode?: string;
+  language?: string;
+  status: string;
+  accepted_by?: string;
+  assigned_to_name?: string;
+  assigned_to_phone?: string;
+  is_admin_handled?: boolean;
+  completion_otp?: string;
+  created_at: string;
+}
+
+interface TokenTx {
+  id: number;
+  pandit_name: string;
+  pandit_phone: string;
+  pack_name: string;
+  amount: number;
+  tokens_credited: number;
+  razorpay_payment_id: string;
+  created_at: string;
+}
+
+interface YajmanPayment {
+  id: number;
+  yajman_name: string;
+  yajman_phone: string;
+  puja_name: string;
+  amount: number;
+  payment_method: string;
+  payment_status: string;
+  razorpay_payment_id?: string;
+  created_at: string;
+}
+
+interface Withdrawal {
+  id: number;
+  pandit_id: string;
+  pandit_name: string;
+  pandit_phone: string;
+  upi_id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  processed_at?: string;
+}
+
+export default function AdminDashboardPage() {
+  const [activeTab, setActiveTab] = useState<'requests' | 'pandits' | 'tokens' | 'yajman' | 'withdrawals'>('requests');
+
+  const [bookings, setBookings] = useState<BookingLead[]>([]);
+  const [pandits, setPandits] = useState<Pandit[]>([]);
+  const [tokenTxs, setTokenTxs] = useState<TokenTx[]>([]);
+  const [yajmanPayments, setYajmanPayments] = useState<YajmanPayment[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Fetch real pandits & their latest puja status from Supabase
+  const [selectedPanditForLead, setSelectedPanditForLead] = useState<{ [bookingId: number]: string }>({});
+
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      const { data: panditsData } = await supabase
+      const { data: bData, error: bErr } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('id', { ascending: false });
+      if (bData) {
+        setBookings(
+          bData.map((b: any) => ({
+            id: b.id,
+            name: b.name || b.yajman_name || 'Yajman',
+            phone: b.phone || '',
+            puja_name: b.puja_name || 'Vedic Ritual',
+            event_date: b.event_date || 'Shubh Muhurat',
+            location: b.location || 'Bengaluru',
+            pincode: b.pincode,
+            language: b.language,
+            status: b.status || 'available',
+            accepted_by: b.accepted_by,
+            assigned_to_name: b.assigned_to_name,
+            assigned_to_phone: b.assigned_to_phone,
+            is_admin_handled: b.is_admin_handled,
+            completion_otp: b.completion_otp,
+            created_at: b.created_at || new Date().toISOString(),
+          }))
+        );
+      }
+      if (bErr) console.error('Error fetching bookings:', bErr.message);
+
+      const { data: pData } = await supabase
         .from('pandits')
         .select('*')
-        .order('strike_count', { ascending: false });
+        .order('id', { ascending: false });
+      if (pData) setPandits(pData);
 
-      if (panditsData) {
-        const enriched: SettlementRecord[] = await Promise.all(
-          panditsData.map(async (p) => {
-            // Fetch their latest accepted lead
-            const { data: lead } = await supabase
-              .from('puja_leads')
-              .select('*')
-              .eq('accepted_by', p.id)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .single();
+      const { data: tData } = await supabase
+        .from('token_transactions')
+        .select('*')
+        .order('id', { ascending: false });
+      if (tData) setTokenTxs(tData);
 
-            const isSaturday = lead?.conducted_day === 'Saturday';
+      const { data: yData } = await supabase
+        .from('yajman_payments')
+        .select('*')
+        .order('id', { ascending: false });
+      if (yData) setYajmanPayments(yData);
 
-            return {
-              id: p.id,
-              name: p.full_name || 'Acharya',
-              phone: p.phone,
-              strikeCount: Number(p.strike_count || 0),
-              isBlocked: Boolean(p.is_blocked),
-              latestPujaName: lead?.puja_name || 'No recent puja',
-              conductedOn: lead?.conducted_day || 'Weekday',
-              deadlineHours: isSaturday ? 48 : 24,
-              commissionStatus: lead?.commission_status || 'settled',
-            };
-          })
-        );
-        setRecords(enriched);
-      }
-    } catch (e) {
-      console.error('Admin fetch error:', e);
+      const { data: wData } = await supabase
+        .from('withdrawals')
+        .select('*')
+        .order('id', { ascending: false });
+      if (wData) setWithdrawals(wData);
+    } catch (err) {
+      console.error('Error loading admin data:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
     loadAdminData();
   }, []);
 
-  // Admin Actions with Real Supabase Update
-  const handleIssueStrike = async (panditId: string) => {
-    const target = records.find((r) => r.id === panditId);
-    if (!target) return;
+  const handleAdminClaimLead = async (booking: BookingLead) => {
+    if (confirm(`Accept booking for "${booking.puja_name}" (${booking.name}) as Admin?`)) {
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          status: 'confirmed',
+          accepted_by: 'Admin Team',
+          is_admin_handled: true,
+        })
+        .eq('id', booking.id);
 
-    const newStrikes = target.strikeCount + 1;
-    const shouldBlock = newStrikes >= 2;
-
-    await supabase
-      .from('pandits')
-      .update({
-        strike_count: newStrikes,
-        is_blocked: shouldBlock,
-      })
-      .eq('id', panditId);
-
-    alert(`Strike issued. New count: ${newStrikes} strikes.`);
-    loadAdminData();
+      if (error) {
+        alert('Error claiming lead: ' + error.message);
+      } else {
+        alert('Booking successfully claimed by Admin!');
+        loadAdminData();
+      }
+    }
   };
 
-  const handleCancelStrike = async (panditId: string) => {
-    const target = records.find((r) => r.id === panditId);
-    if (!target) return;
+  const handleAdminAssignPandit = async (bookingId: number) => {
+    const targetPanditPhone = selectedPanditForLead[bookingId];
+    if (!targetPanditPhone) {
+      alert('Please select an Acharya from the dropdown first.');
+      return;
+    }
 
-    const newStrikes = Math.max(0, target.strikeCount - 1);
-    const shouldBlock = newStrikes >= 2;
+    const targetPandit = pandits.find((p) => p.phone === targetPanditPhone);
+    const pName = targetPandit?.full_name || 'Assigned Acharya';
 
-    await supabase
-      .from('pandits')
+    const { error } = await supabase
+      .from('bookings')
       .update({
-        strike_count: newStrikes,
-        is_blocked: shouldBlock,
+        status: 'confirmed',
+        accepted_by: targetPandit?.id || targetPanditPhone,
+        assigned_to_name: pName,
+        assigned_to_phone: targetPanditPhone,
+        accepted_via: 'admin_assigned',
       })
-      .eq('id', panditId);
+      .eq('id', bookingId);
 
-    alert(`Strike cancelled. New count: ${newStrikes} strikes.`);
-    loadAdminData();
+    if (error) {
+      alert('Error assigning lead: ' + error.message);
+    } else {
+      alert(`Puja successfully assigned to ${pName} (${targetPanditPhone})!`);
+      loadAdminData();
+    }
   };
 
-  const handleUnblock = async (panditId: string) => {
-    await supabase
-      .from('pandits')
-      .update({
-        strike_count: 0,
-        is_blocked: false,
-      })
-      .eq('id', panditId);
+  const toggleVerifyPandit = async (id: string, currentStatus: boolean | undefined) => {
+    const newStatus = !currentStatus;
+    await supabase.from('pandits').update({ is_verified: newStatus }).eq('id', id);
+    setPandits(pandits.map((p) => (p.id === id ? { ...p, is_verified: newStatus } : p)));
+    alert(`Pandit status: ${newStatus ? 'VERIFIED' : 'UNVERIFIED'}`);
+  };
 
-    alert('Account unblocked successfully and strikes reset to 0.');
-    loadAdminData();
+  const toggleBlockPandit = async (id: string, currentBlocked: boolean | undefined) => {
+    const newStatus = !currentBlocked;
+    await supabase.from('pandits').update({ is_blocked: newStatus }).eq('id', id);
+    setPandits(pandits.map((p) => (p.id === id ? { ...p, is_blocked: newStatus } : p)));
+    alert(`Pandit ${newStatus ? 'BLOCKED' : 'UNBLOCKED'}`);
+  };
+
+  const updateStrikes = async (id: string, currentStrikes: number, change: number) => {
+    const updated = Math.max(0, currentStrikes + change);
+    await supabase.from('pandits').update({ strike_count: updated }).eq('id', id);
+    setPandits(pandits.map((p) => (p.id === id ? { ...p, strike_count: updated } : p)));
+  };
+
+  const handleApproveWithdrawal = async (w: Withdrawal) => {
+    if (confirm(`Confirm payout of ₹${w.amount} to UPI: ${w.upi_id}?`)) {
+      await supabase
+        .from('withdrawals')
+        .update({
+          status: 'paid',
+          processed_at: new Date().toISOString(),
+        })
+        .eq('id', w.id);
+
+      const p = pandits.find((item) => item.id === w.pandit_id);
+      if (p && (p.earnings_balance || 0) >= w.amount) {
+        const newBal = (p.earnings_balance || 0) - w.amount;
+        await supabase.from('pandits').update({ earnings_balance: newBal }).eq('id', p.id);
+      }
+
+      alert('Withdrawal marked as PAID successfully.');
+      loadAdminData();
+    }
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto font-sans text-gray-900">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Commission & Strike Control Panel</h1>
-          <p className="text-sm text-gray-500">
-            Settlement Deadlines: 24h standard, 48h for Saturday Pujas. Full manual controls for Strikes, Cancellations, and Unblocking.
-          </p>
+    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans pb-24">
+      <header className="bg-gray-900 text-white sticky top-0 z-30 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center font-black text-xl text-white shadow">
+              P
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">PurohitSetu Admin Center</h1>
+              <p className="text-xs text-gray-400">Master Operations & Lead Routing</p>
+            </div>
+          </div>
+          <button
+            onClick={loadAdminData}
+            className="text-xs font-bold bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+          >
+            <span>🔄</span> Refresh Data
+          </button>
         </div>
-        <button
-          onClick={loadAdminData}
-          className="border border-gray-300 hover:bg-gray-50 text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer"
-        >
-          🔄 Refresh
-        </button>
-      </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="p-12 text-center text-sm text-gray-400">Loading live data from Supabase...</div>
-        ) : records.length === 0 ? (
-          <div className="p-12 text-center text-sm text-gray-400">No registered pandits found in the database.</div>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b text-xs uppercase text-gray-600 font-semibold">
-              <tr>
-                <th className="p-4">Pandit Details</th>
-                <th className="p-4">Latest Puja & Window</th>
-                <th className="p-4">Settlement Status</th>
-                <th className="p-4">Strikes</th>
-                <th className="p-4 text-right">Admin Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {records.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50/80">
-                  <td className="p-4 font-semibold text-gray-900">
-                    {r.name}
-                    <span className="block text-xs text-gray-400 font-normal">{r.phone}</span>
-                  </td>
-                  <td className="p-4">
-                    <span className="font-medium text-gray-800">{r.latestPujaName}</span>
-                    <span className="block text-xs text-orange-600 font-bold">
-                      {r.conductedOn} ({r.deadlineHours}h window)
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    {r.commissionStatus === 'settled' || r.commissionStatus === 'paid' ? (
-                      <span className="bg-green-100 text-green-800 text-xs px-2.5 py-1 rounded-full font-bold">
-                        ✓ Settled
-                      </span>
-                    ) : (
-                      <span className="bg-red-100 text-red-800 text-xs px-2.5 py-1 rounded-full font-bold">
-                        ⚠️ Pending / Overdue
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <span className={`font-bold ${r.strikeCount >= 2 ? 'text-red-600' : 'text-gray-700'}`}>
-                      {r.strikeCount} / 2 Strikes
-                    </span>
-                    {r.isBlocked && (
-                      <span className="block text-[11px] text-red-600 font-extrabold uppercase">Suspended</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleIssueStrike(r.id)}
-                      className="bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
-                    >
-                      Issue Strike
-                    </button>
-                    <button
-                      onClick={() => handleCancelStrike(r.id)}
-                      className="border border-gray-300 hover:bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
-                    >
-                      Cancel Strike
-                    </button>
-                    {r.isBlocked && (
-                      <button
-                        onClick={() => handleUnblock(r.id)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition cursor-pointer"
-                      >
-                        🔓 Unblock Account
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="max-w-7xl mx-auto px-4 bg-gray-950 flex overflow-x-auto gap-2 py-2 border-t border-gray-800">
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === 'requests' ? 'bg-orange-600 text-white shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            🪔 Puja Requests ({bookings.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('pandits')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === 'pandits' ? 'bg-orange-600 text-white shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            🕉️ Pandit Verification ({pandits.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('tokens')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === 'tokens' ? 'bg-orange-600 text-white shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            🪙 Token Recharges ({tokenTxs.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('yajman')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === 'yajman' ? 'bg-orange-600 text-white shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            💳 Yajman Ledger ({yajmanPayments.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('withdrawals')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === 'withdrawals' ? 'bg-orange-600 text-white shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            💸 Payout Requests ({withdrawals.filter((w) => w.status === 'pending').length} Pending)
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+        {loading && (
+          <div className="bg-white p-6 rounded-2xl text-center text-sm font-bold text-gray-500 shadow-sm animate-pulse">
+            Syncing database records...
+          </div>
         )}
-      </div>
+
+        {/* TAB 1: ALL PUJA REQUESTS & LEAD ASSIGNMENT */}
+        {activeTab === 'requests' && (
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">All Incoming Puja Requests & Assignments</h2>
+                <p className="text-xs text-gray-500">
+                  Accept leads directly if no Pandit claims them, or manually assign to any verified Acharya.
+                </p>
+              </div>
+              <span className="bg-orange-100 text-orange-800 text-xs font-bold px-3 py-1 rounded-full self-start md:self-auto">
+                Total Requests: {bookings.length}
+              </span>
+            </div>
+
+            {bookings.length === 0 ? (
+              <div className="bg-white p-12 text-center rounded-2xl text-gray-400 text-xs">
+                No Puja booking requests found in database yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {bookings.map((b) => {
+                  const isClaimable =
+                    b.status === 'available' ||
+                    !b.status ||
+                    b.status === 'pending' ||
+                    b.status.toLowerCase() === 'pending';
+
+                  return (
+                    <div
+                      key={b.id}
+                      className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold">
+                            #{b.id}
+                          </span>
+                          <h3 className="font-bold text-base text-gray-900">{b.puja_name}</h3>
+                          <span
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                              b.status === 'completed'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : b.status === 'confirmed'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-amber-100 text-amber-800 animate-pulse'
+                            }`}
+                          >
+                            {b.status}
+                          </span>
+                          {b.completion_otp && (
+                            <span className="text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-lg">
+                              OTP: <span className="font-mono font-black">{b.completion_otp}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600 pt-1">
+                          <p>👤 <strong>Yajman:</strong> {b.name}</p>
+                          <p>📞 <strong>Phone:</strong> {b.phone}</p>
+                          <p>📍 <strong>Location:</strong> {b.location} {b.pincode ? `(${b.pincode})` : ''}</p>
+                          <p>🕒 <strong>Muhurat:</strong> {b.event_date}</p>
+                        </div>
+
+                        {b.assigned_to_name && (
+                          <p className="text-xs text-green-700 bg-green-50 p-2 rounded-xl border border-green-200 font-semibold inline-block">
+                            ✓ Assigned to Acharya: <strong>{b.assigned_to_name}</strong> ({b.assigned_to_phone})
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Action Buttons for Admin */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-t lg:border-t-0 pt-3 lg:pt-0">
+                        {isClaimable ? (
+                          <>
+                            <button
+                              onClick={() => handleAdminClaimLead(b)}
+                              className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow cursor-pointer transition whitespace-nowrap"
+                            >
+                              ⚡ Claim as Admin
+                            </button>
+
+                            <div className="flex items-center gap-1.5">
+                              <select
+                                value={selectedPanditForLead[b.id] || ''}
+                                onChange={(e) =>
+                                  setSelectedPanditForLead({ ...selectedPanditForLead, [b.id]: e.target.value })
+                                }
+                                className="border border-gray-300 rounded-xl px-2.5 py-2 text-xs bg-gray-50 focus:bg-white text-gray-800"
+                              >
+                                <option value="">Assign to Pandit...</option>
+                                {pandits
+                                  .filter((p) => !p.is_blocked)
+                                  .map((p) => (
+                                    <option key={p.id} value={p.phone}>
+                                      {p.full_name || 'Acharya'} ({p.phone})
+                                    </option>
+                                  ))}
+                              </select>
+                              <button
+                                onClick={() => handleAdminAssignPandit(b.id)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs shadow cursor-pointer transition whitespace-nowrap"
+                              >
+                                Assign
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-right">
+                            <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+                              Accepted by: {b.accepted_by || b.assigned_to_name || 'Acharya'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: PANDIT VERIFICATION */}
+        {activeTab === 'pandits' && (
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex justify-between items-center">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">Registered Vedic Acharyas</h2>
+                <p className="text-xs text-gray-500">Approve credentials, monitor strikes, and manage access.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pandits.map((p) => (
+                <div key={p.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3 relative">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-full overflow-hidden border border-orange-300 bg-orange-50 shrink-0">
+                      {p.avatar_url ? (
+                        <img src={p.avatar_url} alt={p.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="flex items-center justify-center w-full h-full text-2xl">🕉️</span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-sm">{p.full_name || 'Acharya'}</h3>
+                      <p className="text-xs text-gray-500">📞 {p.phone}</p>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                          p.is_verified ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {p.is_verified ? '✓ Verified Acharya' : '⏳ Pending Verification'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-2.5 rounded-xl text-xs space-y-1 text-gray-700 border border-gray-100">
+                    <p>📍 <strong>City:</strong> {p.city || 'Bangalore'}</p>
+                    <p>🎓 <strong>Experience:</strong> {p.experience || 'Vedic Trained'}</p>
+                    <p>🪙 <strong>Tokens:</strong> {p.wallet_balance || 0} | <strong>Earnings:</strong> ₹{p.earnings_balance || 0}</p>
+                    <p className="truncate">🆔 <strong>UPI:</strong> {p.upi_id || 'Not added'}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="font-bold text-gray-600">
+                      Strikes: <span className="text-red-600 font-black">{p.strike_count || 0}/2</span>
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => updateStrikes(p.id, p.strike_count || 0, 1)}
+                        className="bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded text-xs font-bold border border-red-200 cursor-pointer"
+                        title="Add Strike"
+                      >
+                        + Strike
+                      </button>
+                      <button
+                        onClick={() => updateStrikes(p.id, p.strike_count || 0, -1)}
+                        className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-2 py-1 rounded text-xs font-bold cursor-pointer"
+                        title="Reset/Reduce Strike"
+                      >
+                        - Strike
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2 border-t">
+                    <button
+                      onClick={() => toggleVerifyPandit(p.id, p.is_verified)}
+                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        p.is_verified
+                          ? 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
+                    >
+                      {p.is_verified ? 'Unverify' : 'Verify & Approve'}
+                    </button>
+                    <button
+                      onClick={() => toggleBlockPandit(p.id, p.is_blocked)}
+                      className={`py-1.5 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        p.is_blocked
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                          : 'bg-red-600 hover:bg-red-700 text-white'
+                      }`}
+                    >
+                      {p.is_blocked ? 'Unblock' : 'Block'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: TOKEN PURCHASE HISTORY */}
+        {activeTab === 'tokens' && (
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <h2 className="text-base font-bold text-gray-900">Pandit Token Recharge Log</h2>
+              <p className="text-xs text-gray-500">Every Razorpay payment executed by Acharyas for lead access tokens.</p>
+            </div>
+
+            {tokenTxs.length === 0 ? (
+              <div className="bg-white p-12 text-center rounded-2xl text-gray-400 text-xs">
+                No token purchase transactions recorded yet.
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 border-b text-gray-600 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3">Acharya</th>
+                      <th className="p-3">Phone</th>
+                      <th className="p-3">Pack Details</th>
+                      <th className="p-3">Tokens Credited</th>
+                      <th className="p-3">Amount Paid</th>
+                      <th className="p-3">Razorpay ID</th>
+                      <th className="p-3">Date & Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {tokenTxs.map((t) => (
+                      <tr key={t.id} className="hover:bg-orange-50/30">
+                        <td className="p-3 font-bold text-gray-900">{t.pandit_name}</td>
+                        <td className="p-3 text-gray-600">{t.pandit_phone}</td>
+                        <td className="p-3"><span className="bg-orange-100 text-orange-900 px-2 py-0.5 rounded-full font-bold">{t.pack_name}</span></td>
+                        <td className="p-3 font-bold text-amber-700">+{t.tokens_credited} 🪙</td>
+                        <td className="p-3 font-bold text-green-700">₹{t.amount}</td>
+                        <td className="p-3 font-mono text-[11px] text-gray-500">{t.razorpay_payment_id || 'Direct'}</td>
+                        <td className="p-3 text-gray-500">{new Date(t.created_at).toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: YAJMAN PAYMENTS HISTORY */}
+        {activeTab === 'yajman' && (
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <h2 className="text-base font-bold text-gray-900">Yajman Booking & Payment Ledger</h2>
+              <p className="text-xs text-gray-500">Tracks Online Advance payments vs Cash On Puja reservations.</p>
+            </div>
+
+            {yajmanPayments.length === 0 ? (
+              <div className="bg-white p-12 text-center rounded-2xl text-gray-400 text-xs">
+                No Yajman payments logged yet.
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 border-b text-gray-600 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3">Yajman Name</th>
+                      <th className="p-3">Contact</th>
+                      <th className="p-3">Puja Ceremony</th>
+                      <th className="p-3">Mode</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Amount</th>
+                      <th className="p-3">Transaction ID</th>
+                      <th className="p-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {yajmanPayments.map((y) => (
+                      <tr key={y.id} className="hover:bg-gray-50">
+                        <td className="p-3 font-bold text-gray-900">{y.yajman_name}</td>
+                        <td className="p-3 text-gray-600">{y.yajman_phone}</td>
+                        <td className="p-3 font-medium text-gray-800">{y.puja_name}</td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full font-bold ${
+                              y.payment_method === 'online'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
+                            {y.payment_method === 'online' ? 'Online (Razorpay)' : 'Cash on Puja'}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full font-bold ${
+                              y.payment_status === 'paid'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {y.payment_status}
+                          </span>
+                        </td>
+                        <td className="p-3 font-bold text-gray-900">₹{y.amount}</td>
+                        <td className="p-3 font-mono text-[11px] text-gray-500">{y.razorpay_payment_id || 'N/A (Cash)'}</td>
+                        <td className="p-3 text-gray-500">{new Date(y.created_at).toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 5: PANDIT WITHDRAWAL REQUESTS */}
+        {activeTab === 'withdrawals' && (
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <h2 className="text-base font-bold text-gray-900">Pandit Payout & Withdrawal Requests</h2>
+              <p className="text-xs text-gray-500">Pay out Acharyas directly via their specified UPI ID and mark completed.</p>
+            </div>
+
+            {withdrawals.length === 0 ? (
+              <div className="bg-white p-12 text-center rounded-2xl text-gray-400 text-xs">
+                No withdrawal requests at this moment.
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 border-b text-gray-600 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3">Acharya</th>
+                      <th className="p-3">Phone</th>
+                      <th className="p-3">Settlement UPI ID</th>
+                      <th className="p-3">Payout Amount</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Requested At</th>
+                      <th className="p-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {withdrawals.map((w) => (
+                      <tr key={w.id} className="hover:bg-gray-50">
+                        <td className="p-3 font-bold text-gray-900">{w.pandit_name}</td>
+                        <td className="p-3 text-gray-600">{w.pandit_phone}</td>
+                        <td className="p-3 font-mono text-emerald-800 font-bold">{w.upi_id || 'N/A'}</td>
+                        <td className="p-3 font-extrabold text-gray-900 text-sm">₹{w.amount}</td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full font-bold ${
+                              w.status === 'paid'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {w.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="p-3 text-gray-500">{new Date(w.created_at).toLocaleString('en-IN')}</td>
+                        <td className="p-3">
+                          {w.status === 'pending' ? (
+                            <button
+                              onClick={() => handleApproveWithdrawal(w)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded-xl text-xs shadow cursor-pointer transition"
+                            >
+                              ✓ Mark as Paid
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 font-semibold text-xs">Processed</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
