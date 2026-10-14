@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
 declare global {
@@ -24,7 +24,7 @@ interface Lead {
 
 const TOKEN_COST = 1;
 
-// Razorpay SDK Dynamic Loader Helper
+// Razorpay SDK Dynamic Loader
 const loadRazorpaySDK = (): Promise<boolean> => {
   return new Promise((resolve) => {
     if (typeof window !== 'undefined' && window.Razorpay) {
@@ -58,7 +58,7 @@ export default function PanditDashboardPage() {
   const [strikeCount, setStrikeCount] = useState<number>(0);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
 
-  // Tabs & Safe Time State
+  // Tabs & Hydration Safe Time
   const [activeTab, setActiveTab] = useState<'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules'>('leads');
   const [currentTime, setCurrentTime] = useState<number>(0);
 
@@ -73,15 +73,11 @@ export default function PanditDashboardPage() {
   // Recharge Modal State
   const [showRechargeModal, setShowRechargeModal] = useState<boolean>(false);
 
-  // Background Mantra Audio & Sound Mute Toggle
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState<boolean>(false);
 
-  // Real Database Lists
+  // Database Lists
   const [leads, setLeads] = useState<Lead[]>([]);
   const [confirmedBookings, setConfirmedBookings] = useState<Lead[]>([]);
   const [missingLeads, setMissingLeads] = useState<Lead[]>([]);
@@ -100,46 +96,7 @@ export default function PanditDashboardPage() {
     }
   }, []);
 
-  // 1. Audio Interaction Listener
-  useEffect(() => {
-    const handleFirstInteraction = () => {
-      if (audioRef.current) {
-        audioRef.current
-          .play()
-          .then(() => setIsMuted(false))
-          .catch((err) => console.log('Audio autoplay prevented:', err));
-      }
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
-      window.removeEventListener('keydown', handleFirstInteraction);
-    };
-
-    window.addEventListener('click', handleFirstInteraction);
-    window.addEventListener('touchstart', handleFirstInteraction);
-    window.addEventListener('keydown', handleFirstInteraction);
-
-    return () => {
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
-      window.removeEventListener('keydown', handleFirstInteraction);
-    };
-  }, []);
-
-  // 2. Mute / Unmute Toggle Function
-  const toggleMute = () => {
-    if (!audioRef.current) return;
-    if (audioRef.current.paused) {
-      audioRef.current
-        .play()
-        .then(() => setIsMuted(false))
-        .catch(() => {});
-    } else {
-      audioRef.current.pause();
-      setIsMuted(true);
-    }
-  };
-
-  // 3. PWA Install Event Listener
+  // PWA Install Event Listener
   useEffect(() => {
     const handler = (e: any) => {
       e.preventDefault();
@@ -161,14 +118,14 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // 4. Live Timer Tick
+  // Live Timer Tick
   useEffect(() => {
     setCurrentTime(Math.floor(Date.now() / 1000));
     const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // 5. Fetch Pandit Data & Real Leads from Supabase
+  // Fetch Pandit Data & Bookings
   const loadDashboardData = async () => {
     try {
       if (phone) {
@@ -209,7 +166,6 @@ export default function PanditDashboardPage() {
         }
       }
 
-      // Load all bookings from public.bookings table
       const { data: allBookings, error: bError } = await supabase
         .from('bookings')
         .select('*')
@@ -285,7 +241,7 @@ export default function PanditDashboardPage() {
         return;
       }
 
-      alert(`Lead Accepted! ${TOKEN_COST} token deducted. Yajman contact unlocked in Confirmed Bookings.`);
+      alert(`Lead Accepted! ${TOKEN_COST} token deducted. Direct contact unlocked.`);
       loadDashboardData();
     } else {
       const { error } = await supabase
@@ -302,12 +258,12 @@ export default function PanditDashboardPage() {
         return;
       }
 
-      alert('Lead Accepted in Free Mode! Yajman contact unlocked in Confirmed Bookings.');
+      alert('Lead Accepted in Free Mode! Direct contact unlocked.');
       loadDashboardData();
     }
   };
 
-  // Real Razorpay Payment Checkout
+  // Razorpay Checkout
   const handleBuyTokens = async (packName: string, amount: number, tokensCount: number) => {
     const isLoaded = await loadRazorpaySDK();
 
@@ -318,7 +274,7 @@ export default function PanditDashboardPage() {
 
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_purohitsetu',
-      amount: amount * 100, // amount in paise
+      amount: amount * 100,
       currency: 'INR',
       name: 'PurohitSetu',
       description: `Recharge: ${packName} (${tokensCount} Tokens)`,
@@ -350,14 +306,13 @@ export default function PanditDashboardPage() {
       rzp.open();
     } catch (e) {
       console.error('Razorpay popup error:', e);
-      // Fallback for local testing
       const newTokens = tokenBalance + tokensCount;
       setTokenBalance(newTokens);
       if (panditId) {
         await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('id', panditId);
       }
       setShowRechargeModal(false);
-      alert(`Payment Mode Triggered: ${tokensCount} tokens credited to wallet.`);
+      alert(`Tokens Credited: ${tokensCount} tokens added to wallet.`);
     }
   };
 
@@ -417,7 +372,7 @@ export default function PanditDashboardPage() {
         if (panditId) {
           await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('id', panditId);
         }
-        alert('Puja Anushthan photo added to your public gallery!');
+        alert('Puja photo added to your public gallery!');
       };
       reader.readAsDataURL(file);
     }
@@ -444,16 +399,6 @@ export default function PanditDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 font-sans text-gray-900 relative">
-      {/* Background Mantra Audio (Looping) */}
-      <audio
-        ref={audioRef}
-        src="/bg-mantra.mp3"
-        loop
-        preload="auto"
-        onPlay={() => setIsMuted(false)}
-        onPause={() => setIsMuted(true)}
-      />
-
       {/* Account Warning Banner */}
       {strikeCount > 0 && (
         <div className="bg-red-600 text-white px-4 py-2.5 text-center text-xs font-semibold flex items-center justify-center gap-2">
@@ -490,15 +435,6 @@ export default function PanditDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleMute}
-              title={isMuted ? 'Unmute Mantra' : 'Mute Mantra'}
-              className="bg-black/20 hover:bg-black/30 border border-white/20 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>{isMuted ? '🔇' : '🔊'}</span>
-              <span>{isMuted ? 'Muted' : 'Playing'}</span>
-            </button>
-
             {showInstallBtn && (
               <button
                 onClick={handleInstallApp}
@@ -973,14 +909,12 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 5: PROFILE & COMPLETE PUJA GALLERY */}
+        {/* TAB 5: PROFILE & PUJA GALLERY */}
         {activeTab === 'profile' && (
           <div className="space-y-6">
-            {/* Acharya Details Card */}
             <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b pb-6">
                 <div className="flex items-center gap-5">
-                  {/* Avatar with Camera Upload Icon */}
                   <div className="relative group">
                     <div className="w-22 h-22 rounded-full overflow-hidden border-2 border-orange-400 bg-orange-50 flex items-center justify-center shadow-md">
                       {profilePhoto ? (
@@ -1049,7 +983,7 @@ export default function PanditDashboardPage() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">Pavitra Puja & Anushthan Gallery</h3>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Upload photos of Griha Pravesh, Havan & Vivah rituals performed by you. Yajman will see these verified photos.
+                    Upload photos of Griha Pravesh, Havan & Vivah rituals performed by you.
                   </p>
                 </div>
 
@@ -1129,22 +1063,7 @@ export default function PanditDashboardPage() {
         )}
       </main>
 
-      {/* Floating Vedic Mantra Player Mute/Unmute Button (Always Visible) */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={toggleMute}
-          className={`flex items-center gap-2.5 px-5 py-3 rounded-full font-bold shadow-2xl transition-all transform hover:scale-105 cursor-pointer text-sm border-2 ${
-            !isMuted
-              ? 'bg-amber-500 text-gray-950 border-amber-300 animate-pulse'
-              : 'bg-gray-800 text-white border-gray-600 hover:bg-gray-700'
-          }`}
-        >
-          <span className="text-xl">{isMuted ? '🔇' : '🔊'}</span>
-          <span>{isMuted ? 'Muted (Tap to Play)' : 'Mantra Playing (Tap to Mute)'}</span>
-        </button>
-      </div>
-
-      {/* EDIT MODAL */}
+      {/* EDIT PROFILE MODAL */}
       {isEditing && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">

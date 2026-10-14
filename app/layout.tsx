@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import AutoMusicPlayer from '@/components/AutoMusicPlayer';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.purohitsetu.in'),
@@ -7,26 +8,38 @@ export const metadata: Metadata = {
   description:
     'Book verified Gurukul-trained Vedic Hindi Pandits in Bengaluru for Griha Pravesh, Vivah, Satyanarayan Puja, Rudrabhishek & Shradh. 100% Shastric precision, zero superstitions.',
   keywords: [
+    'Hindi Pandit in Bangalore',
+    'North Indian Pandit Bangalore',
+    'Vedic Pandit Bangalore',
+    'Griha Pravesh Puja Pandit',
+    'Satyanarayan Puja Pandit Bangalore',
     'PurohitSetu',
-    'purohit setu bangalore',
-    'best hindi pandit in bangalore',
-    'vedic pandit in bengaluru',
-    'book pandit online bangalore',
-    'north indian pandit in bangalore',
-    'griha pravesh puja bangalore',
-    'pandit for pooja bangalore',
-    'purohit bangalore'
   ],
   alternates: {
-    canonical: 'https://www.purohitsetu.in',
+    canonical: 'https://www.purohitsetu.in/',
   },
   openGraph: {
     title: 'PurohitSetu | Best Vedic Hindi Pandit in Bangalore',
-    description: 'Book verified Gurukul-trained Vedic Acharyas for authentic Pujas at home in Bengaluru.',
-    url: 'https://www.purohitsetu.in',
+    description:
+      'Book verified Gurukul-trained Vedic Hindi Pandits in Bengaluru for authentic Vedic rituals.',
+    url: 'https://www.purohitsetu.in/',
     siteName: 'PurohitSetu',
+    images: [
+      {
+        url: 'https://www.purohitsetu.in/logo.jpg',
+        width: 800,
+        height: 600,
+        alt: 'PurohitSetu Vedic Rituals',
+      },
+    ],
     locale: 'en_IN',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PurohitSetu | Vedic Hindi Pandit in Bangalore',
+    description: 'Book authentic Gurukul Acharyas in Bengaluru.',
+    images: ['https://www.purohitsetu.in/logo.jpg'],
   },
   robots: {
     index: true,
@@ -38,6 +51,10 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/logo.jpg',
   },
 };
 
@@ -51,7 +68,7 @@ export default function RootLayout({
     '@type': 'LocalBusiness',
     name: 'PurohitSetu',
     image: 'https://www.purohitsetu.in/logo.jpg',
-    url: 'https://www.purohitsetu.in',
+    url: 'https://www.purohitsetu.in/',
     telephone: '+91-7667984349',
     priceRange: '₹₹',
     address: {
@@ -59,24 +76,6 @@ export default function RootLayout({
       addressLocality: 'Bengaluru',
       addressRegion: 'Karnataka',
       addressCountry: 'IN',
-    },
-    geo: {
-      '@type': 'GeoCoordinates',
-      latitude: '12.9716',
-      longitude: '77.5946',
-    },
-    areaServed: {
-      '@type': 'City',
-      name: 'Bengaluru',
-    },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '1250',
-    },
-    offers: {
-      '@type': 'Offer',
-      description: 'Authentic Vedic Pujas and Sanskars at home in Bangalore',
     },
   };
 
@@ -88,7 +87,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="antialiased selection:bg-[#ff9933] selection:text-white">
+      <body className="antialiased min-h-screen">
+        {/* Global Vedic Mantra Player with Floating Toggle Button */}
+        <AutoMusicPlayer />
         {children}
       </body>
     </html>

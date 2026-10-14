@@ -3,84 +3,95 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function AutoMusicPlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.volume = 0.4;
+    audio.volume = 0.5;
 
-    const startAudio = () => {
-      audio.play()
+    // 1. Muted attempt to satisfy browser security
+    const attemptPlay = () => {
+      audio
+        .play()
         .then(() => {
           setIsPlaying(true);
         })
         .catch(() => {
-          // Autoplay block hua, user interaction ka wait karega
+          // Fallback if blocked
+          setIsPlaying(false);
         });
     };
 
-    // 1. Direct play attempt
-    startAudio();
+    attemptPlay();
 
-    // 2. User ke pehle click/touch par start karne ke liye
-    const handleFirstInteraction = () => {
-      if (audio.paused) {
-        startAudio();
+    // 2. Unlock sound on user's first interaction anywhere on the screen
+    const unlockSound = () => {
+      if (audio) {
+        audio.muted = false;
+        audio
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch((err) => console.log('Audio unlock err:', err));
       }
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
+      window.removeEventListener('click', unlockSound);
+      window.removeEventListener('touchstart', unlockSound);
+      window.removeEventListener('scroll', unlockSound);
+      window.removeEventListener('keydown', unlockSound);
     };
 
-    window.addEventListener('click', handleFirstInteraction);
-    window.addEventListener('touchstart', handleFirstInteraction);
+    window.addEventListener('click', unlockSound);
+    window.addEventListener('touchstart', unlockSound);
+    window.addEventListener('scroll', unlockSound);
+    window.addEventListener('keydown', unlockSound);
 
     return () => {
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
+      window.removeEventListener('click', unlockSound);
+      window.removeEventListener('touchstart', unlockSound);
+      window.removeEventListener('scroll', unlockSound);
+      window.removeEventListener('keydown', unlockSound);
     };
   }, []);
 
-  const toggleMusic = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
+  const toggleSound = () => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      audioRef.current.muted = false;
+      audioRef.current.play();
+      setIsPlaying(true);
     } else {
-      audio.play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => console.log('Playback error:', err));
+      audioRef.current.pause();
+      setIsPlaying(false);
     }
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 99999 }}>
-      <audio ref={audioRef} src="/bg-mantra.mp3" loop preload="auto" />
-      <button
-        onClick={toggleMusic}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          backgroundColor: isPlaying ? '#ea580c' : '#4b5563',
-          color: '#ffffff',
-          border: 'none',
-          padding: '10px 18px',
-          borderRadius: '9999px',
-          boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-          cursor: 'pointer',
-          fontWeight: 600,
-          fontSize: '14px',
-          transition: 'all 0.2s ease',
-        }}
-      >
-        <span>{isPlaying ? '🔊' : '🔇'}</span>
-        <span>{isPlaying ? 'Mantra Playing' : 'Play Mantra'}</span>
-      </button>
-    </div>
+    <>
+      <audio
+        ref={audioRef}
+        src="/bg-mantra.mp3"
+        loop
+        preload="auto"
+        autoPlay
+        playsInline
+      />
+
+      {/* Floating Vedic Sound Toggle Button */}
+      <div className="fixed bottom-5 right-5 z-50">
+        <button
+          onClick={toggleSound}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-bold shadow-2xl transition-all transform hover:scale-105 cursor-pointer text-xs border ${
+            isPlaying
+              ? 'bg-amber-500 text-gray-950 border-amber-300 animate-pulse'
+              : 'bg-gray-900/90 text-white border-gray-700'
+          }`}
+        >
+          <span>{isPlaying ? '🔊' : '🔇'}</span>
+          <span>{isPlaying ? 'Mantra Playing' : 'Tap for Mantra'}</span>
+        </button>
+      </div>
+    </>
   );
 }

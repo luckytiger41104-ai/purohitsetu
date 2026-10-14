@@ -77,7 +77,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "1,120+",
       tag: "Child Milestone",
-      img: "/poojas/annaprasan sanskar pooja.jpeg",
+      img: "/poojas/annaprasan sanskar pooja.png",
     },
     {
       id: "mundan-sanskar",
