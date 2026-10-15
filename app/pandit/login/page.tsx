@@ -7,11 +7,10 @@ export default function PanditAuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   
-  // Form fields
+  // Form fields (City removed to match database schema)
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [city, setCity] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
@@ -59,7 +58,7 @@ export default function PanditAuthPage() {
     }
   };
 
-  // 2. Pandit Register
+  // 2. Pandit Register (clean payload without city)
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     clearAlerts();
@@ -72,7 +71,6 @@ export default function PanditAuthPage() {
         body: JSON.stringify({
           name: name.trim(),
           phone: phone.trim(),
-          city: city.trim(),
           password: password.trim(),
         }),
       });
@@ -153,13 +151,21 @@ export default function PanditAuthPage() {
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-8">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8">
         
-        {/* Header */}
+        {/* Header with Pandit Partner Logo */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 font-bold text-xl mb-3 border border-amber-500/20">
-            PS
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl overflow-hidden mb-3 border border-amber-500/40 shadow-lg shadow-amber-500/10 bg-slate-950">
+            <img 
+              src="/pandit-logo.png" 
+              alt="PurohitSetu Pandit Partner" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to logo.png if pandit-logo.png is not yet placed
+                e.currentTarget.src = "/logo.png";
+              }}
+            />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">PurohitSetu</h1>
-          <p className="text-sm text-slate-400 mt-1">Pandit Partner Portal</p>
+          <p className="text-sm text-amber-400 font-medium mt-1">Pandit Partner Portal</p>
         </div>
 
         {/* Mode Selector */}
@@ -254,7 +260,7 @@ export default function PanditAuthPage() {
           </form>
         )}
 
-        {/* 2. REGISTER FORM */}
+        {/* 2. REGISTER FORM (Without City) */}
         {mode === 'register' && (
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
@@ -283,20 +289,6 @@ export default function PanditAuthPage() {
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                 className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm"
                 placeholder="10-digit mobile number"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-slate-300 mb-1.5">
-                City / Location
-              </label>
-              <input
-                type="text"
-                required
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm"
-                placeholder="City Name"
               />
             </div>
 
