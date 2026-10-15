@@ -3,11 +3,10 @@ import { supabase } from '@/lib/supabaseClient';
 
 export async function POST(req: Request) {
   try {
-    const { name, phone, city, password } = await req.json();
+    const { name, phone, password } = await req.json();
 
     const cleanPhone = (phone || '').trim();
     const cleanName = (name || '').trim();
-    const cleanCity = (city || '').trim();
     const cleanPassword = (password || '').trim();
 
     if (!cleanPhone || !cleanName || !cleanPassword) {
@@ -31,17 +30,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // Insert new Pandit
+    // Insert new Pandit (without city column)
     const { data, error } = await supabase
       .from('pandits')
       .insert([
         {
           name: cleanName,
           phone: cleanPhone,
-          city: cleanCity,
           password: cleanPassword,
-          status: 'pending', // admin verify karega ya auto-approved
-          tokens: 50,        // welcome free tokens
+          status: 'pending',
+          tokens: 50,
         },
       ])
       .select()
