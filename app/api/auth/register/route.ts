@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Check existing pandit by phone
+    // Check existing pandit by phone
     const { data: existingPandit } = await supabase
       .from('pandits')
       .select('phone')
@@ -30,35 +30,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Safe Insert Object (supports schema with or without name)
+    // Both full_name and name provided to satisfy any schema constraint
     const insertPayload: Record<string, any> = {
       phone: cleanPhone,
       password: cleanPassword,
+      name: cleanName,
+      full_name: cleanName,
       status: 'pending',
       tokens: 50,
     };
 
-    if (cleanName) {
-      insertPayload.name = cleanName;
-    }
-
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('pandits')
       .insert([insertPayload])
       .select()
       .single();
-
-    // Fallback: If 'name' column is missing in schema, insert without it
-    if (error && error.message?.includes("'name' column")) {
-      delete insertPayload.name;
-      const retry = await supabase
-        .from('pandits')
-        .insert([insertPayload])
-        .select()
-        .single();
-      data = retry.data;
-      error = retry.error;
-    }
 
     if (error) {
       return NextResponse.json(
