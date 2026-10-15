@@ -1,11 +1,11 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'in.purohitsetu.app',
-  appName: 'PurohitSetu',
+  appId: 'in.purohitsetu.pandit',
+  appName: 'PurohitSetu Pandit',
   webDir: 'public',
   server: {
-    url: 'http://192.168.1.5:3000/pandit/dashboard',
+    url: 'https://www.purohitsetu.in/pandit/login',
     cleartext: true
   }
 };
