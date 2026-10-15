@@ -1,98 +1,94 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { cookies } from 'next/headers';
 
 export async function POST(req: Request) {
   try {
-    const { phone, purpose } = await req.json();
+    const { action, email, password, phone, otp, newPassword } = await req.json();
 
-    if (!phone || phone.length !== 10) {
-      return NextResponse.json(
-        { error: 'Valid 10-digit mobile number required' },
-        { status: 400 }
-      );
-    }
+    // 1. Direct Email & Password Login
+    if (action === 'login') {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const cleanPassword = (password || '').trim();
 
-    // Pandit checks
-    if (purpose === 'register' || purpose === 'forgot') {
-      const { data: existingPandit } = await supabase
-        .from('pandits')
-        .select('id, password_hash')
-        .eq('phone', phone)
-        .single();
-
-      if (purpose === 'register' && existingPandit?.password_hash) {
-        return NextResponse.json(
-          { error: 'This number is already registered. Please login using your password.' },
-          { status: 400 }
-        );
-      }
-
-      if (purpose === 'forgot' && (!existingPandit || !existingPandit.password_hash)) {
-        return NextResponse.json(
-          { error: 'This number is not registered yet. Please register first.' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Admin check
-    if (purpose === 'admin_forgot') {
-      const { data: adminUser } = await supabase
+      const { data: admins, error: adminErr } = await supabase
         .from('admins')
-        .select('id')
-        .eq('phone', phone)
-        .single();
+        .select('*');
 
-      if (!adminUser) {
+      if (adminErr || !admins) {
         return NextResponse.json(
-          { error: 'Yeh number kisi admin account se link nahi hai.' },
-          { status: 404 }
+          { error: 'Failed to access database.' },
+          { status: 500 }
         );
       }
+
+      // Case-insensitive email check
+      const admin = admins.find(
+        (a) => (a.email || '').trim().toLowerCase() === cleanEmail && (a.password || '').trim() === cleanPassword
+      );
+
+      if (!admin) {
+        return NextResponse.json(
+          { error: 'Invalid email or password.' },
+          { status: 401 }
+        );
+      }
+
+      const cookieStore = await cookies();
+      cookieStore.set('admin_session', admin.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      });
+
+      return NextResponse.json({ success: true });
     }
 
-    // Generate 4-digit OTP
-    const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    // 2. Forgot Password via OTP Verification
+    if (action === 'reset_password') {
+      const cleanPhone = (phone || '').trim();
+      const cleanOtp = (otp || '').trim();
+      const cleanNewPassword = (newPassword || '').trim();
 
-    await supabase.from('phone_otps').upsert({
-      phone: phone,
-      otp_code: generatedOtp,
-      expires_at: expiresAt,
-    });
+      const { data: otpRecord } = await supabase
+        .from('phone_otps')
+        .select('*')
+        .eq('phone', cleanPhone)
+        .eq('otp_code', cleanOtp)
+        .gte('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    console.log(`\n================================`);
-    console.log(`>>> OTP FOR ${phone}: [ ${generatedOtp} ] <<<`);
-    console.log(`================================\n`);
+      if (!otpRecord) {
+        return NextResponse.json(
+          { error: 'Invalid or expired OTP. Please check again.' },
+          { status: 400 }
+        );
+      }
 
-    const apiKey = (process.env.FAST2SMS_API_KEY || '').trim();
+      // Update password in admins table
+      const { error: updateErr } = await supabase
+        .from('admins')
+        .update({ password: cleanNewPassword })
+        .eq('phone', cleanPhone);
 
-    const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
-      method: 'POST',
-      headers: {
-        'authorization': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        route: 'q',
-        message: `Your PurohitSetu OTP is ${generatedOtp}. Valid for 5 minutes.`,
-        language: 'english',
-        numbers: phone,
-      }),
-    });
+      if (updateErr) {
+        return NextResponse.json(
+          { error: 'Could not update password. Please try again.' },
+          { status: 500 }
+        );
+      }
 
-    const smsData = await response.json();
-    console.log('Fast2SMS response:', smsData);
+      return NextResponse.json({
+        success: true,
+        message: 'Password successfully updated. Please login with your new password.',
+      });
+    }
 
-    return NextResponse.json({
-      success: true,
-      message: 'OTP sent successfully!',
-    });
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (err: any) {
-    console.error(err);
-    return NextResponse.json(
-      { error: 'Internal server error while sending OTP' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -16,7 +16,6 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Email + Password Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -27,10 +26,14 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', email, password }),
+        body: JSON.stringify({ 
+          action: 'login', 
+          email: email.trim(), 
+          password: password.trim() 
+        }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Login failed');
 
       router.push('/admin');
       router.refresh();
@@ -41,7 +44,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  // Send OTP to Admin Phone
   const handleSendOtp = async () => {
     setError('');
     setMessage('');
@@ -51,12 +53,12 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, purpose: 'admin_forgot' }),
+        body: JSON.stringify({ phone: phone.trim(), purpose: 'admin_forgot' }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
 
-      setMessage('OTP aapke number par bhej diya gaya hai!');
+      setMessage('OTP has been generated. Please check your SMS or phone_otps table.');
       setStep('otp');
     } catch (err: any) {
       setError(err.message);
@@ -65,7 +67,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  // Reset Password via OTP
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -78,18 +79,19 @@ export default function AdminLoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'reset_password',
-          phone,
-          otp,
-          newPassword,
+          phone: phone.trim(),
+          otp: otp.trim(),
+          newPassword: newPassword.trim(),
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Password update failed');
 
-      setMessage('Password update ho gaya! Ab naye password se login karein.');
+      setMessage('Password updated successfully. Please login.');
       setIsForgot(false);
       setStep('phone');
       setPassword('');
+      setOtp('');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -128,7 +130,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                placeholder="Luckytiger41104@gmail.com"
+                placeholder="Enter admin email"
               />
             </div>
             <div>
@@ -141,7 +143,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                placeholder="••••••••"
+                placeholder="Enter password"
               />
             </div>
             <button
@@ -149,7 +151,7 @@ export default function AdminLoginPage() {
               disabled={loading}
               className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Signing In...' : 'Login'}
             </button>
             <div className="text-center mt-3">
               <button
@@ -170,15 +172,16 @@ export default function AdminLoginPage() {
             {step === 'phone' ? (
               <div>
                 <label className="block text-xs uppercase font-medium text-slate-300 mb-1">
-                  Registered Phone Number
+                  Registered Mobile Number
                 </label>
                 <input
                   type="tel"
                   maxLength={10}
+                  required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                  placeholder="7667984349"
+                  placeholder="Enter 10-digit mobile number"
                 />
                 <button
                   type="button"
@@ -192,17 +195,27 @@ export default function AdminLoginPage() {
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-3">
                 <div>
-                  <label className="block text-xs uppercase font-medium text-slate-300 mb-1">
-                    Enter 4-Digit OTP
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-xs uppercase font-medium text-slate-300">
+                      Enter 4-Digit OTP
+                    </label>
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={handleSendOtp}
+                      className="text-xs text-amber-400 hover:underline"
+                    >
+                      Resend OTP
+                    </button>
+                  </div>
                   <input
                     type="text"
                     maxLength={4}
                     required
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                    placeholder="4-digit OTP"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 text-center tracking-widest text-lg font-bold"
+                    placeholder="••••"
                   />
                 </div>
                 <div>
