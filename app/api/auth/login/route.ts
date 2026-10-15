@@ -5,18 +5,36 @@ export async function POST(req: Request) {
   try {
     const { phone, password } = await req.json();
 
+    const cleanPhone = (phone || '').toString().trim();
+    const cleanPassword = (password || '').toString().trim();
+
+    if (!cleanPhone || !cleanPassword) {
+      return NextResponse.json(
+        { error: 'Mobile number aur password zaroori hain.' },
+        { status: 400 }
+      );
+    }
+
     const { data: pandit, error } = await supabase
       .from('pandits')
       .select('*')
-      .eq('phone', phone)
+      .eq('phone', cleanPhone)
       .single();
 
     if (error || !pandit) {
-      return NextResponse.json({ error: 'Account not found. Please register first.' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Account not found. Please register first.' },
+        { status: 404 }
+      );
     }
 
-    if (pandit.password_hash !== password) {
-      return NextResponse.json({ error: 'Incorrect password. Click "Forgot Password" to reset.' }, { status: 401 });
+    const storedPassword = (pandit.password_hash || pandit.password || '').toString().trim();
+
+    if (storedPassword !== cleanPassword) {
+      return NextResponse.json(
+        { error: 'Incorrect password. Click "Forgot Password" to reset.' },
+        { status: 401 }
+      );
     }
 
     const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -24,7 +42,7 @@ export async function POST(req: Request) {
     await supabase
       .from('pandits')
       .update({ active_session_token: sessionToken })
-      .eq('phone', phone);
+      .eq('phone', cleanPhone);
 
     return NextResponse.json({
       success: true,
@@ -32,7 +50,10 @@ export async function POST(req: Request) {
       pandit: { ...pandit, active_session_token: sessionToken },
     });
   } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+    console.error('Login error:', err);
+    return NextResponse.json(
+      { error: 'Login failed. Please try again.' },
+      { status: 500 }
+    );
   }
 }
