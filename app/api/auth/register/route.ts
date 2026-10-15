@@ -9,14 +9,14 @@ export async function POST(req: Request) {
     const cleanName = (name || '').trim();
     const cleanPassword = (password || '').trim();
 
-    if (!cleanPhone || !cleanName || !cleanPassword) {
+    if (!cleanPhone || !cleanPassword) {
       return NextResponse.json(
-        { error: 'Name, phone number, and password are required.' },
+        { error: 'Phone number and password are required.' },
         { status: 400 }
       );
     }
 
-    // Check if phone already registered
+    // 1. Check existing pandit by phone
     const { data: existingPandit } = await supabase
       .from('pandits')
       .select('phone')
@@ -30,20 +30,35 @@ export async function POST(req: Request) {
       );
     }
 
-    // Insert new Pandit (without city column)
-    const { data, error } = await supabase
+    // 2. Safe Insert Object (supports schema with or without name)
+    const insertPayload: Record<string, any> = {
+      phone: cleanPhone,
+      password: cleanPassword,
+      status: 'pending',
+      tokens: 50,
+    };
+
+    if (cleanName) {
+      insertPayload.name = cleanName;
+    }
+
+    let { data, error } = await supabase
       .from('pandits')
-      .insert([
-        {
-          name: cleanName,
-          phone: cleanPhone,
-          password: cleanPassword,
-          status: 'pending',
-          tokens: 50,
-        },
-      ])
+      .insert([insertPayload])
       .select()
       .single();
+
+    // Fallback: If 'name' column is missing in schema, insert without it
+    if (error && error.message?.includes("'name' column")) {
+      delete insertPayload.name;
+      const retry = await supabase
+        .from('pandits')
+        .insert([insertPayload])
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       return NextResponse.json(

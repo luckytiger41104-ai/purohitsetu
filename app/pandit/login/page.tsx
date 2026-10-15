@@ -7,7 +7,7 @@ export default function PanditAuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   
-  // Form fields (City removed to match database schema)
+  // Form fields
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -58,7 +58,7 @@ export default function PanditAuthPage() {
     }
   };
 
-  // 2. Pandit Register (clean payload without city)
+  // 2. Pandit Register
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     clearAlerts();
@@ -153,14 +153,13 @@ export default function PanditAuthPage() {
         
         {/* Header with Pandit Partner Logo */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl overflow-hidden mb-3 border border-amber-500/40 shadow-lg shadow-amber-500/10 bg-slate-950">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl overflow-hidden mb-3 border border-amber-500/40 shadow-lg shadow-amber-500/20 bg-slate-950 p-1">
             <img 
-              src="/pandit-logo.png" 
+              src="/logo.png" 
               alt="PurohitSetu Pandit Partner" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               onError={(e) => {
-                // Fallback to logo.png if pandit-logo.png is not yet placed
-                e.currentTarget.src = "/logo.png";
+                e.currentTarget.src = "https://www.purohitsetu.in/logo.png";
               }}
             />
           </div>
@@ -260,7 +259,7 @@ export default function PanditAuthPage() {
           </form>
         )}
 
-        {/* 2. REGISTER FORM (Without City) */}
+        {/* 2. REGISTER FORM */}
         {mode === 'register' && (
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
