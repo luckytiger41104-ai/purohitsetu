@@ -523,17 +523,18 @@ export default function Home() {
               className="group bg-white rounded-3xl border border-amber-200/90 overflow-hidden shadow-sm hover:shadow-xl hover:border-orange-400 transition-all duration-300 flex flex-col justify-between"
             >
               <div className="relative h-48 w-full bg-amber-50 overflow-hidden">
-                <img
-                  src={puja.img}
-                  alt={puja.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-
-                <span className="absolute top-3 left-3 bg-red-600/90 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow">
-                  {puja.tag}
-                </span>
-
+                    <div className="relative h-48 w-full bg-amber-50 overflow-hidden">
+                    <img
+                      src={puja.img}
+                      alt={puja.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute top-3 left-3 bg-red-600/90 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                      {puja.tag}
+                    </span>
+                  </div>
                 <div className="absolute bottom-3 left-3 right-3 text-white flex justify-between items-end">
                   <div className="text-xs font-bold flex items-center gap-1 text-yellow-300">
                     ★ {puja.rating} <span className="text-slate-300 text-[10px]">({puja.conductedCount})</span>
