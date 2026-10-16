@@ -1,9 +1,10 @@
-@'
 {
   "name": "PurohitSetu - Acharya Portal",
   "short_name": "PurohitSetu",
   "description": "Vedic Pandit Ceremony & Lead Claim Dashboard",
+  "id": "/pandit/dashboard",
   "start_url": "/pandit/dashboard",
+  "scope": "/pandit/",
   "display": "standalone",
   "background_color": "#c2410c",
   "theme_color": "#c2410c",
@@ -13,14 +14,25 @@
       "src": "/pandit-logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/pandit-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/pandit-logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/pandit-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
-'@ | Set-Content -Path "public\manifest.json" -Encoding UTF8

@@ -12,10 +12,20 @@ export default function PanditLoginPage() {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Auto-login: Agar session pehle se saved hai to direct dashboard bhej do
+  // Helper to read cookie
+  const getCookie = (name: string) => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? match[2] : null;
+  };
+
+  // Auto-login: Check both localStorage & permanent cookie
   useEffect(() => {
-    const savedPhone = localStorage.getItem('pandit_phone');
+    const savedPhone = localStorage.getItem('pandit_phone') || getCookie('pandit_phone');
     if (savedPhone) {
+      const cleanPhone = savedPhone.replace(/\D/g, '').slice(-10);
+      localStorage.setItem('pandit_phone', cleanPhone);
+      document.cookie = `pandit_phone=${cleanPhone}; path=/; max-age=31536000; SameSite=Lax`;
       router.replace('/pandit/dashboard');
     } else {
       setCheckingAuth(false);
@@ -24,7 +34,7 @@ export default function PanditLoginPage() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPhone = phone.trim();
+    const cleanPhone = phone.trim().replace(/\D/g, '').slice(-10);
     if (!cleanPhone || cleanPhone.length < 10) {
       alert('Kripya apna 10 anko ka mobile number enter karein.');
       return;
@@ -65,8 +75,12 @@ export default function PanditLoginPage() {
       return;
     }
 
-    const cleanPhone = phone.trim();
+    const cleanPhone = phone.trim().replace(/\D/g, '').slice(-10);
+
+    // Save permanently in both LocalStorage & 1-Year Cookie
     localStorage.setItem('pandit_phone', cleanPhone);
+    document.cookie = `pandit_phone=${cleanPhone}; path=/; max-age=31536000; SameSite=Lax`;
+
     router.replace('/pandit/dashboard');
   };
 

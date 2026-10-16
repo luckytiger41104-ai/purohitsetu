@@ -105,13 +105,24 @@ export default function PanditDashboardPage() {
     return rawPhone.slice(0, 3) + '••••' + rawPhone.slice(-3);
   };
 
-  // 1. Persistent Session Guard
+  const getCookie = (name: string) => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? match[2] : null;
+  };
+
+  // 1. Persistent Session Guard (Checks Cookie + LocalStorage)
   useEffect(() => {
-    const savedPhone = localStorage.getItem('pandit_phone');
+    const savedPhone = (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') : null) || getCookie('pandit_phone');
     if (!savedPhone) {
       router.replace('/pandit/login');
     } else {
-      setPhone(savedPhone.replace(/\D/g, '').slice(-10));
+      const clean = savedPhone.replace(/\D/g, '').slice(-10);
+      setPhone(clean);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pandit_phone', clean);
+        document.cookie = `pandit_phone=${clean}; path=/; max-age=31536000; SameSite=Lax`;
+      }
     }
   }, [router]);
 
@@ -148,7 +159,7 @@ export default function PanditDashboardPage() {
   // 4. Load Dashboard & Profile Data
   const loadDashboardData = async () => {
     try {
-      const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+      const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
       const cleanPhone = activePhone.replace(/\D/g, '').slice(-10);
       if (!cleanPhone) return;
 
@@ -251,7 +262,7 @@ export default function PanditDashboardPage() {
       return;
     }
 
-    const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+    const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
     const currentPanditIdentifier = cleanPhone || panditId || 'Acharya Ji';
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -451,7 +462,7 @@ export default function PanditDashboardPage() {
 
   // 9. Profile Save (Fixed via Phone Matching)
   const handleSaveProfile = async () => {
-    const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+    const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
     const cleanPhone = activePhone.replace(/\D/g, '').slice(-10);
 
     if (!cleanPhone) {
@@ -460,6 +471,7 @@ export default function PanditDashboardPage() {
     }
 
     const payload = {
+      phone: cleanPhone,
       full_name: editName,
       city: editCity,
       experience: editExp,
@@ -470,12 +482,19 @@ export default function PanditDashboardPage() {
 
     const { error } = await supabase
       .from('pandits')
-      .update(payload)
-      .eq('phone', cleanPhone);
+      .upsert(payload, { onConflict: 'phone' });
 
     if (error) {
-      alert('Failed to save profile in database: ' + error.message);
-      return;
+      // Fallback to update if upsert constraint differs
+      const { error: updateError } = await supabase
+        .from('pandits')
+        .update(payload)
+        .eq('phone', cleanPhone);
+
+      if (updateError) {
+        alert('Failed to save profile in database: ' + updateError.message);
+        return;
+      }
     }
 
     setPanditName(editName);
@@ -496,7 +515,7 @@ export default function PanditDashboardPage() {
       reader.onloadend = async () => {
         const base64String = reader.result as string;
         setProfilePhoto(base64String);
-        const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+        const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
         if (cleanPhone) {
           await supabase.from('pandits').update({ avatar_url: base64String }).eq('phone', cleanPhone);
         }
@@ -514,7 +533,7 @@ export default function PanditDashboardPage() {
         const base64String = reader.result as string;
         const updatedGallery = [base64String, ...gallery];
         setGallery(updatedGallery);
-        const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+        const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
         if (cleanPhone) {
           await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('phone', cleanPhone);
         }
@@ -528,7 +547,7 @@ export default function PanditDashboardPage() {
     if (confirm('Are you sure you want to remove this puja photo?')) {
       const updatedGallery = gallery.filter((_, idx) => idx !== indexToDelete);
       setGallery(updatedGallery);
-      const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+      const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
       if (cleanPhone) {
         await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('phone', cleanPhone);
       }
@@ -537,7 +556,10 @@ export default function PanditDashboardPage() {
 
   const handleLogout = () => {
     if (confirm('Are you sure you want to log out from Acharya Portal?')) {
-      localStorage.removeItem('pandit_phone');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('pandit_phone');
+        document.cookie = 'pandit_phone=; path=/; max-age=0;';
+      }
       router.replace('/pandit/login');
     }
   };
