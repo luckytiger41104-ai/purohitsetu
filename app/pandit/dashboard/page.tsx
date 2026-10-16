@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 declare global {
@@ -25,9 +26,8 @@ interface Lead {
   cancellation_reason?: string;
 }
 
-const TOKEN_COST = 1;
+const TOKEN_COST = 150;
 
-// 15 Recharge Packs with Exact Bonus Calculations
 const TOKEN_PACKS = [
   { name: 'Micro Trial', tokens: 35, amount: 50, tag: '' },
   { name: 'Trial Pack', tokens: 75, amount: 100, tag: '' },
@@ -38,37 +38,12 @@ const TOKEN_PACKS = [
   { name: 'Bronze Acharya', tokens: 375, amount: 500, tag: '' },
   { name: 'Silver Acharya', tokens: 450, amount: 600, tag: '' },
   { name: 'Gold Acharya', tokens: 600, amount: 800, tag: '' },
-  {
-    name: 'Platinum Pack',
-    tokens: 800, // 750 base + 50 extra bonus
-    amount: 1000,
-    tag: '🎁 +50 Bonus',
-  },
+  { name: 'Platinum Pack', tokens: 800, amount: 1000, tag: '🎁 +50 Bonus' },
   { name: 'Diamond Shastri', tokens: 1125, amount: 1500, tag: '' },
-  {
-    name: 'Royal Shastri',
-    tokens: 1600, // 1500 base + 100 extra bonus
-    amount: 2000,
-    tag: '🎁 +100 Bonus',
-  },
-  {
-    name: 'Vedic Samrat',
-    tokens: 2400, // 2250 base + 150 extra bonus
-    amount: 3000,
-    tag: '🎁 +150 Bonus',
-  },
-  {
-    name: 'Brahmarishi Pack',
-    tokens: 3200, // 3000 base + 200 extra bonus
-    amount: 4000,
-    tag: '🎁 +200 Bonus',
-  },
-  {
-    name: 'Maharishi Crown',
-    tokens: 4050, // 3750 base + 300 extra bonus
-    amount: 5000,
-    tag: '👑 +300 Bonus Free',
-  },
+  { name: 'Royal Shastri', tokens: 1600, amount: 2000, tag: '🎁 +100 Bonus' },
+  { name: 'Vedic Samrat', tokens: 2400, amount: 3000, tag: '🎁 +150 Bonus' },
+  { name: 'Brahmarishi Pack', tokens: 3200, amount: 4000, tag: '🎁 +200 Bonus' },
+  { name: 'Maharishi Crown', tokens: 4050, amount: 5000, tag: '👑 +300 Bonus Free' },
 ];
 
 const loadRazorpaySDK = (): Promise<boolean> => {
@@ -86,6 +61,7 @@ const loadRazorpaySDK = (): Promise<boolean> => {
 };
 
 export default function PanditDashboardPage() {
+  const router = useRouter();
   const [phone, setPhone] = useState<string>('');
   const [panditId, setPanditId] = useState<string>('');
   const [panditName, setPanditName] = useState<string>('Acharya Ji');
@@ -104,7 +80,7 @@ export default function PanditDashboardPage() {
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules'>('leads');
-  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>(panditName);
@@ -114,7 +90,6 @@ export default function PanditDashboardPage() {
   const [editUpi, setEditUpi] = useState<string>(upiId);
 
   const [showRechargeModal, setShowRechargeModal] = useState<boolean>(false);
-
   const [activeOtpLead, setActiveOtpLead] = useState<Lead | null>(null);
   const [enteredOtp, setEnteredOtp] = useState<string>('');
 
@@ -130,13 +105,17 @@ export default function PanditDashboardPage() {
     return rawPhone.slice(0, 3) + '••••' + rawPhone.slice(-3);
   };
 
+  // 1. Persistent Session Guard
   useEffect(() => {
     const savedPhone = localStorage.getItem('pandit_phone');
-    if (savedPhone) {
-      setPhone(savedPhone);
+    if (!savedPhone) {
+      router.replace('/pandit/login');
+    } else {
+      setPhone(savedPhone.replace(/\D/g, '').slice(-10));
     }
-  }, []);
+  }, [router]);
 
+  // 2. Install Prompt Listener
   useEffect(() => {
     const handler = (e: any) => {
       e.preventDefault();
@@ -158,50 +137,55 @@ export default function PanditDashboardPage() {
     }
   };
 
+  // 3. 1-Second Heartbeat Timer
   useEffect(() => {
-    setCurrentTime(Math.floor(Date.now() / 1000));
-    const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
+    const timer = setInterval(() => {
+      setCurrentTime(Math.floor(Date.now() / 1000));
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // 4. Load Dashboard & Profile Data
   const loadDashboardData = async () => {
     try {
-      if (phone) {
-        const { data: pData } = await supabase
-          .from('pandits')
-          .select('*')
-          .eq('phone', phone)
-          .maybeSingle();
+      const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+      const cleanPhone = activePhone.replace(/\D/g, '').slice(-10);
+      if (!cleanPhone) return;
 
-        if (pData) {
-          setPanditId(pData.id);
-          if (pData.full_name) {
-            setPanditName(pData.full_name);
-            setEditName(pData.full_name);
-          }
-          if (pData.wallet_balance !== undefined) setTokenBalance(Number(pData.wallet_balance));
-          if (pData.earnings_balance !== undefined) setEarningsBalance(Number(pData.earnings_balance));
-          if (pData.strike_count !== undefined) setStrikeCount(Number(pData.strike_count));
-          if (pData.is_blocked !== undefined) setIsBlocked(pData.is_blocked);
-          if (pData.city) {
-            setBaseCity(pData.city);
-            setEditCity(pData.city);
-          }
-          if (pData.experience) {
-            setExperience(pData.experience);
-            setEditExp(pData.experience);
-          }
-          if (pData.bio) {
-            setBio(pData.bio);
-            setEditBio(pData.bio);
-          }
-          if (pData.upi_id) {
-            setUpiId(pData.upi_id);
-            setEditUpi(pData.upi_id);
-          }
-          if (pData.avatar_url) setProfilePhoto(pData.avatar_url);
-          if (pData.puja_gallery && Array.isArray(pData.puja_gallery)) setGallery(pData.puja_gallery);
+      const { data: pData } = await supabase
+        .from('pandits')
+        .select('*')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
+
+      if (pData) {
+        setPanditId(String(pData.id));
+        if (pData.full_name) {
+          setPanditName(pData.full_name);
+          setEditName(pData.full_name);
         }
+        if (pData.wallet_balance !== undefined) setTokenBalance(Number(pData.wallet_balance));
+        if (pData.earnings_balance !== undefined) setEarningsBalance(Number(pData.earnings_balance));
+        if (pData.strike_count !== undefined) setStrikeCount(Number(pData.strike_count));
+        if (pData.is_blocked !== undefined) setIsBlocked(Boolean(pData.is_blocked));
+        if (pData.city) {
+          setBaseCity(pData.city);
+          setEditCity(pData.city);
+        }
+        if (pData.experience) {
+          setExperience(pData.experience);
+          setEditExp(pData.experience);
+        }
+        if (pData.bio) {
+          setBio(pData.bio);
+          setEditBio(pData.bio);
+        }
+        if (pData.upi_id) {
+          setUpiId(pData.upi_id);
+          setEditUpi(pData.upi_id);
+        }
+        if (pData.avatar_url) setProfilePhoto(pData.avatar_url);
+        if (pData.puja_gallery && Array.isArray(pData.puja_gallery)) setGallery(pData.puja_gallery);
       }
 
       const { data: allBookings, error: bError } = await supabase
@@ -233,19 +217,13 @@ export default function PanditDashboardPage() {
             (item) =>
               item.status === 'available' ||
               !item.status ||
-              item.status === 'pending' ||
               item.status.toLowerCase() === 'pending'
           )
         );
 
         setConfirmedBookings(
           formatted.filter(
-            (item) =>
-              (item.status === 'confirmed' || item.status === 'in_progress') &&
-              (item.accepted_by === panditId ||
-                item.accepted_by === phone ||
-                item.assigned_to_phone === phone ||
-                !phone)
+            (item) => item.status === 'confirmed' || item.status === 'in_progress'
           )
         );
 
@@ -261,30 +239,36 @@ export default function PanditDashboardPage() {
   };
 
   useEffect(() => {
-    loadDashboardData();
+    if (phone) {
+      loadDashboardData();
+    }
   }, [phone]);
 
+  // 5. Accept Lead Flow
   const handleAcceptLead = async (lead: Lead) => {
     if (isBlocked || strikeCount >= 2) {
       alert('Your account is currently suspended due to active strikes. Please resolve pending settlements to continue.');
       return;
     }
 
+    const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+    const currentPanditIdentifier = cleanPhone || panditId || 'Acharya Ji';
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    const createdSec = Math.floor(new Date(lead.created_at).getTime() / 1000);
-    const elapsed = currentTime - createdSec;
+    const cleanCreatedAt = lead.created_at.endsWith('Z') ? lead.created_at : lead.created_at + 'Z';
+    const createdSec = Math.floor(new Date(cleanCreatedAt).getTime() / 1000);
+    const elapsed = Math.max(0, currentTime - createdSec);
     const isWithin60s = elapsed < 60;
 
     if (isWithin60s) {
       if (tokenBalance < TOKEN_COST) {
-        alert(`This lead is in the exclusive priority window (${60 - elapsed}s remaining). Requires ${TOKEN_COST} token.`);
+        alert(`This lead is in the exclusive priority window (${Math.max(0, 60 - elapsed)}s remaining). Requires ${TOKEN_COST} tokens.`);
         return;
       }
 
       const remainingTokens = tokenBalance - TOKEN_COST;
-      if (panditId) {
-        await supabase.from('pandits').update({ wallet_balance: remainingTokens }).eq('id', panditId);
+      if (cleanPhone) {
+        await supabase.from('pandits').update({ wallet_balance: remainingTokens }).eq('phone', cleanPhone);
       }
       setTokenBalance(remainingTokens);
 
@@ -292,7 +276,7 @@ export default function PanditDashboardPage() {
         .from('bookings')
         .update({
           status: 'confirmed',
-          accepted_by: panditId || phone || 'Acharya',
+          accepted_by: currentPanditIdentifier,
           accepted_via: 'token',
           completion_otp: generatedOtp,
         })
@@ -303,14 +287,15 @@ export default function PanditDashboardPage() {
         return;
       }
 
-      alert(`Lead Accepted! ${TOKEN_COST} token deducted. Direct contact unlocked.`);
-      loadDashboardData();
+      alert(`Lead Accepted! ${TOKEN_COST} tokens deducted. Direct contact unlocked.`);
+      await loadDashboardData();
+      setActiveTab('bookings');
     } else {
       const { error } = await supabase
         .from('bookings')
         .update({
           status: 'confirmed',
-          accepted_by: panditId || phone || 'Acharya',
+          accepted_by: currentPanditIdentifier,
           accepted_via: 'free',
           completion_otp: generatedOtp,
         })
@@ -322,10 +307,12 @@ export default function PanditDashboardPage() {
       }
 
       alert('Lead Accepted in Free Mode! Direct contact unlocked.');
-      loadDashboardData();
+      await loadDashboardData();
+      setActiveTab('bookings');
     }
   };
 
+  // 6. Verify OTP
   const handleVerifyCompletionOtp = async () => {
     if (!activeOtpLead) return;
 
@@ -352,14 +339,15 @@ export default function PanditDashboardPage() {
       alert('Har Har Mahadev! Vedic Ceremony verified and completed successfully.');
       setActiveOtpLead(null);
       setEnteredOtp('');
-      loadDashboardData();
+      await loadDashboardData();
     }
   };
 
+  // 7. Token Purchase & Recharge
   const recordTokenTransaction = async (packName: string, amount: number, tokensCount: number, razorpayId: string) => {
     try {
       await supabase.from('token_transactions').insert({
-        pandit_id: panditId || 'unknown',
+        pandit_id: panditId || phone || 'unknown',
         pandit_phone: phone || 'unknown',
         pandit_name: panditName || 'Acharya Ji',
         pack_name: packName,
@@ -386,17 +374,17 @@ export default function PanditDashboardPage() {
       currency: 'INR',
       name: 'PurohitSetu',
       description: `Recharge: ${packName} (${tokensCount} Tokens)`,
-      image: '/logo.jpg',
+      image: '/pandit-logo.png',
       handler: async function (response: any) {
         const newTokens = tokenBalance + tokensCount;
         setTokenBalance(newTokens);
-        if (panditId) {
-          await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('id', panditId);
+        if (phone) {
+          await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('phone', phone);
         }
         await recordTokenTransaction(packName, amount, tokensCount, response?.razorpay_payment_id || 'RZP_SUCCESS');
         setShowRechargeModal(false);
         alert(`Har Har Mahadev! Payment Verified (${response.razorpay_payment_id || 'Success'}). ${tokensCount} tokens credited.`);
-        loadDashboardData();
+        await loadDashboardData();
       },
       prefill: {
         name: panditName,
@@ -417,8 +405,8 @@ export default function PanditDashboardPage() {
       console.error('Razorpay popup error:', e);
       const newTokens = tokenBalance + tokensCount;
       setTokenBalance(newTokens);
-      if (panditId) {
-        await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('id', panditId);
+      if (phone) {
+        await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('phone', phone);
       }
       await recordTokenTransaction(packName, amount, tokensCount, 'DIRECT_OFFLINE');
       setShowRechargeModal(false);
@@ -426,6 +414,7 @@ export default function PanditDashboardPage() {
     }
   };
 
+  // 8. Request Payout
   const handleRequestPayout = async () => {
     if (earningsBalance <= 0) {
       alert('No withdrawable ceremony earnings available right now.');
@@ -460,21 +449,33 @@ export default function PanditDashboardPage() {
     }
   };
 
+  // 9. Profile Save (Fixed via Phone Matching)
   const handleSaveProfile = async () => {
-    if (panditId) {
-      const { error } = await supabase.from('pandits').update({
-        full_name: editName,
-        city: editCity,
-        experience: editExp,
-        bio: editBio,
-        upi_id: editUpi,
-        avatar_url: profilePhoto,
-      }).eq('id', panditId);
+    const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+    const cleanPhone = activePhone.replace(/\D/g, '').slice(-10);
 
-      if (error) {
-        alert('Error updating profile: ' + error.message);
-        return;
-      }
+    if (!cleanPhone) {
+      alert('Active mobile session not found. Please log in again.');
+      return;
+    }
+
+    const payload = {
+      full_name: editName,
+      city: editCity,
+      experience: editExp,
+      bio: editBio,
+      upi_id: editUpi,
+      avatar_url: profilePhoto,
+    };
+
+    const { error } = await supabase
+      .from('pandits')
+      .update(payload)
+      .eq('phone', cleanPhone);
+
+    if (error) {
+      alert('Failed to save profile in database: ' + error.message);
+      return;
     }
 
     setPanditName(editName);
@@ -483,9 +484,11 @@ export default function PanditDashboardPage() {
     setBio(editBio);
     setUpiId(editUpi);
     setIsEditing(false);
-    alert('Profile updated successfully!');
+    alert('Har Har Mahadev! Profile updated and saved in database.');
+    await loadDashboardData();
   };
 
+  // 10. Photo Uploads
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -493,8 +496,9 @@ export default function PanditDashboardPage() {
       reader.onloadend = async () => {
         const base64String = reader.result as string;
         setProfilePhoto(base64String);
-        if (panditId) {
-          await supabase.from('pandits').update({ avatar_url: base64String }).eq('id', panditId);
+        const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+        if (cleanPhone) {
+          await supabase.from('pandits').update({ avatar_url: base64String }).eq('phone', cleanPhone);
         }
         alert('Profile Photo Updated Successfully!');
       };
@@ -510,8 +514,9 @@ export default function PanditDashboardPage() {
         const base64String = reader.result as string;
         const updatedGallery = [base64String, ...gallery];
         setGallery(updatedGallery);
-        if (panditId) {
-          await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('id', panditId);
+        const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+        if (cleanPhone) {
+          await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('phone', cleanPhone);
         }
         alert('Puja photo added to your public gallery!');
       };
@@ -523,8 +528,9 @@ export default function PanditDashboardPage() {
     if (confirm('Are you sure you want to remove this puja photo?')) {
       const updatedGallery = gallery.filter((_, idx) => idx !== indexToDelete);
       setGallery(updatedGallery);
-      if (panditId) {
-        await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('id', panditId);
+      const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '');
+      if (cleanPhone) {
+        await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('phone', cleanPhone);
       }
     }
   };
@@ -532,7 +538,7 @@ export default function PanditDashboardPage() {
   const handleLogout = () => {
     if (confirm('Are you sure you want to log out from Acharya Portal?')) {
       localStorage.removeItem('pandit_phone');
-      window.location.href = '/pandit/login';
+      router.replace('/pandit/login');
     }
   };
 
@@ -545,19 +551,14 @@ export default function PanditDashboardPage() {
         </div>
       )}
 
+      {/* HEADER */}
       <header className="bg-gradient-to-r from-orange-700 via-amber-700 to-orange-800 text-white shadow-lg sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-amber-300 bg-white p-0.5 shadow-md flex items-center justify-center shrink-0">
               <img
-                src="/logo.jpg"
+                src="/pandit-logo.png"
                 alt="PurohitSetu Logo"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (target.src.endsWith('/logo.jpg')) target.src = '/logo.jpeg';
-                  else if (target.src.endsWith('/logo.jpeg')) target.src = '/logo.png';
-                  else target.src = '/logo';
-                }}
                 className="w-full h-full object-contain"
               />
             </div>
@@ -599,6 +600,7 @@ export default function PanditDashboardPage() {
           </div>
         </div>
 
+        {/* NAVIGATION TABS */}
         <div className="max-w-6xl mx-auto px-4 bg-black/20 backdrop-blur border-t border-white/10 flex overflow-x-auto gap-2 py-1.5">
           <button
             onClick={() => setActiveTab('leads')}
@@ -685,10 +687,11 @@ export default function PanditDashboardPage() {
               </div>
             ) : (
               leads.map((lead) => {
-                const createdSec = Math.floor(new Date(lead.created_at).getTime() / 1000);
-                const elapsed = currentTime - createdSec;
-                const isExclusive = elapsed < 60;
+                const cleanCreatedAt = lead.created_at.endsWith('Z') ? lead.created_at : lead.created_at + 'Z';
+                const createdSec = Math.floor(new Date(cleanCreatedAt).getTime() / 1000);
+                const elapsed = Math.max(0, currentTime - createdSec);
                 const secondsLeft = Math.max(0, 60 - elapsed);
+                const isExclusive = secondsLeft > 0;
                 const hasTokens = tokenBalance >= TOKEN_COST;
 
                 return (
@@ -722,7 +725,7 @@ export default function PanditDashboardPage() {
                       <p className="text-xs text-gray-500">
                         {isExclusive ? (
                           <span className="text-orange-700 font-semibold">
-                            Token Holders: Deducts {TOKEN_COST} token. 0% Commission applies.
+                            Token Holders: Deducts {TOKEN_COST} tokens. 0% Commission applies.
                           </span>
                         ) : (
                           <span className="text-gray-600">
@@ -745,7 +748,7 @@ export default function PanditDashboardPage() {
                             isExclusive ? 'bg-orange-600 hover:bg-orange-700' : 'bg-emerald-600 hover:bg-emerald-700'
                           }`}
                         >
-                          {isExclusive ? `Accept Priority (${TOKEN_COST} Token)` : 'Accept Lead (Free Mode)'}
+                          {isExclusive ? `Accept Priority (${TOKEN_COST} Tokens)` : 'Accept Lead (Free Mode)'}
                         </button>
                       )}
                     </div>
@@ -759,11 +762,19 @@ export default function PanditDashboardPage() {
         {/* TAB 2: CONFIRMED BOOKINGS */}
         {activeTab === 'bookings' && (
           <div className="space-y-4">
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900">Confirmed Bookings</h2>
-              <p className="text-xs text-gray-500">
-                You have accepted these ceremonies. Direct Yajman contact is unlocked. Verify completion via OTP.
-              </p>
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Confirmed Bookings</h2>
+                <p className="text-xs text-gray-500">
+                  You have accepted these ceremonies. Direct Yajman contact is unlocked. Verify completion via OTP.
+                </p>
+              </div>
+              <button
+                onClick={loadDashboardData}
+                className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-3 py-1 rounded-lg hover:bg-orange-100 cursor-pointer"
+              >
+                🔄 Refresh
+              </button>
             </div>
             {confirmedBookings.length === 0 ? (
               <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 shadow-sm">
@@ -833,7 +844,7 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 4: WALLET & 15 RECHARGE PACKS WITH BONUSES */}
+        {/* TAB 4: WALLET & RECHARGE */}
         {activeTab === 'wallet' && (
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-green-800 text-white p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -872,7 +883,7 @@ export default function PanditDashboardPage() {
               </button>
             </div>
 
-            {/* 15 RECHARGE PACKS MODAL (UP TO ₹5000 WITH BONUSES) */}
+            {/* 15 RECHARGE PACKS MODAL */}
             {showRechargeModal && (
               <div className="bg-white p-6 md:p-8 rounded-3xl border border-orange-200 shadow-2xl space-y-5">
                 <div className="flex justify-between items-center border-b pb-4">
