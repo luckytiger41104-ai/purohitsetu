@@ -12,6 +12,7 @@ export default function PanditAuthPage() {
   // Form Fields
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // Eye Toggle State
   const [fullName, setFullName] = useState('');
   const [city, setCity] = useState('Bengaluru, Karnataka');
   const [experience, setExperience] = useState('10+ Years Vedic Rituals');
@@ -220,7 +221,7 @@ export default function PanditAuthPage() {
           </div>
         )}
 
-        {/* 1. SIGN IN (MOBILE + PASSWORD ONLY) */}
+        {/* 1. SIGN IN (MOBILE + PASSWORD WITH EYE BUTTON) */}
         {mode === 'login' && (
           <form onSubmit={handlePasswordLogin} className="space-y-4">
             <div>
@@ -257,14 +258,24 @@ export default function PanditAuthPage() {
                   Forgot Password?
                 </button>
               </div>
-              <input
-                type="password"
-                required
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl pl-3.5 pr-11 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-500 hover:text-gray-800 cursor-pointer text-lg select-none"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? '👁️' : '🙈'}
+                </button>
+              </div>
             </div>
 
             <button
@@ -277,7 +288,7 @@ export default function PanditAuthPage() {
           </form>
         )}
 
-        {/* 2. REGISTRATION (DETAILS + PASSWORD + OTP) */}
+        {/* 2. REGISTRATION (DETAILS + PASSWORD + EYE BUTTON + OTP) */}
         {mode === 'register' && step === 'form' && (
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div>
@@ -318,14 +329,24 @@ export default function PanditAuthPage() {
 
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Set Account Password</label>
-              <input
-                type="password"
-                required
-                placeholder="Create a password (min 4 characters)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Create a password (min 4 characters)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl pl-3.5 pr-11 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-500 hover:text-gray-800 cursor-pointer text-lg select-none"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? '👁️' : '🙈'}
+                </button>
+              </div>
             </div>
 
             <div>
@@ -356,7 +377,7 @@ export default function PanditAuthPage() {
           </form>
         )}
 
-        {/* 3. FORGOT PASSWORD (PHONE + NEW PASSWORD) */}
+        {/* 3. FORGOT PASSWORD (PHONE + NEW PASSWORD WITH EYE BUTTON) */}
         {mode === 'forgot' && step === 'form' && (
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div className="text-left">
@@ -384,14 +405,24 @@ export default function PanditAuthPage() {
 
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Set New Password</label>
-              <input
-                type="password"
-                required
-                placeholder="Enter new password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Enter new password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl pl-3.5 pr-11 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-500 hover:text-gray-800 cursor-pointer text-lg select-none"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? '👁️' : '🙈'}
+                </button>
+              </div>
             </div>
 
             <button
