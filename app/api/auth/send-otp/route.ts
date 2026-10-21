@@ -33,9 +33,9 @@ export async function POST(req: Request) {
 
     // 4-digit numeric OTP generate
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes validity
 
-    // Supabase phone_verifications me store
+    // Supabase phone_verifications table me store
     const { error: dbError } = await supabase
       .from('phone_verifications')
       .upsert({
@@ -48,10 +48,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'Failed to initiate OTP verification.' }, { status: 500 });
     }
 
-    // Fast2SMS API call
+    // Fast2SMS API Call via Quick Route (Does not require website approval)
     const fast2smsApiKey = process.env.FAST2SMS_API_KEY;
     if (!fast2smsApiKey) {
-      return NextResponse.json({ success: false, message: 'SMS Gateway service unavailable.' }, { status: 500 });
+      return NextResponse.json({ success: false, message: 'SMS Gateway service key not configured.' }, { status: 500 });
     }
 
     const fast2smsRes = await fetch('https://www.fast2sms.com/dev/bulkV2', {
@@ -61,8 +61,10 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        variables_values: generatedOtp,
-        route: 'otp',
+        route: 'q',
+        message: `Your PurohitSetu verification code is ${generatedOtp}. Valid for 5 minutes.`,
+        language: 'english',
+        flash: 0,
         numbers: cleanPhone,
       }),
     });
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
     if (!smsResult.return) {
       return NextResponse.json({
         success: false,
-        message: smsResult.message || 'Unable to dispatch verification SMS.'
+        message: smsResult.message || 'Unable to send SMS code right now.'
       }, { status: 502 });
     }
 

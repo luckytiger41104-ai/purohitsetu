@@ -129,7 +129,7 @@ export default function PanditAuthPage() {
                 setErrorMsg('');
                 setInfoMsg('');
               }}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
                 mode === 'login' ? 'bg-white text-orange-800 shadow-sm' : 'text-gray-500 hover:text-gray-900'
               }`}
             >
@@ -143,7 +143,7 @@ export default function PanditAuthPage() {
                 setErrorMsg('');
                 setInfoMsg('');
               }}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
                 mode === 'register' ? 'bg-white text-orange-800 shadow-sm' : 'text-gray-500 hover:text-gray-900'
               }`}
             >
@@ -177,7 +177,7 @@ export default function PanditAuthPage() {
                     placeholder="e.g. Acharya Rameshwar Sharma"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-600"
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
                   />
                 </div>
                 <div>
@@ -188,7 +188,7 @@ export default function PanditAuthPage() {
                     placeholder="e.g. Bengaluru, Karnataka"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-600"
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
                   />
                 </div>
                 <div>
@@ -199,7 +199,7 @@ export default function PanditAuthPage() {
                     placeholder="e.g. 12+ Years Vedic Rituals"
                     value={experience}
                     onChange={(e) => setExperience(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-600"
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
                   />
                 </div>
               </>
@@ -208,7 +208,7 @@ export default function PanditAuthPage() {
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Mobile Number (SMS verification)</label>
               <div className="flex">
-                <span className="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-gray-300 bg-stone-50 text-gray-600 text-sm font-semibold">
+                <span className="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-gray-300 bg-stone-50 text-gray-700 text-sm font-bold">
                   +91
                 </span>
                 <input
@@ -218,7 +218,7 @@ export default function PanditAuthPage() {
                   placeholder="9876543210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full border border-gray-300 rounded-r-xl px-3.5 py-2.5 text-sm font-mono tracking-wider focus:outline-none focus:border-orange-600"
+                  className="w-full border border-gray-300 rounded-r-xl px-3.5 py-2.5 text-sm font-mono tracking-wider font-bold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
                 />
               </div>
             </div>
@@ -252,7 +252,7 @@ export default function PanditAuthPage() {
                 placeholder="• • • •"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                className="w-full border-2 border-orange-400 rounded-xl py-3 text-center font-mono text-2xl tracking-widest focus:outline-none focus:border-orange-600"
+                className="w-full border-2 border-orange-400 rounded-xl py-3 text-center font-mono text-2xl font-bold tracking-widest text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
               />
             </div>
 
