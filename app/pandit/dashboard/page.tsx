@@ -24,6 +24,8 @@ interface Lead {
   assigned_to_phone?: string;
   completion_otp?: string;
   cancellation_reason?: string;
+  cancelled_by?: string;
+  refund_status?: string;
 }
 
 const TOKEN_COST = 150;
@@ -92,6 +94,13 @@ export default function PanditDashboardPage() {
   const [showRechargeModal, setShowRechargeModal] = useState<boolean>(false);
   const [activeOtpLead, setActiveOtpLead] = useState<Lead | null>(null);
   const [enteredOtp, setEnteredOtp] = useState<string>('');
+
+  // Cancellation State
+  const [activeCancelLead, setActiveCancelLead] = useState<Lead | null>(null);
+  const [cancelBy, setCancelBy] = useState<'yajman' | 'pandit'>('yajman');
+  const [cancelReasonPreset, setCancelReasonPreset] = useState<string>('Yajman changed plan or cancelled date');
+  const [cancelCustomReason, setCancelCustomReason] = useState<string>('');
+  const [cancelSubmitting, setCancelSubmitting] = useState<boolean>(false);
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState<boolean>(false);
@@ -222,6 +231,8 @@ export default function PanditDashboardPage() {
           assigned_to_phone: b.assigned_to_phone,
           completion_otp: b.completion_otp,
           cancellation_reason: b.cancellation_reason,
+          cancelled_by: b.cancelled_by,
+          refund_status: b.refund_status,
         }));
 
         setLeads(
@@ -241,7 +252,11 @@ export default function PanditDashboardPage() {
 
         setMissingLeads(
           formatted.filter(
-            (item) => item.status === 'cancelled_by_yajman' || item.status === 'cancelled_by_pandit'
+            (item) =>
+              item.status === 'cancelled_by_yajman' ||
+              item.status === 'cancelled_by_pandit' ||
+              item.status === 'cancellation_under_review' ||
+              item.status === 'cancelled'
           )
         );
       }
@@ -259,7 +274,7 @@ export default function PanditDashboardPage() {
   // 5. Accept Lead Flow
   const handleAcceptLead = async (lead: Lead) => {
     if (isBlocked || strikeCount >= 2) {
-      alert('Your account is currently suspended due to active strikes. Please settle pending clearances to proceed.');
+      alert('Your account is currently suspended due to active strikes. Please contact support.');
       return;
     }
 
@@ -356,7 +371,53 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // 7. Token Purchase & Recharge
+  // 7. Cancellation Submission Handler
+  const handleConfirmCancellation = async () => {
+    if (!activeCancelLead) return;
+
+    const finalReason = cancelCustomReason.trim()
+      ? `${cancelReasonPreset}: ${cancelCustomReason.trim()}`
+      : cancelReasonPreset;
+
+    setCancelSubmitting(true);
+    try {
+      const newStatus = 'cancellation_under_review';
+      const refundStatus =
+        cancelBy === 'yajman'
+          ? 'Pending Admin Verification (Eligible for +150 Token Refund)'
+          : 'No Refund Applicable (Pandit Initiated)';
+
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          status: newStatus,
+          cancelled_by: cancelBy,
+          cancellation_reason: finalReason,
+          refund_status: refundStatus,
+        })
+        .eq('id', activeCancelLead.id);
+
+      if (error) {
+        alert('Failed to report cancellation: ' + error.message);
+      } else {
+        alert(
+          cancelBy === 'yajman'
+            ? 'Cancellation reported. Admin is reviewing this case with the Yajman. Once verified genuine, 150 Tokens will be credited back to your wallet.'
+            : 'Cancellation reported. Please note that cancellations caused by the Acharya do not qualify for a token refund.'
+        );
+        setActiveCancelLead(null);
+        setCancelCustomReason('');
+        await loadDashboardData();
+        setActiveTab('missing');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setCancelSubmitting(false);
+    }
+  };
+
+  // 8. Token Purchase & Recharge
   const recordTokenTransaction = async (packName: string, amount: number, tokensCount: number, razorpayId: string) => {
     try {
       await supabase.from('token_transactions').insert({
@@ -426,7 +487,7 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // 8. Request Payout
+  // 9. Request Payout
   const handleRequestPayout = async () => {
     if (earningsBalance <= 0) {
       alert('No withdrawable ceremony earnings available right now.');
@@ -461,7 +522,7 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // 9. Profile Save
+  // 10. Profile Save
   const handleSaveProfile = async () => {
     const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
     const cleanPhone = activePhone.replace(/\D/g, '').slice(-10);
@@ -507,7 +568,7 @@ export default function PanditDashboardPage() {
     await loadDashboardData();
   };
 
-  // 10. Photo Uploads
+  // 11. Photo Uploads
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -646,7 +707,7 @@ export default function PanditDashboardPage() {
               activeTab === 'missing' ? 'bg-white text-orange-800 shadow' : 'text-orange-100 hover:bg-white/10'
             }`}
           >
-            ⏳ Missing Leads ({missingLeads.length})
+            ⏳ Missing / Cancelled ({missingLeads.length})
           </button>
           <button
             onClick={() => setActiveTab('wallet')}
@@ -789,7 +850,7 @@ export default function PanditDashboardPage() {
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Confirmed Bookings</h2>
                 <p className="text-xs text-gray-500">
-                  Direct client contacts unlocked. Complete the ritual and enter the OTP provided by the Yajman.
+                  Direct client contacts unlocked. Complete the ritual and enter the OTP, or report cancellation if required.
                 </p>
               </div>
               <button
@@ -807,7 +868,12 @@ export default function PanditDashboardPage() {
               confirmedBookings.map((b) => (
                 <div key={b.id} className="bg-white p-6 rounded-2xl border border-green-200 shadow-sm space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-gray-900">{b.puja_name}</h3>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">{b.puja_name}</h3>
+                      <span className="text-xs font-semibold text-gray-500">
+                        Claimed via: {b.accepted_via === 'token' ? 'Priority Token (0% fee)' : 'Open Mode'}
+                      </span>
+                    </div>
                     {b.accepted_via === 'admin_assigned' && (
                       <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
                         Direct Admin Assigned
@@ -822,19 +888,33 @@ export default function PanditDashboardPage() {
                     <p className="text-gray-700">🕒 <strong>Timing:</strong> {b.event_date}</p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3 pt-2">
-                    <a
-                      href={`tel:${b.phone}`}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs transition shadow-md flex items-center gap-1.5"
-                    >
-                      📞 Call Yajman
-                    </a>
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`tel:${b.phone}`}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-md flex items-center gap-1.5"
+                      >
+                        📞 Call Yajman
+                      </a>
+
+                      <button
+                        onClick={() => setActiveOtpLead(b)}
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
+                      >
+                        ✓ Complete & Enter OTP
+                      </button>
+                    </div>
 
                     <button
-                      onClick={() => setActiveOtpLead(b)}
-                      className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
+                      onClick={() => {
+                        setActiveCancelLead(b);
+                        setCancelBy('yajman');
+                        setCancelReasonPreset('Yajman cancelled / changed mind');
+                        setCancelCustomReason('');
+                      }}
+                      className="text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold py-2 px-3.5 rounded-xl transition cursor-pointer"
                     >
-                      ✓ Complete & Enter OTP
+                      ✕ Report Cancellation
                     </button>
                   </div>
                 </div>
@@ -843,23 +923,76 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 3: MISSING LEADS */}
+        {/* TAB 3: MISSING & CANCELLED LEADS */}
         {activeTab === 'missing' && (
           <div className="space-y-4">
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900">Cancelled or Missed Requests</h2>
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Cancelled & Missed Requests</h2>
+                <p className="text-xs text-gray-500">
+                  Cancellation reason breakdown, initiator details, and token refund tracking.
+                </p>
+              </div>
+              <button
+                onClick={loadDashboardData}
+                className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-3 py-1 rounded-lg hover:bg-orange-100 cursor-pointer"
+              >
+                🔄 Refresh
+              </button>
             </div>
+
             {missingLeads.length === 0 ? (
               <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 shadow-sm">
                 <p className="text-sm text-gray-400">No cancelled records found.</p>
               </div>
             ) : (
               missingLeads.map((m) => (
-                <div key={m.id} className="bg-white p-5 rounded-2xl border border-gray-200 opacity-90 space-y-2">
-                  <h3 className="font-bold text-gray-800 line-through text-base">{m.puja_name}</h3>
-                  <p className="text-xs text-gray-500">Yajman: {m.yajman_name} • {m.location}</p>
-                  <div className="text-xs text-red-700 bg-red-50 p-2.5 rounded-lg font-medium border border-red-100">
-                    ⚠️ {m.cancellation_reason || 'Cancelled'}
+                <div key={m.id} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-base">{m.puja_name}</h3>
+                      <p className="text-xs text-gray-500">Yajman: {m.yajman_name} • {m.location}</p>
+                    </div>
+
+                    <span
+                      className={`text-xs font-bold px-3 py-1 rounded-full self-start sm:self-auto ${
+                        m.status === 'cancellation_under_review'
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : m.cancelled_by === 'yajman'
+                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                          : 'bg-red-100 text-red-900 border border-red-300'
+                      }`}
+                    >
+                      {m.status === 'cancellation_under_review'
+                        ? '⏳ Under Admin Review'
+                        : m.cancelled_by === 'yajman'
+                        ? 'Cancelled by Yajman'
+                        : 'Cancelled by Pandit'}
+                    </span>
+                  </div>
+
+                  {/* CANCELLATION EXPLANATION BREAKDOWN SECTION */}
+                  <div className="bg-stone-50 rounded-xl p-3.5 border border-stone-200 text-xs space-y-1.5">
+                    <p className="text-gray-700">
+                      <strong>Cancellation Reason:</strong> {m.cancellation_reason || 'Reason not specified.'}
+                    </p>
+                    <p className="text-gray-700">
+                      <strong>Reported Initiator:</strong> {m.cancelled_by ? (m.cancelled_by === 'yajman' ? 'Yajman Side' : 'Pandit Ji Side') : 'Direct'}
+                    </p>
+                    <div className="pt-1">
+                      <span className="font-bold text-gray-900">Token Refund Status: </span>
+                      <span
+                        className={`font-semibold ${
+                          m.refund_status?.includes('+150') || m.refund_status?.includes('Refund Approved')
+                            ? 'text-emerald-700'
+                            : m.refund_status?.includes('No Refund') || m.cancelled_by === 'pandit'
+                            ? 'text-red-700'
+                            : 'text-amber-700'
+                        }`}
+                      >
+                        {m.refund_status || (m.cancelled_by === 'yajman' ? 'Eligible for Token Refund (Admin Verification Pending)' : 'No Refund Applicable')}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -1136,10 +1269,133 @@ export default function PanditDashboardPage() {
                 <h4 className="font-bold text-gray-900 mb-1">4. Settlement Windows & Account Strikes</h4>
                 <p className="text-xs text-gray-600">Settlements are cleared within 24 hours (48 hours for Saturdays). Reaching two strikes will pause lead assignments.</p>
               </div>
+              <div className="p-5 rounded-2xl border border-purple-200 bg-purple-50/40 md:col-span-2">
+                <h4 className="font-bold text-gray-900 mb-1">5. Cancellation, Token Refunds & Anti-Fraud Policy</h4>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  • <strong>Yajman Cancellation:</strong> If a ceremony is cancelled by the Yajman (e.g. postponed or cancelled plan), 150 priority tokens are credited back to the Acharya’s wallet following admin confirmation.<br />
+                  • <strong>Pandit Cancellation:</strong> If a ceremony is cancelled due to an Acharya issue (dakshina disputes, delays, unprofessional conduct), no token refund is provided.<br />
+                  • <strong>False Claim Penalty:</strong> Reporting false cancellation claims to gain illicit refunds will result in an immediate <strong>7-Day Platform Account Suspension</strong> upon review.
+                </p>
+              </div>
             </div>
           </div>
         )}
       </main>
+
+      {/* CANCELLATION REPORTING MODAL */}
+      {activeCancelLead && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="border-b pb-3">
+              <h3 className="text-lg font-bold text-gray-900">Report Ceremony Cancellation</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {activeCancelLead.puja_name} for Yajman {activeCancelLead.yajman_name}
+              </p>
+            </div>
+
+            <div className="space-y-3.5 text-xs text-left">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1.5">Who initiated this cancellation?</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCancelBy('yajman');
+                      setCancelReasonPreset('Yajman cancelled / changed mind');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center font-bold transition cursor-pointer ${
+                      cancelBy === 'yajman'
+                        ? 'border-orange-600 bg-orange-50 text-orange-900'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Yajman Side
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCancelBy('pandit');
+                      setCancelReasonPreset('Acharya schedule clash / emergency');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center font-bold transition cursor-pointer ${
+                      cancelBy === 'pandit'
+                        ? 'border-orange-600 bg-orange-50 text-orange-900'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Acharya Side
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Select Cancellation Reason</label>
+                <select
+                  value={cancelReasonPreset}
+                  onChange={(e) => setCancelReasonPreset(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:border-orange-600"
+                >
+                  {cancelBy === 'yajman' ? (
+                    <>
+                      <option value="Yajman cancelled / changed mind">Yajman cancelled / changed mind</option>
+                      <option value="Family out of town / postphoned">Family out of town / postponed</option>
+                      <option value="Puja arranged locally / already conducted">Puja arranged locally / already conducted</option>
+                      <option value="Yajman unreachable / phone switched off">Yajman unreachable / phone switched off</option>
+                      <option value="Other Yajman side reason">Other Yajman side reason</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Acharya emergency / health issue">Acharya emergency / health issue</option>
+                      <option value="Date and time clash with another ceremony">Date and time clash with another ceremony</option>
+                      <option value="Travel distance / transport unavailable">Travel distance / transport unavailable</option>
+                      <option value="Dakshina / Samagri misalignment">Dakshina / Samagri misalignment</option>
+                      <option value="Other Acharya reason">Other Acharya reason</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Additional Details (Optional)</label>
+                <textarea
+                  rows={2}
+                  value={cancelCustomReason}
+                  onChange={(e) => setCancelCustomReason(e.target.value)}
+                  placeholder="Explain briefly what happened..."
+                  className="w-full border border-gray-300 rounded-xl p-2.5 text-xs focus:outline-none focus:border-orange-600"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 space-y-1">
+                <p className="font-bold">⚠️ Platform Dispute & Token Policy:</p>
+                <p>
+                  • If verified genuine on Yajman&apos;s side, 150 priority tokens will be restored.
+                  <br />
+                  • Reporting false claims to improperly claim tokens will incur an immediate <strong>7-Day Platform Suspension</strong>.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setActiveCancelLead(null)}
+                className="flex-1 border text-gray-600 font-bold py-2.5 rounded-xl text-xs cursor-pointer"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={cancelSubmitting}
+                onClick={handleConfirmCancellation}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-bold py-2.5 rounded-xl text-xs shadow cursor-pointer transition"
+              >
+                {cancelSubmitting ? 'Submitting...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* OTP VERIFICATION MODAL */}
       {activeOtpLead && (
