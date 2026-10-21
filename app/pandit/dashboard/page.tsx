@@ -64,11 +64,11 @@ const loadRazorpaySDK = (): Promise<boolean> => {
 
 // Safe UTC Time Parser to prevent countdown timer jumps
 const parseUtcSeconds = (dateStr: string): number => {
-  if (!dateStr) return Math.floor(Date.now() / 1000);
+  if (!dateStr) return 0;
   const isoStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
   const normalized = isoStr.endsWith('Z') || isoStr.includes('+') ? isoStr : `${isoStr}Z`;
   const ms = new Date(normalized).getTime();
-  return isNaN(ms) ? Math.floor(Date.now() / 1000) : Math.floor(ms / 1000);
+  return isNaN(ms) ? 0 : Math.floor(ms / 1000);
 };
 
 export default function PanditDashboardPage() {
@@ -91,7 +91,7 @@ export default function PanditDashboardPage() {
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules'>('leads');
-  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
+  const [currentTime, setCurrentTime] = useState<number>(0);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>(panditName);
@@ -166,7 +166,7 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // 3. 1-Second Timer for Lead Countdown
+  // 3. 1-Second Timer for Lead Countdown (Hydrated cleanly inside useEffect)
   useEffect(() => {
     setCurrentTime(Math.floor(Date.now() / 1000));
     const timer = setInterval(() => {
