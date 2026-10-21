@@ -36,7 +36,7 @@ export default function FloatingPaymentButton() {
       currency: 'INR',
       name: 'PurohitSetu',
       description: `Puja Dakshina: ${pujaName}`,
-      image: '/logo.jpg',
+      image:'/pandit-logo.png',
       handler: async function (response: any) {
         await supabase.from('yajman_payments').insert({
           yajman_name: name,
