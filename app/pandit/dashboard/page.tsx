@@ -62,6 +62,15 @@ const loadRazorpaySDK = (): Promise<boolean> => {
   });
 };
 
+// Safe UTC Time Parser to prevent countdown timer jumps
+const parseUtcSeconds = (dateStr: string): number => {
+  if (!dateStr) return Math.floor(Date.now() / 1000);
+  const isoStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+  const normalized = isoStr.endsWith('Z') || isoStr.includes('+') ? isoStr : `${isoStr}Z`;
+  const ms = new Date(normalized).getTime();
+  return isNaN(ms) ? Math.floor(Date.now() / 1000) : Math.floor(ms / 1000);
+};
+
 export default function PanditDashboardPage() {
   const router = useRouter();
   const [phone, setPhone] = useState<string>('');
@@ -82,7 +91,7 @@ export default function PanditDashboardPage() {
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules'>('leads');
-  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>(panditName);
@@ -98,7 +107,7 @@ export default function PanditDashboardPage() {
   // Cancellation State
   const [activeCancelLead, setActiveCancelLead] = useState<Lead | null>(null);
   const [cancelBy, setCancelBy] = useState<'yajman' | 'pandit'>('yajman');
-  const [cancelReasonPreset, setCancelReasonPreset] = useState<string>('Yajman changed plan or cancelled date');
+  const [cancelReasonPreset, setCancelReasonPreset] = useState<string>('Yajman cancelled / changed mind');
   const [cancelCustomReason, setCancelCustomReason] = useState<string>('');
   const [cancelSubmitting, setCancelSubmitting] = useState<boolean>(false);
 
@@ -157,7 +166,7 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // 3. Heartbeat Timer (Hydrated)
+  // 3. 1-Second Timer for Lead Countdown
   useEffect(() => {
     setCurrentTime(Math.floor(Date.now() / 1000));
     const timer = setInterval(() => {
@@ -235,6 +244,7 @@ export default function PanditDashboardPage() {
           refund_status: b.refund_status,
         }));
 
+        // 1. Available New Leads (Unclaimed)
         setLeads(
           formatted.filter(
             (item) =>
@@ -244,24 +254,22 @@ export default function PanditDashboardPage() {
           )
         );
 
-       const myIdentifier = cleanPhone;
-
-        // Sirf wahi confirmed bookings jo is login pandit ji ne claim ki hain
+        // 2. Confirmed Bookings: ONLY leads claimed by or assigned to THIS Pandit
         setConfirmedBookings(
           formatted.filter(
             (item) =>
               (item.status === 'confirmed' || item.status === 'in_progress') &&
-              (item.accepted_by === myIdentifier || item.assigned_to_phone === myIdentifier)
+              (item.accepted_by === cleanPhone || item.assigned_to_phone === cleanPhone)
           )
         );
 
-        // Missing leads: Jo kisi aur ne le li YA cancel ho gayi
+        // 3. Missing Leads: Leads claimed by others OR cancelled
         setMissingLeads(
           formatted.filter((item) => {
             const isClaimedByOther =
               (item.status === 'confirmed' || item.status === 'in_progress' || item.status === 'completed') &&
-              item.accepted_by !== myIdentifier &&
-              item.assigned_to_phone !== myIdentifier;
+              item.accepted_by !== cleanPhone &&
+              item.assigned_to_phone !== cleanPhone;
 
             const isCancelled =
               item.status === 'cancelled_by_yajman' ||
@@ -284,7 +292,7 @@ export default function PanditDashboardPage() {
     }
   }, [phone]);
 
-  // 5. Accept Lead Flow
+  // 5. Accept Lead Flow with Correct Timer Calculation
   const handleAcceptLead = async (lead: Lead) => {
     if (isBlocked || strikeCount >= 2) {
       alert('Your account is currently suspended due to active strikes. Please contact support.');
@@ -295,8 +303,7 @@ export default function PanditDashboardPage() {
     const currentPanditIdentifier = cleanPhone || panditId || 'Acharya';
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    const cleanCreatedAt = lead.created_at.endsWith('Z') ? lead.created_at : lead.created_at + 'Z';
-    const createdSec = Math.floor(new Date(cleanCreatedAt).getTime() / 1000);
+    const createdSec = parseUtcSeconds(lead.created_at);
     const effectiveCurrent = currentTime || Math.floor(Date.now() / 1000);
     const elapsed = Math.max(0, effectiveCurrent - createdSec);
     const isWithin60s = elapsed < 60;
@@ -347,7 +354,7 @@ export default function PanditDashboardPage() {
         return;
       }
 
-      alert('Ceremony Claimed in Open Mode! Direct contact unlocked.');
+      alert('Ceremony Claimed in Open Mode! Direct contact unlocked (30% platform commission applies upon completion).');
       await loadDashboardData();
       setActiveTab('bookings');
     }
@@ -395,9 +402,12 @@ export default function PanditDashboardPage() {
     setCancelSubmitting(true);
     try {
       const newStatus = 'cancellation_under_review';
+      const isPriorityClaim = activeCancelLead.accepted_via === 'token';
       const refundStatus =
         cancelBy === 'yajman'
-          ? 'Pending Admin Verification (Eligible for +150 Token Refund)'
+          ? isPriorityClaim
+            ? 'Pending Admin Verification (Eligible for +150 Token Refund)'
+            : 'Pending Admin Verification (0 Refund - Claimed via Free Mode)'
           : 'No Refund Applicable (Pandit Initiated)';
 
       const { error } = await supabase
@@ -415,7 +425,9 @@ export default function PanditDashboardPage() {
       } else {
         alert(
           cancelBy === 'yajman'
-            ? 'Cancellation reported. Admin is reviewing this case with the Yajman. Once verified genuine, 150 Tokens will be credited back to your wallet.'
+            ? isPriorityClaim
+              ? 'Cancellation reported. Admin is reviewing this case with the Yajman. Once verified genuine, 150 Tokens will be credited back to your wallet.'
+              : 'Cancellation reported. Since this ceremony was claimed in Free Mode, no token refund is applicable.'
             : 'Cancellation reported. Please note that cancellations caused by the Acharya do not qualify for a token refund.'
         );
         setActiveCancelLead(null);
@@ -783,8 +795,7 @@ export default function PanditDashboardPage() {
               </div>
             ) : (
               leads.map((lead) => {
-                const cleanCreatedAt = lead.created_at.endsWith('Z') ? lead.created_at : lead.created_at + 'Z';
-                const createdSec = Math.floor(new Date(cleanCreatedAt).getTime() / 1000);
+                const createdSec = parseUtcSeconds(lead.created_at);
                 const effectiveCurrent = currentTime || Math.floor(Date.now() / 1000);
                 const elapsed = Math.max(0, effectiveCurrent - createdSec);
                 const secondsLeft = Math.max(0, 60 - elapsed);
@@ -884,7 +895,7 @@ export default function PanditDashboardPage() {
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">{b.puja_name}</h3>
                       <span className="text-xs font-semibold text-gray-500">
-                        Claimed via: {b.accepted_via === 'token' ? 'Priority Token (0% fee)' : 'Open Mode'}
+                        Claimed via: {b.accepted_via === 'token' ? 'Priority Token (0% fee)' : 'Open Mode (30% fee)'}
                       </span>
                     </div>
                     {b.accepted_via === 'admin_assigned' && (
@@ -943,7 +954,7 @@ export default function PanditDashboardPage() {
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Cancelled & Missed Requests</h2>
                 <p className="text-xs text-gray-500">
-                  Cancellation reason breakdown, initiator details, and token refund tracking.
+                  Ceremonies claimed by other Acharyas or cancelled ceremonies under review.
                 </p>
               </div>
               <button
@@ -956,59 +967,72 @@ export default function PanditDashboardPage() {
 
             {missingLeads.length === 0 ? (
               <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 shadow-sm">
-                <p className="text-sm text-gray-400">No cancelled records found.</p>
+                <p className="text-sm text-gray-400">No missed or cancelled records found.</p>
               </div>
             ) : (
-              missingLeads.map((m) => (
-                <div key={m.id} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-base">{m.puja_name}</h3>
-                      <p className="text-xs text-gray-500">Yajman: {m.yajman_name} • {m.location}</p>
-                    </div>
+              missingLeads.map((m) => {
+                const isClaimedByOther =
+                  (m.status === 'confirmed' || m.status === 'in_progress' || m.status === 'completed') &&
+                  m.accepted_by !== phone;
 
-                    <span
-                      className={`text-xs font-bold px-3 py-1 rounded-full self-start sm:self-auto ${
-                        m.status === 'cancellation_under_review'
-                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                          : m.cancelled_by === 'yajman'
-                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                          : 'bg-red-100 text-red-900 border border-red-300'
-                      }`}
-                    >
-                      {m.status === 'cancellation_under_review'
-                        ? '⏳ Under Admin Review'
-                        : m.cancelled_by === 'yajman'
-                        ? 'Cancelled by Yajman'
-                        : 'Cancelled by Pandit'}
-                    </span>
-                  </div>
+                return (
+                  <div key={m.id} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-base">{m.puja_name}</h3>
+                        <p className="text-xs text-gray-500">
+                          Yajman: {m.yajman_name} • {m.location} • 🔒 {maskPhone(m.phone)}
+                        </p>
+                      </div>
 
-                  {/* CANCELLATION EXPLANATION BREAKDOWN SECTION */}
-                  <div className="bg-stone-50 rounded-xl p-3.5 border border-stone-200 text-xs space-y-1.5">
-                    <p className="text-gray-700">
-                      <strong>Cancellation Reason:</strong> {m.cancellation_reason || 'Reason not specified.'}
-                    </p>
-                    <p className="text-gray-700">
-                      <strong>Reported Initiator:</strong> {m.cancelled_by ? (m.cancelled_by === 'yajman' ? 'Yajman Side' : 'Pandit Ji Side') : 'Direct'}
-                    </p>
-                    <div className="pt-1">
-                      <span className="font-bold text-gray-900">Token Refund Status: </span>
                       <span
-                        className={`font-semibold ${
-                          m.refund_status?.includes('+150') || m.refund_status?.includes('Refund Approved')
-                            ? 'text-emerald-700'
-                            : m.refund_status?.includes('No Refund') || m.cancelled_by === 'pandit'
-                            ? 'text-red-700'
-                            : 'text-amber-700'
+                        className={`text-xs font-bold px-3 py-1 rounded-full self-start sm:self-auto ${
+                          isClaimedByOther
+                            ? 'bg-stone-100 text-stone-700 border border-stone-200'
+                            : m.status === 'cancellation_under_review'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : m.cancelled_by === 'yajman'
+                            ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                            : 'bg-red-100 text-red-900 border border-red-300'
                         }`}
                       >
-                        {m.refund_status || (m.cancelled_by === 'yajman' ? 'Eligible for Token Refund (Admin Verification Pending)' : 'No Refund Applicable')}
+                        {isClaimedByOther
+                          ? 'Missed • Claimed by another Acharya'
+                          : m.status === 'cancellation_under_review'
+                          ? '⏳ Cancellation Under Review'
+                          : m.cancelled_by === 'yajman'
+                          ? 'Cancelled by Yajman'
+                          : 'Cancelled by Acharya'}
                       </span>
                     </div>
+
+                    {!isClaimedByOther && (
+                      <div className="bg-stone-50 rounded-xl p-3.5 border border-stone-200 text-xs space-y-1.5">
+                        <p className="text-gray-700">
+                          <strong>Cancellation Reason:</strong> {m.cancellation_reason || 'Reason not specified.'}
+                        </p>
+                        <p className="text-gray-700">
+                          <strong>Reported Initiator:</strong> {m.cancelled_by === 'yajman' ? 'Yajman Side' : 'Acharya Side'}
+                        </p>
+                        <div className="pt-1">
+                          <span className="font-bold text-gray-900">Token Refund Status: </span>
+                          <span
+                            className={`font-semibold ${
+                              m.refund_status?.includes('+150') || m.refund_status?.includes('Refund Approved')
+                                ? 'text-emerald-700'
+                                : m.refund_status?.includes('No Refund') || m.refund_status?.includes('0 Tokens') || m.cancelled_by === 'pandit'
+                                ? 'text-red-700'
+                                : 'text-amber-700'
+                            }`}
+                          >
+                            {m.refund_status || (m.cancelled_by === 'yajman' ? 'Eligible for Token Refund (Admin Verification Pending)' : 'No Refund Applicable')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -1285,9 +1309,10 @@ export default function PanditDashboardPage() {
               <div className="p-5 rounded-2xl border border-purple-200 bg-purple-50/40 md:col-span-2">
                 <h4 className="font-bold text-gray-900 mb-1">5. Cancellation, Token Refunds & Anti-Fraud Policy</h4>
                 <p className="text-xs text-gray-600 leading-relaxed">
-                  • <strong>Yajman Cancellation:</strong> If a ceremony is cancelled by the Yajman (e.g. postponed or cancelled plan), 150 priority tokens are credited back to the Acharya’s wallet following admin confirmation.<br />
-                  • <strong>Pandit Cancellation:</strong> If a ceremony is cancelled due to an Acharya issue (dakshina disputes, delays, unprofessional conduct), no token refund is provided.<br />
-                  • <strong>False Claim Penalty:</strong> Reporting false cancellation claims to gain illicit refunds will result in an immediate <strong>7-Day Platform Account Suspension</strong> upon review.
+                  • <strong>Priority Lead Cancellation:</strong> If a ceremony claimed with priority tokens is cancelled by the Yajman, 150 priority tokens are refunded to the Acharya’s wallet after admin review.<br />
+                  • <strong>Free Mode Cancellation:</strong> Ceremonies claimed under Open Free Mode do not qualify for any token refund.<br />
+                  • <strong>Acharya Cancellation:</strong> If a ceremony is cancelled due to an Acharya issue (dakshina disputes, delays, unprofessional conduct), no refund is granted.<br />
+                  • <strong>False Claim Penalty:</strong> Reporting false cancellation claims will result in an immediate <strong>7-Day Platform Account Suspension</strong>.
                 </p>
               </div>
             </div>
@@ -1351,7 +1376,7 @@ export default function PanditDashboardPage() {
                   {cancelBy === 'yajman' ? (
                     <>
                       <option value="Yajman cancelled / changed mind">Yajman cancelled / changed mind</option>
-                      <option value="Family out of town / postphoned">Family out of town / postponed</option>
+                      <option value="Family out of town / postponed">Family out of town / postponed</option>
                       <option value="Puja arranged locally / already conducted">Puja arranged locally / already conducted</option>
                       <option value="Yajman unreachable / phone switched off">Yajman unreachable / phone switched off</option>
                       <option value="Other Yajman side reason">Other Yajman side reason</option>
@@ -1382,9 +1407,11 @@ export default function PanditDashboardPage() {
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 space-y-1">
                 <p className="font-bold">⚠️ Platform Dispute & Token Policy:</p>
                 <p>
-                  • If verified genuine on Yajman&apos;s side, 150 priority tokens will be restored.
+                  • If claimed with tokens and verified genuine on Yajman side, 150 priority tokens will be refunded.
                   <br />
-                  • Reporting false claims to improperly claim tokens will incur an immediate <strong>7-Day Platform Suspension</strong>.
+                  • If claimed in Free Mode, no tokens will be credited.
+                  <br />
+                  • Reporting false claims will incur an immediate <strong>7-Day Platform Suspension</strong>.
                 </p>
               </div>
             </div>

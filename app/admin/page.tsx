@@ -31,6 +31,7 @@ interface BookingLead {
   pincode?: string;
   language?: string;
   status: string;
+  accepted_via?: 'token' | 'free' | 'admin_assigned';
   accepted_by?: string;
   assigned_to_name?: string;
   assigned_to_phone?: string;
@@ -108,6 +109,7 @@ export default function AdminDashboardPage() {
             pincode: b.pincode,
             language: b.language,
             status: b.status || 'available',
+            accepted_via: b.accepted_via,
             accepted_by: b.accepted_by,
             assigned_to_name: b.assigned_to_name,
             assigned_to_phone: b.assigned_to_phone,
@@ -155,6 +157,44 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     loadAdminData();
   }, []);
+
+  // 1. DELETE BOOKING LEAD
+  const handleDeleteBooking = async (bookingId: number, pujaName: string) => {
+    const confirmDelete = confirm(`Are you sure you want to permanently delete lead #${bookingId} ("${pujaName}")? This cannot be undone.`);
+    if (!confirmDelete) return;
+
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+      if (error) {
+        alert('Failed to delete lead: ' + error.message);
+      } else {
+        alert(`Lead #${bookingId} deleted successfully.`);
+        setBookings(bookings.filter((b) => b.id !== bookingId));
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  // 2. PERMANENT PANDIT PROFILE DELETION (PUNISHMENT RESET)
+  const handleDeletePanditProfile = async (pandit: Pandit) => {
+    const confirmDelete = confirm(
+      `⚠️ CRITICAL ACTION: Delete Pandit Account?\n\nPandit: ${pandit.full_name}\nPhone: +91 ${pandit.phone}\n\nThis will permanently erase their profile, tokens, and verified status. They will have to register from 0. Proceed?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const { error } = await supabase.from('pandits').delete().eq('id', pandit.id);
+      if (error) {
+        alert('Failed to delete pandit profile: ' + error.message);
+      } else {
+        alert(`Pandit profile for ${pandit.full_name} has been permanently deleted.`);
+        setPandits(pandits.filter((p) => p.id !== pandit.id));
+      }
+    } catch (err: any) {
+      alert('Error deleting pandit: ' + err.message);
+    }
+  };
 
   const handleAdminClaimLead = async (booking: BookingLead) => {
     if (confirm(`Accept booking for "${booking.puja_name}" (${booking.name}) as Admin?`)) {
@@ -205,7 +245,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Cancellation Flow 1: Approve Token Refund (+150 Tokens to Pandit Ji)
+  // 3. CANCELLATION FLOW WITH ACCEPTED_VIA REFUND CHECK
   const handleApproveTokenRefund = async (booking: BookingLead) => {
     const targetPhone = booking.assigned_to_phone || booking.accepted_by;
     if (!targetPhone) {
@@ -214,13 +254,34 @@ export default function AdminDashboardPage() {
     }
 
     const cleanPhone = targetPhone.replace(/\D/g, '').slice(-10);
+
+    // Strict Rule: Check if claimed via tokens
+    if (booking.accepted_via !== 'token') {
+      const confirmZeroRefund = confirm(
+        `This ceremony was claimed in FREE MODE (accepted_via: ${booking.accepted_via || 'free'}). No tokens were deducted from the Pandit.\n\nMark this case as resolved with 0 token refund?`
+      );
+      if (!confirmZeroRefund) return;
+
+      await supabase
+        .from('bookings')
+        .update({
+          status: 'cancelled_by_yajman',
+          refund_status: 'Resolved: 0 Tokens Refunded (Ceremony Claimed via Free Mode)',
+        })
+        .eq('id', booking.id);
+
+      alert('Ceremony marked as cancelled by Yajman with 0 token refund (Free Mode Lead).');
+      loadAdminData();
+      return;
+    }
+
+    // If accepted via token: Credit 150 Tokens back
     const confirmApprove = confirm(
-      `Approve refund for this ceremony?\n\nThis will credit +150 Tokens back to Pandit (+91 ${cleanPhone})'s wallet.`
+      `Approve refund for priority ceremony?\n\nThis will restore +150 Tokens to Pandit (+91 ${cleanPhone})'s wallet.`
     );
     if (!confirmApprove) return;
 
     try {
-      // 1. Fetch current balance
       const { data: pData } = await supabase
         .from('pandits')
         .select('wallet_balance')
@@ -230,18 +291,16 @@ export default function AdminDashboardPage() {
       const currentBalance = Number(pData?.wallet_balance || 0);
       const updatedBalance = currentBalance + 150;
 
-      // 2. Add tokens
       await supabase
         .from('pandits')
         .update({ wallet_balance: updatedBalance })
         .eq('phone', cleanPhone);
 
-      // 3. Update Booking
       await supabase
         .from('bookings')
         .update({
           status: 'cancelled_by_yajman',
-          refund_status: 'Refund Approved (+150 Tokens Restored)',
+          refund_status: 'Refund Approved (+150 Tokens Restored to Wallet)',
         })
         .eq('id', booking.id);
 
@@ -252,7 +311,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Cancellation Flow 2: Reject Claim & Suspend Pandit for 7 Days (False Report Penalty)
+  // 4. SUSPEND PANDIT FOR 7 DAYS ON FALSE CLAIM
   const handleRejectAndSuspendPandit = async (booking: BookingLead) => {
     const targetPhone = booking.assigned_to_phone || booking.accepted_by;
     if (!targetPhone) {
@@ -277,7 +336,6 @@ export default function AdminDashboardPage() {
 
       const newStrikes = (Number(pData?.strike_count) || 0) + 1;
 
-      // Suspend account and add strike
       await supabase
         .from('pandits')
         .update({
@@ -287,7 +345,6 @@ export default function AdminDashboardPage() {
         })
         .eq('phone', cleanPhone);
 
-      // Update booking
       await supabase
         .from('bookings')
         .update({
@@ -296,7 +353,7 @@ export default function AdminDashboardPage() {
         })
         .eq('id', booking.id);
 
-      alert(`Penalty Applied: Pandit (+91 ${cleanPhone}) has been suspended for 7 days with +1 Strike added. 0 Tokens refunded.`);
+      alert(`Penalty Applied: Pandit (+91 ${cleanPhone}) suspended for 7 days with +1 Strike added. 0 Tokens refunded.`);
       loadAdminData();
     } catch (err: any) {
       alert('Failed to apply suspension: ' + err.message);
@@ -423,7 +480,7 @@ export default function AdminDashboardPage() {
               <div>
                 <h2 className="text-base font-bold text-gray-900">All Incoming Puja Requests & Assignments</h2>
                 <p className="text-xs text-gray-500">
-                  Accept leads directly if no Pandit claims them, or manually assign to any verified Acharya.
+                  Accept leads directly if no Pandit claims them, assign to Acharyas, or delete invalid requests.
                 </p>
               </div>
               <span className="bg-orange-100 text-orange-800 text-xs font-bold px-3 py-1 rounded-full self-start md:self-auto">
@@ -475,6 +532,19 @@ export default function AdminDashboardPage() {
                             >
                               {b.status.replace(/_/g, ' ')}
                             </span>
+
+                            {b.accepted_via && (
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                  b.accepted_via === 'token'
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}
+                              >
+                                Mode: {b.accepted_via.toUpperCase()}
+                              </span>
+                            )}
+
                             {b.completion_otp && (
                               <span className="text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-lg">
                                 OTP: <span className="font-mono font-black">{b.completion_otp}</span>
@@ -496,7 +566,7 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
 
-                        {/* Action Buttons for Normal Leads */}
+                        {/* Actions for Admin */}
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-t lg:border-t-0 pt-3 lg:pt-0">
                           {isClaimable ? (
                             <>
@@ -539,6 +609,15 @@ export default function AdminDashboardPage() {
                               </span>
                             </div>
                           )}
+
+                          {/* DELETE LEAD BUTTON */}
+                          <button
+                            onClick={() => handleDeleteBooking(b.id, b.puja_name)}
+                            title="Delete Lead"
+                            className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 hover:text-red-800 font-bold px-3 py-2 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1"
+                          >
+                            <span>🗑️</span> Delete
+                          </button>
                         </div>
                       </div>
 
@@ -550,9 +629,14 @@ export default function AdminDashboardPage() {
                               📝 <strong>Reported Cancellation Reason:</strong>{' '}
                               <span className="font-medium text-gray-900">{b.cancellation_reason || 'No detailed reason provided'}</span>
                             </p>
-                            <span className="bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-full font-bold self-start sm:self-auto text-[11px]">
-                              Initiator: {b.cancelled_by === 'yajman' ? 'Yajman Side' : 'Acharya Side'}
-                            </span>
+                            <div className="flex gap-2">
+                              <span className="bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-full font-bold text-[11px]">
+                                Initiator: {b.cancelled_by === 'yajman' ? 'Yajman Side' : 'Acharya Side'}
+                              </span>
+                              <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full font-bold text-[11px]">
+                                Claim Mode: {b.accepted_via === 'token' ? 'Priority (150 Tokens Paid)' : 'Free Mode (0 Tokens)'}
+                              </span>
+                            </div>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-200">
@@ -560,7 +644,9 @@ export default function AdminDashboardPage() {
                               onClick={() => handleApproveTokenRefund(b)}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow cursor-pointer"
                             >
-                              ✓ Verify Genuine & Refund 150 Tokens
+                              {b.accepted_via === 'token'
+                                ? '✓ Verify Genuine & Refund 150 Tokens'
+                                : '✓ Verify Genuine (0 Refund - Free Mode)'}
                             </button>
 
                             <button
@@ -573,9 +659,9 @@ export default function AdminDashboardPage() {
                         </div>
                       )}
 
-                      {/* Display Refund/Resolution Info if already resolved */}
+                      {/* Resolved Refund Info */}
                       {b.refund_status && !isUnderReview && (
-                        <div className="p-2.5 bg-stone-50 border rounded-xl text-xs text-gray-700 flex items-center justify-between">
+                        <div className="p-2.5 bg-stone-50 border rounded-xl text-xs text-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                           <span>
                             <strong>Resolution Status:</strong> {b.refund_status}
                           </span>
@@ -592,13 +678,13 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 2: PANDIT VERIFICATION */}
+        {/* TAB 2: PANDIT VERIFICATION & MANAGEMENT */}
         {activeTab === 'pandits' && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex justify-between items-center">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Registered Vedic Acharyas</h2>
-                <p className="text-xs text-gray-500">Approve credentials, monitor strikes, and manage access.</p>
+                <p className="text-xs text-gray-500">Approve credentials, monitor strikes, manage access, or permanently delete accounts.</p>
               </div>
             </div>
 
@@ -677,13 +763,23 @@ export default function AdminDashboardPage() {
                       {p.is_blocked ? 'Unblock' : 'Block'}
                     </button>
                   </div>
+
+                  {/* PERMANENT DELETE ACCOUNT BUTTON */}
+                  <div className="pt-1">
+                    <button
+                      onClick={() => handleDeletePanditProfile(p)}
+                      className="w-full bg-stone-100 hover:bg-red-50 text-stone-600 hover:text-red-700 border border-stone-200 hover:border-red-300 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1"
+                    >
+                      <span>🗑️</span> Delete Account (Reset to 0)
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* TAB 3: TOKEN PURCHASE HISTORY */}
+        {/* TAB 3: TOKEN RECHARGES */}
         {activeTab === 'tokens' && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
@@ -728,7 +824,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 4: YAJMAN PAYMENTS HISTORY */}
+        {/* TAB 4: YAJMAN PAYMENTS */}
         {activeTab === 'yajman' && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
@@ -795,7 +891,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 5: PANDIT WITHDRAWAL REQUESTS */}
+        {/* TAB 5: WITHDRAWALS */}
         {activeTab === 'withdrawals' && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
