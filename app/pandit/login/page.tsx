@@ -1,68 +1,60 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
 
-export default function PanditLoginPage() {
+export default function PanditAuthPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
+
+  // Form Fields
+  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [city, setCity] = useState('Bengaluru, Karnataka');
+  const [experience, setExperience] = useState('10+ Years Vedic Rituals');
+  const [otp, setOtp] = useState('');
+
   const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [infoMsg, setInfoMsg] = useState('');
 
-  // Helper to read cookie
-  const getCookie = (name: string) => {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? match[2] : null;
-  };
-
-  // Auto-login: Check both localStorage & permanent cookie
-  useEffect(() => {
-    const savedPhone = localStorage.getItem('pandit_phone') || getCookie('pandit_phone');
-    if (savedPhone) {
-      const cleanPhone = savedPhone.replace(/\D/g, '').slice(-10);
-      localStorage.setItem('pandit_phone', cleanPhone);
-      document.cookie = `pandit_phone=${cleanPhone}; path=/; max-age=31536000; SameSite=Lax`;
-      router.replace('/pandit/dashboard');
-    } else {
-      setCheckingAuth(false);
-    }
-  }, [router]);
+  const cleanNumber = (val: string) => val.replace(/\D/g, '').slice(-10);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPhone = phone.trim().replace(/\D/g, '').slice(-10);
-    if (!cleanPhone || cleanPhone.length < 10) {
-      alert('Kripya apna 10 anko ka mobile number enter karein.');
+    setErrorMsg('');
+    setInfoMsg('');
+
+    const targetPhone = cleanNumber(phone);
+    if (targetPhone.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    if (mode === 'register' && !fullName.trim()) {
+      setErrorMsg('Please enter your full Acharya name to register.');
       return;
     }
 
     setLoading(true);
     try {
-      const { data: existingPandit } = await supabase
-        .from('pandits')
-        .select('*')
-        .eq('phone', cleanPhone)
-        .maybeSingle();
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: targetPhone, purpose: mode }),
+      });
 
-      if (!existingPandit) {
-        await supabase.from('pandits').insert({
-          phone: cleanPhone,
-          full_name: 'Acharya Ji',
-          wallet_balance: 0,
-          earnings_balance: 0,
-          strike_count: 0,
-          is_blocked: false,
-        });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.message || 'Failed to send verification code.');
+      } else {
+        setInfoMsg(`Verification code sent to +91 ${targetPhone}. Valid for 5 minutes.`);
+        setStep('otp');
       }
-
-      setStep('otp');
-      alert(`Vedic Verification OTP: 1234 (Testing OTP) sent to +91 ${cleanPhone}`);
-    } catch (err: any) {
-      alert('OTP bhejne me samasya aayi: ' + (err.message || 'Error'));
+    } catch {
+      setErrorMsg('Network error. Please check your connection and retry.');
     } finally {
       setLoading(false);
     }
@@ -70,58 +62,163 @@ export default function PanditLoginPage() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.trim() !== '1234' && otp.trim() !== '1111') {
-      alert('Galat OTP. Kripya 1234 enter karein.');
+    setErrorMsg('');
+    setInfoMsg('');
+
+    const targetPhone = cleanNumber(phone);
+    const targetOtp = otp.trim();
+
+    if (targetOtp.length !== 4) {
+      setErrorMsg('Please enter the 4-digit verification code received on your phone.');
       return;
     }
 
-    const cleanPhone = phone.trim().replace(/\D/g, '').slice(-10);
+    setLoading(true);
+    try {
+      const payload: any = { phone: targetPhone, otp: targetOtp };
+      if (mode === 'register') {
+        payload.fullName = fullName;
+        payload.city = city;
+        payload.experience = experience;
+      }
 
-    // Save permanently in both LocalStorage & 1-Year Cookie
-    localStorage.setItem('pandit_phone', cleanPhone);
-    document.cookie = `pandit_phone=${cleanPhone}; path=/; max-age=31536000; SameSite=Lax`;
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    router.replace('/pandit/dashboard');
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.message || 'Verification failed. Please retry.');
+      } else {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('pandit_phone', targetPhone);
+          document.cookie = `pandit_phone=${targetPhone}; path=/; max-age=31536000; SameSite=Lax`;
+        }
+        router.replace('/pandit/dashboard');
+      }
+    } catch {
+      setErrorMsg('Network error occurred during verification.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen bg-orange-950 flex flex-col items-center justify-center text-white font-sans">
-        <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3"></div>
-        <p className="text-amber-200 text-sm font-semibold">PurohitSetu Acharya Portal Load Ho Raha Hai...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-900 via-amber-950 to-neutral-950 flex items-center justify-center p-4 font-sans text-gray-900">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl space-y-6 border border-orange-200">
-        <div className="text-center space-y-2">
-          <div className="w-20 h-20 mx-auto rounded-full bg-orange-100 border-2 border-orange-400 p-1 flex items-center justify-center shadow-md">
-            <img src="/pandit-logo.png" alt="PurohitSetu" className="w-full h-full object-contain" />
+    <div className="min-h-screen bg-stone-100 flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-stone-200 p-8 space-y-6">
+        
+        {/* Header Branding */}
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-orange-500 bg-white p-1 shadow-md flex items-center justify-center">
+            <img src="/pandit-logo.png" alt="PurohitSetu Logo" className="w-full h-full object-contain" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900">Acharya Portal</h2>
-          <p className="text-xs text-orange-800 font-semibold">
-            PurohitSetu • Vedic Pandit Lead Claim & Management
-          </p>
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">PurohitSetu Acharya Portal</h1>
+            <p className="text-xs text-gray-500 mt-1">Verified Vedic Pandits & Purohits Gateway</p>
+          </div>
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex bg-stone-100 p-1 rounded-2xl mt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login');
+                setStep('phone');
+                setErrorMsg('');
+                setInfoMsg('');
+              }}
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                mode === 'login' ? 'bg-white text-orange-800 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('register');
+                setStep('phone');
+                setErrorMsg('');
+                setInfoMsg('');
+              }}
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+                mode === 'register' ? 'bg-white text-orange-800 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              New Acharya Registration
+            </button>
+          </div>
         </div>
 
+        {/* Status Alerts */}
+        {errorMsg && (
+          <div className="p-3 text-xs bg-red-50 border border-red-200 text-red-700 rounded-xl font-medium">
+            {errorMsg}
+          </div>
+        )}
+        {infoMsg && (
+          <div className="p-3 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl font-medium">
+            {infoMsg}
+          </div>
+        )}
+
+        {/* Step 1: Phone / Registration Form */}
         {step === 'phone' ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
+            {mode === 'register' && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Full Name (Acharya Name)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Acharya Rameshwar Sharma"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Base City</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Bengaluru, Karnataka"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Ritual Experience</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 12+ Years Vedic Rituals"
+                    value={experience}
+                    onChange={(e) => setExperience(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-600"
+                  />
+                </div>
+              </>
+            )}
+
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
-                Registered Mobile Number
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-sm text-gray-400 font-bold">+91</span>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Mobile Number (SMS verification)</label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-gray-300 bg-stone-50 text-gray-600 text-sm font-semibold">
+                  +91
+                </span>
                 <input
                   type="tel"
+                  required
                   maxLength={10}
+                  placeholder="9876543210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="9876543210"
-                  className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-xl text-base font-semibold focus:outline-none focus:border-orange-500"
-                  required
+                  className="w-full border border-gray-300 rounded-r-xl px-3.5 py-2.5 text-sm font-mono tracking-wider focus:outline-none focus:border-orange-600"
                 />
               </div>
             </div>
@@ -129,45 +226,54 @@ export default function PanditLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:brightness-110 text-white font-bold py-3 rounded-xl text-sm shadow-md transition cursor-pointer"
+              className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white font-bold py-3 rounded-xl text-sm transition shadow-md cursor-pointer"
             >
-              {loading ? 'Kripya Pratiksha Karein...' : 'OTP Bhejein'}
+              {loading ? 'Sending Code...' : mode === 'register' ? 'Register & Send Code' : 'Send Verification Code'}
             </button>
           </form>
         ) : (
+          /* Step 2: Strict OTP Entry */
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
-                Enter 4-Digit Verification OTP
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-gray-700">Enter 4-Digit Verification Code</label>
+                <button
+                  type="button"
+                  onClick={() => setStep('phone')}
+                  className="text-xs text-orange-700 hover:underline font-semibold cursor-pointer"
+                >
+                  Change Mobile
+                </button>
+              </div>
               <input
                 type="text"
+                required
                 maxLength={4}
+                placeholder="• • • •"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                placeholder="1234"
-                className="w-full text-center text-2xl tracking-widest font-mono py-2.5 border border-orange-400 rounded-xl focus:outline-none focus:border-orange-600"
-                required
+                className="w-full border-2 border-orange-400 rounded-xl py-3 text-center font-mono text-2xl tracking-widest focus:outline-none focus:border-orange-600"
               />
-              <p className="text-[11px] text-gray-500 text-center mt-1.5">
-                OTP sent to <strong>+91 {phone}</strong> (Test OTP: <strong>1234</strong>)
-              </p>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:brightness-110 text-white font-bold py-3 rounded-xl text-sm shadow-md transition cursor-pointer"
+              disabled={loading}
+              className="w-full bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-300 text-white font-bold py-3 rounded-xl text-sm transition shadow-md cursor-pointer"
             >
-              Verify OTP & Enter Dashboard
+              {loading ? 'Verifying Code...' : 'Verify Code & Enter Portal'}
             </button>
 
-            <button
-              type="button"
-              onClick={() => setStep('phone')}
-              className="w-full text-xs text-orange-700 font-semibold hover:underline text-center cursor-pointer"
-            >
-              ← Mobile Number Badlein
-            </button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={loading}
+                className="text-xs text-gray-500 hover:text-gray-900 font-semibold cursor-pointer"
+              >
+                Did not receive SMS? Resend code
+              </button>
+            </div>
           </form>
         )}
       </div>
