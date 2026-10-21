@@ -244,20 +244,33 @@ export default function PanditDashboardPage() {
           )
         );
 
+       const myIdentifier = cleanPhone;
+
+        // Sirf wahi confirmed bookings jo is login pandit ji ne claim ki hain
         setConfirmedBookings(
           formatted.filter(
-            (item) => item.status === 'confirmed' || item.status === 'in_progress'
+            (item) =>
+              (item.status === 'confirmed' || item.status === 'in_progress') &&
+              (item.accepted_by === myIdentifier || item.assigned_to_phone === myIdentifier)
           )
         );
 
+        // Missing leads: Jo kisi aur ne le li YA cancel ho gayi
         setMissingLeads(
-          formatted.filter(
-            (item) =>
+          formatted.filter((item) => {
+            const isClaimedByOther =
+              (item.status === 'confirmed' || item.status === 'in_progress' || item.status === 'completed') &&
+              item.accepted_by !== myIdentifier &&
+              item.assigned_to_phone !== myIdentifier;
+
+            const isCancelled =
               item.status === 'cancelled_by_yajman' ||
               item.status === 'cancelled_by_pandit' ||
               item.status === 'cancellation_under_review' ||
-              item.status === 'cancelled'
-          )
+              item.status === 'cancelled';
+
+            return isClaimedByOther || isCancelled;
+          })
         );
       }
     } catch (err) {
