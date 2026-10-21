@@ -80,7 +80,9 @@ export default function PanditDashboardPage() {
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules'>('leads');
-  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
+
+  // Prerender safe client hydration
+  const [currentTime, setCurrentTime] = useState<number>(0);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>(panditName);
@@ -148,8 +150,9 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // 3. 1-Second Heartbeat Timer
+  // 3. 1-Second Heartbeat Timer (Client Hydrated)
   useEffect(() => {
+    setCurrentTime(Math.floor(Date.now() / 1000));
     const timer = setInterval(() => {
       setCurrentTime(Math.floor(Date.now() / 1000));
     }, 1000);
@@ -268,7 +271,8 @@ export default function PanditDashboardPage() {
 
     const cleanCreatedAt = lead.created_at.endsWith('Z') ? lead.created_at : lead.created_at + 'Z';
     const createdSec = Math.floor(new Date(cleanCreatedAt).getTime() / 1000);
-    const elapsed = Math.max(0, currentTime - createdSec);
+    const effectiveCurrent = currentTime || Math.floor(Date.now() / 1000);
+    const elapsed = Math.max(0, effectiveCurrent - createdSec);
     const isWithin60s = elapsed < 60;
 
     if (isWithin60s) {
@@ -485,7 +489,6 @@ export default function PanditDashboardPage() {
       .upsert(payload, { onConflict: 'phone' });
 
     if (error) {
-      // Fallback to update if upsert constraint differs
       const { error: updateError } = await supabase
         .from('pandits')
         .update(payload)
@@ -711,7 +714,8 @@ export default function PanditDashboardPage() {
               leads.map((lead) => {
                 const cleanCreatedAt = lead.created_at.endsWith('Z') ? lead.created_at : lead.created_at + 'Z';
                 const createdSec = Math.floor(new Date(cleanCreatedAt).getTime() / 1000);
-                const elapsed = Math.max(0, currentTime - createdSec);
+                const effectiveCurrent = currentTime || Math.floor(Date.now() / 1000);
+                const elapsed = Math.max(0, effectiveCurrent - createdSec);
                 const secondsLeft = Math.max(0, 60 - elapsed);
                 const isExclusive = secondsLeft > 0;
                 const hasTokens = tokenBalance >= TOKEN_COST;
