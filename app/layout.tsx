@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import FloatingPaymentButton from '@/components/FloatingPaymentButton';
+import RegisterServiceWorker from '@/components/RegisterServiceWorker';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -9,6 +10,7 @@ export const viewport: Viewport = {
   themeColor: '#c2410c',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
 };
 
 export const metadata: Metadata = {
@@ -66,11 +68,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/pandit-logo.png" />
-      </head>
       <body className={`${inter.className} bg-stone-50 text-gray-900 antialiased`}>
+        <RegisterServiceWorker />
         <FloatingPaymentButton />
         <main id="main-content">
           {children}
