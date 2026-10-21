@@ -5,55 +5,39 @@ export async function POST(req: Request) {
   try {
     const { phone, password } = await req.json();
 
-    const cleanPhone = (phone || '').toString().trim();
-    const cleanPassword = (password || '').toString().trim();
+    const cleanPhone = (phone || '').replace(/\D/g, '').slice(-10);
+    const cleanPassword = (password || '').trim();
 
-    if (!cleanPhone || !cleanPassword) {
-      return NextResponse.json(
-        { error: 'Mobile number aur password zaroori hain.' },
-        { status: 400 }
-      );
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      return NextResponse.json({ success: false, message: 'Please enter a valid 10-digit mobile number.' }, { status: 400 });
     }
 
+    if (!cleanPassword) {
+      return NextResponse.json({ success: false, message: 'Please enter your password.' }, { status: 400 });
+    }
+
+    // Pandit record find karein
     const { data: pandit, error } = await supabase
       .from('pandits')
-      .select('*')
+      .select('id, phone, full_name, password')
       .eq('phone', cleanPhone)
-      .single();
+      .maybeSingle();
 
     if (error || !pandit) {
-      return NextResponse.json(
-        { error: 'Account not found. Please register first.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, message: 'Account not found. Please register first.' }, { status: 404 });
     }
 
-    const storedPassword = (pandit.password_hash || pandit.password || '').toString().trim();
-
-    if (storedPassword !== cleanPassword) {
-      return NextResponse.json(
-        { error: 'Incorrect password. Click "Forgot Password" to reset.' },
-        { status: 401 }
-      );
+    // Password verify
+    if (pandit.password !== cleanPassword) {
+      return NextResponse.json({ success: false, message: 'Incorrect password. Please try again or reset password.' }, { status: 401 });
     }
-
-    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    await supabase
-      .from('pandits')
-      .update({ active_session_token: sessionToken })
-      .eq('phone', cleanPhone);
 
     return NextResponse.json({
       success: true,
-      session_token: sessionToken,
-      pandit: { ...pandit, active_session_token: sessionToken },
+      message: 'Login successful.',
+      phone: cleanPhone,
     });
-  } catch (err: any) {
-    console.error('Login error:', err);
-    return NextResponse.json(
-      { error: 'Login failed. Please try again.' },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message || 'Internal server error.' }, { status: 500 });
   }
 }
