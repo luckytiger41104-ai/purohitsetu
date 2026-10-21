@@ -18,6 +18,7 @@ interface Pandit {
   is_verified?: boolean;
   avatar_url?: string;
   created_at?: string;
+  suspended_until?: string;
 }
 
 interface BookingLead {
@@ -36,6 +37,9 @@ interface BookingLead {
   is_admin_handled?: boolean;
   completion_otp?: string;
   created_at: string;
+  cancellation_reason?: string;
+  cancelled_by?: string;
+  refund_status?: string;
 }
 
 interface TokenTx {
@@ -110,6 +114,9 @@ export default function AdminDashboardPage() {
             is_admin_handled: b.is_admin_handled,
             completion_otp: b.completion_otp,
             created_at: b.created_at || new Date().toISOString(),
+            cancellation_reason: b.cancellation_reason,
+            cancelled_by: b.cancelled_by,
+            refund_status: b.refund_status,
           }))
         );
       }
@@ -195,6 +202,104 @@ export default function AdminDashboardPage() {
     } else {
       alert(`Puja successfully assigned to ${pName} (${targetPanditPhone})!`);
       loadAdminData();
+    }
+  };
+
+  // Cancellation Flow 1: Approve Token Refund (+150 Tokens to Pandit Ji)
+  const handleApproveTokenRefund = async (booking: BookingLead) => {
+    const targetPhone = booking.assigned_to_phone || booking.accepted_by;
+    if (!targetPhone) {
+      alert('Could not determine Pandit phone number for this ceremony.');
+      return;
+    }
+
+    const cleanPhone = targetPhone.replace(/\D/g, '').slice(-10);
+    const confirmApprove = confirm(
+      `Approve refund for this ceremony?\n\nThis will credit +150 Tokens back to Pandit (+91 ${cleanPhone})'s wallet.`
+    );
+    if (!confirmApprove) return;
+
+    try {
+      // 1. Fetch current balance
+      const { data: pData } = await supabase
+        .from('pandits')
+        .select('wallet_balance')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
+
+      const currentBalance = Number(pData?.wallet_balance || 0);
+      const updatedBalance = currentBalance + 150;
+
+      // 2. Add tokens
+      await supabase
+        .from('pandits')
+        .update({ wallet_balance: updatedBalance })
+        .eq('phone', cleanPhone);
+
+      // 3. Update Booking
+      await supabase
+        .from('bookings')
+        .update({
+          status: 'cancelled_by_yajman',
+          refund_status: 'Refund Approved (+150 Tokens Restored)',
+        })
+        .eq('id', booking.id);
+
+      alert(`Success: 150 Tokens restored to Pandit Ji (+91 ${cleanPhone}).`);
+      loadAdminData();
+    } catch (err: any) {
+      alert('Failed to process token refund: ' + err.message);
+    }
+  };
+
+  // Cancellation Flow 2: Reject Claim & Suspend Pandit for 7 Days (False Report Penalty)
+  const handleRejectAndSuspendPandit = async (booking: BookingLead) => {
+    const targetPhone = booking.assigned_to_phone || booking.accepted_by;
+    if (!targetPhone) {
+      alert('Could not determine Pandit phone number.');
+      return;
+    }
+
+    const cleanPhone = targetPhone.replace(/\D/g, '').slice(-10);
+    const confirmSuspend = confirm(
+      `Reject cancellation as FALSE CLAIM and suspend this Pandit (+91 ${cleanPhone}) for 7 days?`
+    );
+    if (!confirmSuspend) return;
+
+    try {
+      const suspendedUntilDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: pData } = await supabase
+        .from('pandits')
+        .select('strike_count')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
+
+      const newStrikes = (Number(pData?.strike_count) || 0) + 1;
+
+      // Suspend account and add strike
+      await supabase
+        .from('pandits')
+        .update({
+          is_blocked: true,
+          suspended_until: suspendedUntilDate,
+          strike_count: newStrikes,
+        })
+        .eq('phone', cleanPhone);
+
+      // Update booking
+      await supabase
+        .from('bookings')
+        .update({
+          status: 'cancelled_by_pandit',
+          refund_status: 'Rejected (False Report - Account Suspended 7 Days)',
+        })
+        .eq('id', booking.id);
+
+      alert(`Penalty Applied: Pandit (+91 ${cleanPhone}) has been suspended for 7 days with +1 Strike added. 0 Tokens refunded.`);
+      loadAdminData();
+    } catch (err: any) {
+      alert('Failed to apply suspension: ' + err.message);
     }
   };
 
@@ -339,93 +444,146 @@ export default function AdminDashboardPage() {
                     b.status === 'pending' ||
                     b.status.toLowerCase() === 'pending';
 
+                  const isUnderReview = b.status === 'cancellation_under_review';
+
                   return (
                     <div
                       key={b.id}
-                      className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className={`bg-white p-5 rounded-2xl border shadow-sm flex flex-col space-y-3 ${
+                        isUnderReview ? 'border-amber-400 bg-amber-50/20' : 'border-gray-200'
+                      }`}
                     >
-                      <div className="space-y-1.5 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold">
-                            #{b.id}
-                          </span>
-                          <h3 className="font-bold text-base text-gray-900">{b.puja_name}</h3>
-                          <span
-                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                              b.status === 'completed'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : b.status === 'confirmed'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-amber-100 text-amber-800 animate-pulse'
-                            }`}
-                          >
-                            {b.status}
-                          </span>
-                          {b.completion_otp && (
-                            <span className="text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-lg">
-                              OTP: <span className="font-mono font-black">{b.completion_otp}</span>
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold">
+                              #{b.id}
                             </span>
+                            <h3 className="font-bold text-base text-gray-900">{b.puja_name}</h3>
+                            <span
+                              className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                                b.status === 'completed'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : b.status === 'confirmed'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : isUnderReview
+                                  ? 'bg-amber-100 text-amber-900 border border-amber-300 font-extrabold animate-pulse'
+                                  : b.status.startsWith('cancelled')
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {b.status.replace(/_/g, ' ')}
+                            </span>
+                            {b.completion_otp && (
+                              <span className="text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-lg">
+                                OTP: <span className="font-mono font-black">{b.completion_otp}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600 pt-1">
+                            <p>👤 <strong>Yajman:</strong> {b.name}</p>
+                            <p>📞 <strong>Phone:</strong> {b.phone}</p>
+                            <p>📍 <strong>Location:</strong> {b.location} {b.pincode ? `(${b.pincode})` : ''}</p>
+                            <p>🕒 <strong>Muhurat:</strong> {b.event_date}</p>
+                          </div>
+
+                          {b.assigned_to_name && (
+                            <p className="text-xs text-green-700 bg-green-50 p-2 rounded-xl border border-green-200 font-semibold inline-block">
+                              ✓ Assigned to Acharya: <strong>{b.assigned_to_name}</strong> ({b.assigned_to_phone})
+                            </p>
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600 pt-1">
-                          <p>👤 <strong>Yajman:</strong> {b.name}</p>
-                          <p>📞 <strong>Phone:</strong> {b.phone}</p>
-                          <p>📍 <strong>Location:</strong> {b.location} {b.pincode ? `(${b.pincode})` : ''}</p>
-                          <p>🕒 <strong>Muhurat:</strong> {b.event_date}</p>
-                        </div>
+                        {/* Action Buttons for Normal Leads */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-t lg:border-t-0 pt-3 lg:pt-0">
+                          {isClaimable ? (
+                            <>
+                              <button
+                                onClick={() => handleAdminClaimLead(b)}
+                                className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow cursor-pointer transition whitespace-nowrap"
+                              >
+                                ⚡ Claim as Admin
+                              </button>
 
-                        {b.assigned_to_name && (
-                          <p className="text-xs text-green-700 bg-green-50 p-2 rounded-xl border border-green-200 font-semibold inline-block">
-                            ✓ Assigned to Acharya: <strong>{b.assigned_to_name}</strong> ({b.assigned_to_phone})
-                          </p>
-                        )}
+                              <div className="flex items-center gap-1.5">
+                                <select
+                                  value={selectedPanditForLead[b.id] || ''}
+                                  onChange={(e) =>
+                                    setSelectedPanditForLead({ ...selectedPanditForLead, [b.id]: e.target.value })
+                                  }
+                                  className="border border-gray-300 rounded-xl px-2.5 py-2 text-xs bg-gray-50 focus:bg-white text-gray-800"
+                                >
+                                  <option value="">Assign to Pandit...</option>
+                                  {pandits
+                                    .filter((p) => !p.is_blocked)
+                                    .map((p) => (
+                                      <option key={p.id} value={p.phone}>
+                                        {p.full_name || 'Acharya'} ({p.phone})
+                                      </option>
+                                    ))}
+                                </select>
+                                <button
+                                  onClick={() => handleAdminAssignPandit(b.id)}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs shadow cursor-pointer transition whitespace-nowrap"
+                                >
+                                  Assign
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-right">
+                              <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+                                Accepted by: {b.accepted_by || b.assigned_to_name || 'Acharya'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Action Buttons for Admin */}
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-t lg:border-t-0 pt-3 lg:pt-0">
-                        {isClaimable ? (
-                          <>
-                            <button
-                              onClick={() => handleAdminClaimLead(b)}
-                              className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow cursor-pointer transition whitespace-nowrap"
-                            >
-                              ⚡ Claim as Admin
-                            </button>
-
-                            <div className="flex items-center gap-1.5">
-                              <select
-                                value={selectedPanditForLead[b.id] || ''}
-                                onChange={(e) =>
-                                  setSelectedPanditForLead({ ...selectedPanditForLead, [b.id]: e.target.value })
-                                }
-                                className="border border-gray-300 rounded-xl px-2.5 py-2 text-xs bg-gray-50 focus:bg-white text-gray-800"
-                              >
-                                <option value="">Assign to Pandit...</option>
-                                {pandits
-                                  .filter((p) => !p.is_blocked)
-                                  .map((p) => (
-                                    <option key={p.id} value={p.phone}>
-                                      {p.full_name || 'Acharya'} ({p.phone})
-                                    </option>
-                                  ))}
-                              </select>
-                              <button
-                                onClick={() => handleAdminAssignPandit(b.id)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs shadow cursor-pointer transition whitespace-nowrap"
-                              >
-                                Assign
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-right">
-                            <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
-                              Accepted by: {b.accepted_by || b.assigned_to_name || 'Acharya'}
+                      {/* CANCELLATION UNDER REVIEW ADMIN ACTIONS PANEL */}
+                      {isUnderReview && (
+                        <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl space-y-2.5 text-xs mt-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <p className="text-amber-950 font-bold">
+                              📝 <strong>Reported Cancellation Reason:</strong>{' '}
+                              <span className="font-medium text-gray-900">{b.cancellation_reason || 'No detailed reason provided'}</span>
+                            </p>
+                            <span className="bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-full font-bold self-start sm:self-auto text-[11px]">
+                              Initiator: {b.cancelled_by === 'yajman' ? 'Yajman Side' : 'Acharya Side'}
                             </span>
                           </div>
-                        )}
-                      </div>
+
+                          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-200">
+                            <button
+                              onClick={() => handleApproveTokenRefund(b)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow cursor-pointer"
+                            >
+                              ✓ Verify Genuine & Refund 150 Tokens
+                            </button>
+
+                            <button
+                              onClick={() => handleRejectAndSuspendPandit(b)}
+                              className="bg-red-600 hover:bg-red-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow cursor-pointer"
+                            >
+                              ✕ False Report (Suspend Pandit 7 Days & 0 Refund)
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Display Refund/Resolution Info if already resolved */}
+                      {b.refund_status && !isUnderReview && (
+                        <div className="p-2.5 bg-stone-50 border rounded-xl text-xs text-gray-700 flex items-center justify-between">
+                          <span>
+                            <strong>Resolution Status:</strong> {b.refund_status}
+                          </span>
+                          <span className="text-gray-500 font-mono text-[11px]">
+                            Reason: {b.cancellation_reason || 'N/A'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
