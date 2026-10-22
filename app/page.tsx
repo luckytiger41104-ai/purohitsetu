@@ -24,7 +24,6 @@ interface PujaItem {
 
 const DAKSHINA_PRESETS = [101, 251, 501, 1100, 2100, 5100];
 
-// High-impact Bengaluru localities for local hyper-targeted SEO
 const BENGALURU_LOCALITIES = [
   "Whitefield",
   "HSR Layout",
@@ -98,7 +97,6 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Booking Form State
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -115,13 +113,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Shubh Dakshina Modal State
   const [isDakshinaOpen, setIsDakshinaOpen] = useState(false);
   const [dakshinaData, setDakshinaData] = useState({
     yajmanName: "",
     phone: "",
-    panditName: "", // Optional
-    pujaName: "General Vedic Dakshina", // Optional
+    panditName: "",
+    pujaName: "General Vedic Dakshina",
     customPuja: "",
     amount: "501",
   });
@@ -136,7 +133,6 @@ export default function Home() {
     "Antim Sanskar & Shradh",
   ];
 
-  // All 22 Original Sacred Pujas with Deep SEO Target Keywords
   const pujaList: PujaItem[] = [
     {
       id: "vivah-sanskar",
@@ -477,7 +473,6 @@ export default function Home() {
     }
   };
 
-  /* ---------------- Real Razorpay Dakshina Flow ---------------- */
   const handleInitiateDakshinaPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setDakshinaNotice(null);
@@ -521,7 +516,7 @@ export default function Home() {
 
     const options = {
       key: razorpayKey,
-      amount: Math.round(amountNum * 100), // in paise
+      amount: Math.round(amountNum * 100),
       currency: "INR",
       name: "PurohitSetu",
       description: `Shubh Dakshina - ${finalPujaName}`,
@@ -600,7 +595,6 @@ export default function Home() {
     }
   };
 
-  // Structured Data JSON-LD for Google Rich Snippets & Local Search Engine Indexing
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -624,226 +618,188 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-slate-900 font-sans selection:bg-orange-600 selection:text-white">
-      {/* Inject Structured Data for SEO / Schema.org */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      {/* 1. TOP ANNOUNCEMENT TICKER */}
-      <div className="bg-gradient-to-r from-red-800 via-orange-600 to-amber-700 text-white text-xs sm:text-sm font-medium py-2 px-4 shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2.5">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-400"></span>
-          </span>
-          <p className="tracking-wide text-center">
-            <strong>North Indian Vedic Pandits in Bangalore:</strong> Hindi, Maithili, Bhojpuri & Kannada Acharyas available across Whitefield, HSR Layout, Koramangala & all zones • 100% Shastric Vidhi
-          </p>
-        </div>
-      </div>
-
-      {/* 2. GRAND HEADER WITH HAMBURGER MENU */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-amber-200 sticky top-8 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 flex justify-between items-center">
-          {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-red-600 flex items-center justify-center text-white text-2xl font-bold shadow-md shadow-orange-300">
-              ॐ
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <a href="#home-section" className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-700 via-orange-600 to-amber-700 tracking-tight">
-                  PurohitSetu
-                </a>
-                <span className="text-[11px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-amber-300">
-                  📍 Bangalore
-                </span>
-              </div>
-              <p className="text-[10px] font-semibold text-amber-900 tracking-wider uppercase">
-                North Indian & Vedic Purohits • Bengaluru
-              </p>
-            </div>
-          </div>
-
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-7 text-sm font-bold text-slate-700">
-            <a href="#home-section" className="hover:text-orange-600 transition">Home</a>
-            <a href="#services-section" className="hover:text-orange-600 transition">Puja Services</a>
-            <a href="#localities-section" className="hover:text-orange-600 transition">Locations</a>
-            <a href="#about-section" className="hover:text-orange-600 transition">About Us</a>
-            <a href="#contact-section" className="hover:text-orange-600 transition">Contact</a>
-            <button
-              onClick={() => setIsDakshinaOpen(true)}
-              className="text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1 transition"
-            >
-              <span>🪔</span> Shubh Dakshina
-            </button>
-          </nav>
-
-          {/* Right Action & Mobile Menu Toggle */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => setIsDakshinaOpen(true)}
-              className="md:hidden bg-amber-100 text-amber-900 font-bold text-xs px-3 py-2 rounded-full border border-amber-300"
-            >
-              🪔 Dakshina
-            </button>
-
-            <a
-              href="#booking-section"
-              className="hidden sm:inline-flex bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-md transition transform hover:scale-105"
-            >
-              Book Pandit Now
-            </a>
-
-            {/* Three-Line Hamburger Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle Navigation Menu"
-              className="p-2 rounded-xl border border-amber-300 bg-amber-50 text-slate-800 hover:bg-amber-100 transition focus:outline-none"
-            >
-              <div className="w-6 h-4 flex flex-col justify-between">
-                <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "rotate-45 translate-y-1.5" : ""}`}></span>
-                <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "opacity-0" : ""}`}></span>
-                <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "-rotate-45 -translate-y-2" : ""}`}></span>
-              </div>
-            </button>
+      {/* UNIFIED STICKY HEADER (ZERO OVERLAP COLLISION) */}
+      <div className="sticky top-0 z-40 w-full shadow-md">
+        {/* Ticker */}
+        <div className="bg-gradient-to-r from-red-800 via-orange-600 to-amber-700 text-white text-[11px] sm:text-xs py-1.5 px-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-400"></span>
+            </span>
+            <p className="text-center font-medium leading-tight">
+              <strong>North Indian Vedic Pandits in Bangalore:</strong> Hindi, Maithili, Bhojpuri & Kannada Acharyas across all zones
+            </p>
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
-        {isMenuOpen && (
-          <div className="bg-white border-b border-amber-200 shadow-xl px-6 py-5 animate-in fade-in duration-200">
-            <div className="flex flex-col gap-4 text-sm font-bold text-slate-800">
-              <a
-                href="#home-section"
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-orange-600 py-1 border-b border-amber-50 flex items-center justify-between"
-              >
-                <span>🏠 Home</span>
-                <span className="text-xs text-slate-400">→</span>
-              </a>
-              <a
-                href="#services-section"
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-orange-600 py-1 border-b border-amber-50 flex items-center justify-between"
-              >
-                <span>🪔 Vedic Puja Services</span>
-                <span className="text-xs text-slate-400">→</span>
-              </a>
-              <a
-                href="#localities-section"
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-orange-600 py-1 border-b border-amber-50 flex items-center justify-between"
-              >
-                <span>📍 Bangalore Localities</span>
-                <span className="text-xs text-slate-400">→</span>
-              </a>
-              <a
-                href="#about-section"
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-orange-600 py-1 border-b border-amber-50 flex items-center justify-between"
-              >
-                <span>📜 About PurohitSetu</span>
-                <span className="text-xs text-slate-400">→</span>
-              </a>
-              <a
-                href="#contact-section"
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-orange-600 py-1 border-b border-amber-50 flex items-center justify-between"
-              >
-                <span>✉️ Official Contact</span>
-                <span className="text-xs text-slate-400">→</span>
-              </a>
+        {/* Navigation Bar */}
+        <header className="bg-white/95 backdrop-blur-md border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex justify-between items-center">
+            {/* Logo */}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-red-600 flex items-center justify-center text-white text-xl font-bold shadow shrink-0">
+                ॐ
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <a href="#home-section" className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-700 via-orange-600 to-amber-700 tracking-tight">
+                    PurohitSetu
+                  </a>
+                  <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded-full border border-amber-300 shrink-0">
+                    📍 Bangalore
+                  </span>
+                </div>
+                <p className="text-[9px] font-semibold text-amber-900 tracking-wider uppercase truncate">
+                  North Indian & Vedic Purohits
+                </p>
+              </div>
+            </div>
+
+            {/* Desktop Links */}
+            <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-700">
+              <a href="#home-section" className="hover:text-orange-600 transition">Home</a>
+              <a href="#services-section" className="hover:text-orange-600 transition">Puja Services</a>
+              <a href="#localities-section" className="hover:text-orange-600 transition">Locations</a>
+              <a href="#about-section" className="hover:text-orange-600 transition">About Us</a>
+              <a href="#contact-section" className="hover:text-orange-600 transition">Contact</a>
+            </nav>
+
+            {/* Actions */}
+            <div className="flex items-center gap-1.5">
               <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsDakshinaOpen(true);
-                }}
-                className="w-full text-left py-1 text-amber-800 hover:text-orange-600 flex items-center justify-between font-bold"
+                onClick={() => setIsDakshinaOpen(true)}
+                className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg border border-amber-300 transition"
               >
-                <span>🙏 Shubh Dakshina / Online Pay</span>
-                <span className="text-xs text-slate-400">→</span>
+                🪔 Dakshina
               </button>
+
               <a
                 href="#booking-section"
-                onClick={() => setIsMenuOpen(false)}
-                className="mt-2 text-center py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold"
+                className="hidden sm:inline-flex bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow transition"
               >
-                Book a Vedic Puja Now
+                Book Pandit
               </a>
+
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle Navigation Menu"
+                className="p-1.5 rounded-lg border border-amber-300 bg-amber-50 text-slate-800 hover:bg-amber-100 transition md:hidden"
+              >
+                <div className="w-5 h-3.5 flex flex-col justify-between">
+                  <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "rotate-45 translate-y-1.5" : ""}`}></span>
+                  <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "opacity-0" : ""}`}></span>
+                  <span className={`h-0.5 bg-slate-800 rounded transition-all duration-300 ${isMenuOpen ? "-rotate-45 -translate-y-1.5" : ""}`}></span>
+                </div>
+              </button>
             </div>
           </div>
-        )}
-      </header>
 
-      {/* 3. HERO SECTION (Targeting: North Indian Pandit in Bangalore, Hindi Pandit, Griha Pravesh) */}
-      <section id="home-section" className="bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-[#FFFDF7] pt-12 pb-14 px-4 text-center">
+          {/* Mobile Menu Dropdown */}
+          {isMenuOpen && (
+            <div className="bg-white border-b border-amber-200 shadow-xl px-5 py-4 animate-in fade-in duration-200 md:hidden">
+              <div className="flex flex-col gap-3 text-xs font-bold text-slate-800">
+                <a href="#home-section" onClick={() => setIsMenuOpen(false)} className="py-1 border-b border-amber-50 flex justify-between">
+                  <span>🏠 Home</span>
+                  <span className="text-slate-400">→</span>
+                </a>
+                <a href="#services-section" onClick={() => setIsMenuOpen(false)} className="py-1 border-b border-amber-50 flex justify-between">
+                  <span>🪔 Vedic Puja Services</span>
+                  <span className="text-slate-400">→</span>
+                </a>
+                <a href="#localities-section" onClick={() => setIsMenuOpen(false)} className="py-1 border-b border-amber-50 flex justify-between">
+                  <span>📍 Bangalore Localities</span>
+                  <span className="text-slate-400">→</span>
+                </a>
+                <a href="#about-section" onClick={() => setIsMenuOpen(false)} className="py-1 border-b border-amber-50 flex justify-between">
+                  <span>📜 About PurohitSetu</span>
+                  <span className="text-slate-400">→</span>
+                </a>
+                <a href="#contact-section" onClick={() => setIsMenuOpen(false)} className="py-1 flex justify-between">
+                  <span>✉️ Official Contact</span>
+                  <span className="text-slate-400">→</span>
+                </a>
+                <a
+                  href="#booking-section"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="mt-1 text-center py-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold"
+                >
+                  Book a Vedic Puja Now
+                </a>
+              </div>
+            </div>
+          )}
+        </header>
+      </div>
+
+      {/* HERO SECTION */}
+      <section id="home-section" className="bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-[#FFFDF7] pt-8 pb-10 px-4 text-center">
         <div className="max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-950 border border-orange-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-5 shadow-sm">
-            <span>🪔</span> North Indian Pandit in Bangalore • Verified Gurukul Acharyas
+          <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-4 shadow-xs">
+            <span>🪔</span> North Indian Pandit in Bangalore • Verified Acharyas
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 leading-tight mb-4 tracking-tight">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight mb-3 tracking-tight">
             Book Verified North Indian & Hindi Pandits in Bangalore <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-red-600 to-amber-600">
               For Griha Pravesh, Vivah, Satyanarayan & Hawan Rituals
             </span>
           </h1>
 
-          <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
-            Bengaluru’s premier platform connecting devout families with experienced North Indian, Hindi, Maithili, and Bhojpuri speaking Vedic Purohits. Authentic Shastric Vidhi, certified Samagri kits, and zero commercial astrology gimmicks.
+          <p className="text-slate-600 text-xs sm:text-base max-w-2xl mx-auto mb-6 leading-relaxed">
+            Connecting devout families with verified North Indian, Hindi, Maithili, and Bhojpuri speaking Vedic Purohits across Bengaluru. Authentic Shastric Vidhi, certified Samagri kits, and zero superstition.
           </p>
 
-          {/* Quick Action CTA Group */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mb-6">
             <a
               href="#booking-section"
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-600 via-red-600 to-amber-600 text-white font-extrabold text-sm shadow-lg shadow-orange-500/25 hover:scale-105 transition"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 via-red-600 to-amber-600 text-white font-extrabold text-xs shadow hover:scale-105 transition"
             >
               📅 Schedule Puja Muhurat
             </a>
             <button
               onClick={() => setIsDakshinaOpen(true)}
-              className="px-6 py-3 rounded-2xl bg-white border-2 border-orange-300 text-orange-950 font-extrabold text-sm shadow hover:bg-orange-50 transition flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-white border border-orange-300 text-orange-950 font-extrabold text-xs shadow hover:bg-orange-50 transition flex items-center gap-1.5"
             >
               <span>🪔</span> Offer Shubh Dakshina
             </button>
           </div>
 
-          {/* Interactive Search Bar */}
-          <div className="relative max-w-2xl mx-auto mb-6 shadow-xl rounded-2xl">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 text-base">
+          <div className="relative max-w-2xl mx-auto mb-5 shadow-md rounded-2xl">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
               🔍
             </div>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search: 'North Indian Pandit', 'Griha Pravesh in Whitefield', 'Satyanarayan', 'HSR Layout'..."
-              className="w-full pl-12 pr-20 py-4 bg-white border-2 border-orange-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm placeholder:text-slate-400 font-medium"
+              placeholder="Search: 'North Indian Pandit', 'Griha Pravesh in Whitefield', 'Satyanarayan'..."
+              className="w-full pl-10 pr-16 py-3 bg-white border border-orange-200 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-xs font-bold text-slate-400 hover:text-slate-700"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs font-bold text-slate-400 hover:text-slate-700"
               >
                 Clear
               </button>
             )}
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-4xl mx-auto">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`text-xs font-bold px-4 py-2 rounded-full transition duration-200 ${
+                className={`text-[11px] font-bold px-3 py-1.5 rounded-full transition ${
                   selectedCategory === cat
-                    ? "bg-orange-600 text-white shadow-md shadow-orange-500/25"
-                    : "bg-white text-slate-700 border border-amber-200 hover:bg-amber-100/60"
+                    ? "bg-orange-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 border border-amber-200 hover:bg-amber-100"
                 }`}
               >
                 {cat}
@@ -853,21 +809,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. HYPER-LOCAL SEO BENGALURU COVERAGE BAR */}
-      <section id="localities-section" className="bg-amber-100/60 py-6 px-4 border-y border-amber-200">
+      {/* LOCALITIES COVERAGE BAR */}
+      <section id="localities-section" className="bg-amber-100/60 py-4 px-3 sm:px-6 border-y border-amber-200">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 mb-3">
-            <span className="text-xs font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1.5">
-              <span>📍</span> Dedicated Vedic Pandit Coverage Across Bengaluru Zones:
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-1 mb-2.5 text-center sm:text-left">
+            <span className="text-[11px] font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1">
+              <span>📍</span> Dedicated Pandit Coverage Across Bengaluru Zones:
             </span>
-            <span className="text-[11px] text-slate-600">Click a locality to autofill your ritual booking request</span>
+            <span className="text-[10px] text-slate-500">Tap to select locality</span>
           </div>
-          <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
+          <div className="flex flex-wrap gap-1 justify-center sm:justify-start">
             {BENGALURU_LOCALITIES.map((loc) => (
               <button
                 key={loc}
                 onClick={() => handleLocalityFilter(loc)}
-                className="text-[11px] font-semibold bg-white hover:bg-orange-600 hover:text-white text-slate-700 px-3 py-1 rounded-lg border border-amber-300 transition shadow-xs"
+                className="text-[10px] font-semibold bg-white hover:bg-orange-600 hover:text-white text-slate-700 px-2 py-0.5 rounded border border-amber-300 transition"
               >
                 Pandit in {loc}
               </button>
@@ -876,33 +832,32 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. PUJA SERVICES DIRECTORY (ALL 22 SACRED SERVICES INCLUDED) */}
-      <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 border-b border-amber-200/80 pb-4">
+      {/* PUJA SERVICES DIRECTORY */}
+      <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 border-b border-amber-200/80 pb-3">
           <div>
-            <span className="text-orange-600 font-extrabold uppercase tracking-widest text-xs">Sanatan Sanskar Directory</span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+            <span className="text-orange-600 font-extrabold uppercase tracking-widest text-[10px]">Sanatan Sanskar Directory</span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
               Vedic Pujas, Sanskars & Hawan Ceremonies
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Select an auspicious ritual to view specifications and book an ordained North Indian or South Indian Purohit Ji.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Select an auspicious ritual to view specifications and book an ordained Acharya.
             </p>
           </div>
-          <div className="mt-3 sm:mt-0">
-            <span className="text-xs font-bold text-orange-700 bg-orange-100 px-3 py-1.5 rounded-full border border-orange-300">
+          <div className="mt-2 sm:mt-0">
+            <span className="text-[11px] font-bold text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full border border-orange-300">
               Showing {filteredPujas.length} Sacred Services
             </span>
           </div>
         </div>
 
-        {/* Puja Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredPujas.map((puja) => (
             <div
               key={puja.id}
-              className="group bg-white rounded-3xl border border-amber-200/90 overflow-hidden shadow-sm hover:shadow-xl hover:border-orange-400 transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white rounded-2xl border border-amber-200 overflow-hidden shadow-xs hover:shadow-md hover:border-orange-400 transition flex flex-col justify-between"
             >
-              <div className="relative h-48 w-full bg-amber-50 overflow-hidden">
+              <div className="relative h-44 w-full bg-amber-50 overflow-hidden">
                 <img
                   src={puja.img}
                   alt={puja.seoKeyword}
@@ -911,35 +866,35 @@ export default function Home() {
                   decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <span className="absolute top-3 left-3 bg-red-600/90 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                <span className="absolute top-2.5 left-2.5 bg-red-600/90 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
                   {puja.tag}
                 </span>
-                <div className="absolute bottom-3 left-3 right-3 text-white flex justify-between items-end">
-                  <div className="text-xs font-bold flex items-center gap-1 text-yellow-300">
-                    ★ {puja.rating} <span className="text-slate-300 text-[10px]">({puja.conductedCount})</span>
+                <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white flex justify-between items-end">
+                  <div className="text-[11px] font-bold flex items-center gap-1 text-yellow-300">
+                    ★ {puja.rating} <span className="text-slate-300 text-[9px]">({puja.conductedCount})</span>
                   </div>
-                  <div className="text-[11px] bg-black/60 backdrop-blur-sm px-2.5 py-0.5 rounded-full text-white font-medium border border-white/20">
+                  <div className="text-[10px] bg-black/60 px-2 py-0.5 rounded-full text-white font-medium border border-white/20">
                     ⏱ {puja.duration}
                   </div>
                 </div>
               </div>
 
-              <div className="p-5 flex-1 flex flex-col justify-between">
+              <div className="p-4 flex-1 flex flex-col justify-between">
                 <div>
-                  <span className="text-[10px] font-extrabold text-orange-600 uppercase tracking-widest block mb-1">
+                  <span className="text-[9px] font-extrabold text-orange-600 uppercase tracking-widest block mb-0.5">
                     {puja.category}
                   </span>
-                  <h3 className="font-black text-base text-slate-900 mb-2 group-hover:text-orange-600 transition">
+                  <h3 className="font-black text-sm text-slate-900 mb-1 group-hover:text-orange-600 transition">
                     {puja.name}
                   </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed mb-4 line-clamp-3">
+                  <p className="text-[11px] text-slate-600 leading-relaxed mb-3 line-clamp-3">
                     {puja.desc}
                   </p>
                 </div>
 
                 <button
                   onClick={() => handleSelectPujaToBook(puja.name)}
-                  className="w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow transition-all duration-200 active:scale-95 flex items-center justify-center gap-1"
+                  className="w-full py-2 rounded-xl font-bold text-xs bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-xs transition active:scale-95"
                 >
                   Book Ritual Now →
                 </button>
@@ -949,94 +904,75 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. ABOUT US & SEO VALUE PROPOSITION */}
-      <section id="about-section" className="bg-gradient-to-br from-amber-100/40 via-orange-50/30 to-amber-100/50 py-16 px-4 sm:px-8 border-y border-amber-200 my-8">
+      {/* ABOUT US SECTION */}
+      <section id="about-section" className="bg-gradient-to-br from-amber-100/40 via-orange-50/30 to-amber-100/50 py-12 px-4 border-y border-amber-200 my-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <span className="text-orange-600 font-extrabold uppercase text-xs tracking-widest">
+          <div className="text-center mb-8">
+            <span className="text-orange-600 font-extrabold uppercase text-[10px] tracking-widest">
               Sanatan Heritage & Trust
             </span>
-            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 mt-2">
+            <h2 className="text-xl sm:text-3xl font-black text-slate-900 mt-1">
               Why Devotees Choose PurohitSetu in Bangalore
             </h2>
-            <p className="text-slate-600 text-xs sm:text-base max-w-2xl mx-auto mt-2 leading-relaxed">
-              Connecting North Indian and South Indian diaspora with authentic, Gurukul-ordained Vedic Pandits across all Bangalore localities.
+            <p className="text-slate-600 text-xs sm:text-sm max-w-2xl mx-auto mt-1 leading-relaxed">
+              Authentic Gurukul-ordained North Indian and South Indian Vedic Pandits across Bengaluru.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <div className="bg-white p-7 rounded-3xl border border-amber-200 shadow-sm">
-              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl mb-4">
-                🌿
-              </div>
-              <h3 className="text-lg font-black text-slate-900 mb-2">Authentic Sanskrit Chanting & Shastric Vidhi</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                PurohitSetu is dedicated strictly to genuine Vedic rituals and Hawans. We intentionally exclude speculative astrology, horoscope sales, and commercial fortune-telling to preserve sacred dharmic purity.
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8">
+            <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs">
+              <span className="text-xl block mb-2">🌿</span>
+              <h3 className="text-sm font-black text-slate-900 mb-1">Authentic Sanskrit Chanting & Shastric Vidhi</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Dedicated strictly to genuine Vedic rituals and Hawans. Zero speculative astrology or commercial horoscope gimmicks.
               </p>
             </div>
 
-            <div className="bg-white p-7 rounded-3xl border border-amber-200 shadow-sm">
-              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl mb-4">
-                🕉
-              </div>
-              <h3 className="text-lg font-black text-slate-900 mb-2">North Indian, Hindi, Bihari & Maithili Pandits</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Relocated to Bengaluru and missing your home traditions? Our platform assigns verified Acharyas from Varanasi, Mithila, Haridwar, and Prayagraj proficient in your native family customs.
+            <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs">
+              <span className="text-xl block mb-2">🕉</span>
+              <h3 className="text-sm font-black text-slate-900 mb-1">North Indian, Hindi, Bihari & Maithili Pandits</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Verified Acharyas from Varanasi, Mithila, Haridwar, and Prayagraj proficient in your family's authentic customs.
               </p>
             </div>
 
-            <div className="bg-white p-7 rounded-3xl border border-amber-200 shadow-sm">
-              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl mb-4">
-                🗣
-              </div>
-              <h3 className="text-lg font-black text-slate-900 mb-2">Multilingual Ceremony Conduct</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Rituals conducted with word-by-word meaning explained in Hindi, English, Kannada, Telugu, Bhojpuri, or Maithili so your family experiences every blessing with profound spiritual understanding.
+            <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs">
+              <span className="text-xl block mb-2">🗣</span>
+              <h3 className="text-sm font-black text-slate-900 mb-1">Multilingual Ceremony Conduct</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Rituals conducted with clear explanation in Hindi, English, Kannada, Telugu, Bhojpuri, or Maithili.
               </p>
             </div>
 
-            <div className="bg-white p-7 rounded-3xl border border-amber-200 shadow-sm">
-              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl mb-4">
-                🔥
-              </div>
-              <h3 className="text-lg font-black text-slate-900 mb-2">Certified Hawan & Puja Samagri Kit</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                No need to scour Bangalore markets for rare ritual items. Our Pandits arrive with authenticated Mango wood, Navagraha samidhas, pure cow ghee, Panchamrit essentials, and consecrated Gangajal.
+            <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs">
+              <span className="text-xl block mb-2">🔥</span>
+              <h3 className="text-sm font-black text-slate-900 mb-1">Complete Hawan & Samagri Management</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Our Pandits arrive equipped with authenticated Mango wood, Navagraha herbs, pure cow ghee, and Gangajal.
               </p>
             </div>
-          </div>
-
-          <div className="bg-white/80 backdrop-blur rounded-2xl border border-amber-300 p-6 text-center max-w-3xl mx-auto shadow-sm">
-            <h4 className="font-black text-slate-900 text-sm sm:text-base mb-1">
-              "यतो धर्मस्ततो जयः — Where there is Dharma, there is Divine Victory"
-            </h4>
-            <p className="text-xs text-slate-600">
-              Making high-standard Vedic ceremonies seamless, dignified, and accessible for every home across Whitefield, HSR, Koramangala, and Greater Bengaluru.
-            </p>
           </div>
         </div>
       </section>
 
-      {/* 7. BOOKING FORM SECTION */}
-      <section id="booking-section" className="py-16 px-4">
-        <div className="max-w-3xl mx-auto bg-white rounded-3xl border-2 border-orange-300 shadow-2xl p-6 sm:p-10 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 via-orange-500 to-amber-500"></div>
-
-          <div className="text-center mb-8">
-            <span className="bg-orange-100 text-orange-900 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-              Yajman Ritual Request Portal
+      {/* BOOKING FORM SECTION */}
+      <section id="booking-section" className="py-10 px-4">
+        <div className="max-w-2xl mx-auto bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-8 relative">
+          <div className="text-center mb-6">
+            <span className="bg-orange-100 text-orange-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Yajman Portal
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
-              Book a Certified Vedic Pandit in Bangalore
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+              Book a Certified Vedic Pandit
             </h2>
-            <p className="text-slate-600 text-xs sm:text-sm mt-1">
-              Enter your puja preferences below. Your booking is routed instantly to our verified Acharya network.
+            <p className="text-slate-500 text-xs mt-0.5">
+              Enter your details to request an ordained Acharya.
             </p>
           </div>
 
           {statusMsg && (
             <div
-              className={`p-4 rounded-2xl text-xs sm:text-sm font-semibold mb-6 ${
+              className={`p-3 rounded-xl text-xs font-semibold mb-4 ${
                 statusMsg.type === "success"
                   ? "bg-green-100 text-green-950 border border-green-300"
                   : "bg-red-100 text-red-950 border border-red-300"
@@ -1046,42 +982,40 @@ export default function Home() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Yajman Name (Full Name) *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Yajman Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Rahul Sharma"
+                  placeholder="Rahul Sharma"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Contact (WhatsApp Enabled) *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Mobile Contact *</label>
                 <input
                   type="tel"
                   required
-                  placeholder="10-digit mobile number"
+                  placeholder="10-digit number"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="puja-select-input" className="block text-xs font-bold text-slate-700 mb-1">Select Sacred Ritual / Puja *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Select Sacred Ritual *</label>
                 <select
-                  id="puja-select-input"
-                  aria-label="Select Sacred Ritual / Puja"
                   value={formData.pujaName}
                   onChange={(e) => setFormData({ ...formData, pujaName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
                 >
                   {pujaList.map((p) => (
                     <option key={p.id} value={p.name}>
@@ -1093,198 +1027,178 @@ export default function Home() {
               </div>
 
               <div>
-                <label htmlFor="language-select-input" className="block text-xs font-bold text-slate-700 mb-1">Purohit Preferred Language *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Preferred Language *</label>
                 <select
-                  id="language-select-input"
-                  aria-label="Select Language Preference"
                   value={formData.language}
                   onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
                 >
                   <option value="Hindi">Hindi (North Indian)</option>
-                  <option value="Maithili">Maithili (Mithila Vidhi)</option>
+                  <option value="Maithili">Maithili (Mithila)</option>
                   <option value="Bhojpuri">Bhojpuri</option>
-                  <option value="Sanskrit (Pure Vedic)">Sanskrit (Pure Vedic)</option>
-                  <option value="Kannada">Kannada (Karnataka Tradition)</option>
+                  <option value="Sanskrit">Sanskrit (Pure Vedic)</option>
+                  <option value="Kannada">Kannada</option>
                   <option value="Telugu">Telugu</option>
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Bengaluru Zone / Locality *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Bengaluru Locality *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. HSR Layout, Whitefield, Koramangala"
+                  placeholder="e.g. HSR Layout, Whitefield"
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Bengaluru Pincode *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Pincode *</label>
                 <input
                   type="text"
                   required
                   placeholder="560xxx"
                   value={formData.pincode}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Complete Address / Venue Details *</label>
+              <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Complete Address *</label>
               <textarea
                 rows={2}
                 required
-                placeholder="Apartment/Villa No., Society Name, Landmark..."
+                placeholder="Apartment/Villa No., Landmark..."
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm"
+                className="w-full px-3 py-1.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Puja Date (Auspicious Tithi) *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Puja Date *</label>
                 <input
                   type="date"
-                  aria-label="Puja Date (Auspicious Tithi)"
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Auspicious Time Slot *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Time Slot *</label>
                 <select
-                  aria-label="Auspicious Time Slot"
                   value={formData.timeSlot}
                   onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:outline-none text-xs sm:text-sm bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
                 >
-                  <option value="Morning (06:00 AM - 09:00 AM)">Pratah Kaal (06:00 AM - 09:00 AM)</option>
+                  <option value="Morning (06:00 AM - 09:00 AM)">Pratah (06:00 AM - 09:00 AM)</option>
                   <option value="Morning (09:00 AM - 12:00 PM)">Morning (09:00 AM - 12:00 PM)</option>
                   <option value="Afternoon (12:00 PM - 03:00 PM)">Afternoon (12:00 PM - 03:00 PM)</option>
-                  <option value="Evening (05:00 PM - 08:00 PM)">Sandhya / Evening (05:00 PM - 08:00 PM)</option>
+                  <option value="Evening (05:00 PM - 08:00 PM)">Evening (05:00 PM - 08:00 PM)</option>
                 </select>
               </div>
             </div>
 
-            <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 flex items-center gap-3">
+            <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex items-center gap-2">
               <input
                 type="checkbox"
                 id="samagri-box"
                 checked={formData.samagri}
                 onChange={(e) => setFormData({ ...formData, samagri: e.target.checked })}
-                className="w-4 h-4 accent-orange-600 rounded cursor-pointer"
+                className="w-3.5 h-3.5 accent-orange-600 rounded"
               />
-              <label htmlFor="samagri-box" className="text-xs sm:text-sm text-slate-800 font-medium cursor-pointer">
-                <strong>Include Complete Sacred Hawan & Puja Samagri Kit</strong> (Purohit Ji carries consecrated woods, herbs, Gangajal, and ritual items).
+              <label htmlFor="samagri-box" className="text-[11px] text-slate-800">
+                <strong>Include Complete Hawan & Samagri Kit</strong> (Purohit Ji carries woods, herbs, Gangajal).
               </label>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-600 text-white font-black text-sm sm:text-base shadow-xl shadow-orange-500/25 hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-600 text-white font-black text-xs sm:text-sm shadow hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
             >
-              {loading ? "Registering Sacred Booking..." : "🚩 Confirm Booking & Request Pandit Ji"}
+              {loading ? "Registering..." : "🚩 Confirm Booking & Request Pandit Ji"}
             </button>
           </form>
         </div>
       </section>
 
-      {/* 8. OFFICIAL CONTACT US SECTION */}
-      <section id="contact-section" className="bg-white py-12 px-4 border-t border-amber-200">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="text-orange-600 font-extrabold uppercase text-xs tracking-widest">
-            Direct Coordination & Inquiries
+      {/* CONTACT SECTION */}
+      <section id="contact-section" className="bg-white py-8 px-4 border-t border-amber-200 text-center">
+        <div className="max-w-4xl mx-auto">
+          <span className="text-orange-600 font-extrabold uppercase text-[10px] tracking-widest">
+            Support Desk
           </span>
-          <h2 className="text-2xl font-black text-slate-900 mt-1 mb-2">
+          <h2 className="text-lg font-black text-slate-900 mt-0.5 mb-1">
             Contact Official Platform Support
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto mb-6">
-            For specialized anushthan bookings, customized muhurat queries, or immediate Pandit requirements across Bengaluru, reach out to our desk.
+          <p className="text-xs text-slate-600 max-w-md mx-auto mb-4">
+            For specialized anushthan bookings or muhurat queries across Bengaluru:
           </p>
 
-          <div className="inline-flex flex-col sm:flex-row items-center gap-3 bg-amber-50 border border-amber-300 px-6 py-4 rounded-2xl shadow-sm">
-            <span className="text-xl">✉️</span>
-            <span className="text-xs sm:text-sm font-semibold text-slate-700">Official Support Email:</span>
-            <a
-              href="mailto:support.purohitsetu@gmail.com"
-              className="text-xs sm:text-sm font-extrabold text-orange-700 hover:text-red-700 underline"
-            >
+          <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-300 px-4 py-2 rounded-xl text-xs">
+            <span>✉️</span>
+            <span className="font-semibold text-slate-700">Official Support Email:</span>
+            <a href="mailto:support.purohitsetu@gmail.com" className="font-extrabold text-orange-700 underline">
               support.purohitsetu@gmail.com
             </a>
           </div>
         </div>
       </section>
 
-      {/* 9. FOOTER WITH CREDITS & COMPLIANCE */}
-      <footer className="bg-slate-950 text-slate-400 py-12 px-4 text-xs border-t-4 border-orange-500">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-6 text-center md:text-left">
+      {/* FOOTER */}
+      <footer className="bg-slate-950 text-slate-400 py-8 px-4 text-xs border-t-4 border-orange-500">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-800 pb-4 text-center sm:text-left">
             <div className="flex items-center gap-2">
-              <span className="text-amber-500 text-xl font-bold">ॐ</span>
-              <span className="font-extrabold text-white text-base">PurohitSetu Bengaluru</span>
+              <span className="text-amber-500 text-lg font-bold">ॐ</span>
+              <span className="font-extrabold text-white text-sm">PurohitSetu Bengaluru</span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-300 font-medium">
-              <a href="/privacy-policy" className="hover:text-amber-400 transition underline underline-offset-4">
-                Privacy Policy
-              </a>
-              <a href="/delete-account" className="hover:text-rose-400 transition underline underline-offset-4">
-                Delete Account
-              </a>
-              <button
-                onClick={() => setIsDakshinaOpen(true)}
-                className="hover:text-amber-400 transition underline underline-offset-4"
-              >
-                Online Dakshina
-              </button>
+            <div className="flex gap-4 text-xs text-slate-300">
+              <a href="/privacy-policy" className="hover:text-amber-400 underline">Privacy Policy</a>
+              <a href="/delete-account" className="hover:text-rose-400 underline">Delete Account</a>
+              <button onClick={() => setIsDakshinaOpen(true)} className="hover:text-amber-400 underline">Online Dakshina</button>
             </div>
           </div>
 
-          {/* Targeted Search Engine Index Keywords in Footer */}
-          <div className="text-[10px] text-slate-500 space-y-2 border-b border-slate-800 pb-4 leading-relaxed">
+          <div className="text-[10px] text-slate-500 space-y-1.5 border-b border-slate-800 pb-3">
             <p className="font-bold text-slate-400">Popular Vedic Ritual Searches in Bangalore:</p>
-            <p className="flex flex-wrap gap-2 text-slate-400">
+            <p className="flex flex-wrap gap-1.5 text-slate-400">
               {HIGH_INTENT_KEYWORDS.map((kw, i) => (
-                <span key={i} className="hover:text-amber-400 cursor-default">
-                  {kw} {i < HIGH_INTENT_KEYWORDS.length - 1 ? "•" : ""}
-                </span>
+                <span key={i}>{kw} {i < HIGH_INTENT_KEYWORDS.length - 1 ? "•" : ""}</span>
               ))}
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left text-[11px] text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-slate-500 text-center sm:text-left">
             <p>© 2026 PurohitSetu. Dedicated Vedic Puja Services • Authentic Shastric Tradition.</p>
-            <p className="font-semibold text-amber-500/90 tracking-wide">
+            <p className="font-semibold text-amber-500/90">
               Created and Designed by Prince Kumar Pandey | Mob: 7667984349
             </p>
           </div>
         </div>
       </footer>
 
-      {/* 10. REAL RAZORPAY SHUBH DAKSHINA MODAL */}
+      {/* DAKSHINA MODAL */}
       {isDakshinaOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border-2 border-orange-200 relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🪔</span>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-orange-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-2.5 mb-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">🪔</span>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 leading-tight">Shubh Dakshina / Online Pay</h3>
-                  <p className="text-[11px] text-slate-500">Official Vedic Ritual Dakshina Portal</p>
+                  <h3 className="text-sm font-extrabold text-slate-900 leading-tight">Shubh Dakshina / Online Pay</h3>
+                  <p className="text-[10px] text-slate-500">Official Vedic Ritual Dakshina Portal</p>
                 </div>
               </div>
               <button
@@ -1292,7 +1206,7 @@ export default function Home() {
                   setIsDakshinaOpen(false);
                   setDakshinaNotice(null);
                 }}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs"
+                className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold text-xs"
               >
                 ✕
               </button>
@@ -1300,7 +1214,7 @@ export default function Home() {
 
             {dakshinaNotice && (
               <div
-                className={`p-3 rounded-xl text-xs font-semibold mb-4 leading-relaxed ${
+                className={`p-2.5 rounded-xl text-xs font-semibold mb-3 ${
                   dakshinaNotice.type === "success"
                     ? "bg-green-50 text-green-900 border border-green-200"
                     : "bg-red-50 text-red-900 border border-red-200"
@@ -1310,71 +1224,51 @@ export default function Home() {
               </div>
             )}
 
-            <form onSubmit={handleInitiateDakshinaPayment} className="space-y-3.5">
-              {/* Yajman Name */}
+            <form onSubmit={handleInitiateDakshinaPayment} className="space-y-2.5 text-xs">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Yajman Name *
-                </label>
+                <label className="block font-bold text-slate-700 mb-0.5">Yajman Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Rahul Sharma"
+                  placeholder="Rahul Sharma"
                   value={dakshinaData.yajmanName}
-                  onChange={(e) =>
-                    setDakshinaData({ ...dakshinaData, yajmanName: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm"
+                  onChange={(e) => setDakshinaData({ ...dakshinaData, yajmanName: e.target.value })}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
                 />
               </div>
 
-              {/* Phone Number */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Phone Number (For Receipt & SMS) *
-                </label>
+                <label className="block font-bold text-slate-700 mb-0.5">Phone Number *</label>
                 <input
                   type="tel"
                   required
-                  placeholder="10-digit mobile number"
+                  placeholder="10-digit number"
                   value={dakshinaData.phone}
-                  onChange={(e) =>
-                    setDakshinaData({ ...dakshinaData, phone: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm"
+                  onChange={(e) => setDakshinaData({ ...dakshinaData, phone: e.target.value })}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
                 />
               </div>
 
-              {/* Optional Pandit Ji Name */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-slate-700">
-                    Pandit Ji Name
-                  </label>
-                  <span className="text-[10px] text-slate-400 font-medium">Optional</span>
+                <div className="flex justify-between mb-0.5">
+                  <label className="font-bold text-slate-700">Pandit Ji Name</label>
+                  <span className="text-[9px] text-slate-400">Optional</span>
                 </div>
                 <input
                   type="text"
-                  placeholder="e.g. Acharya Prince Pandey (if assigned)"
+                  placeholder="e.g. Acharya Prince Pandey"
                   value={dakshinaData.panditName}
-                  onChange={(e) =>
-                    setDakshinaData({ ...dakshinaData, panditName: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm bg-stone-50"
+                  onChange={(e) => setDakshinaData({ ...dakshinaData, panditName: e.target.value })}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-stone-50"
                 />
               </div>
 
-              {/* Puja Purpose / Ritual Selection */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Puja Ritual / Purpose
-                </label>
+                <label className="block font-bold text-slate-700 mb-0.5">Puja Ritual / Purpose</label>
                 <select
                   value={dakshinaData.pujaName}
-                  onChange={(e) =>
-                    setDakshinaData({ ...dakshinaData, pujaName: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm bg-white"
+                  onChange={(e) => setDakshinaData({ ...dakshinaData, pujaName: e.target.value })}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white"
                 >
                   <option value="General Vedic Dakshina">General Vedic Dakshina</option>
                   <option value="Griha Pravesh Puja">Griha Pravesh Puja</option>
@@ -1388,36 +1282,27 @@ export default function Home() {
               </div>
 
               {dakshinaData.pujaName === "Other Custom Ritual" && (
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Enter ritual purpose..."
-                    value={dakshinaData.customPuja}
-                    onChange={(e) =>
-                      setDakshinaData({ ...dakshinaData, customPuja: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Specify ritual..."
+                  value={dakshinaData.customPuja}
+                  onChange={(e) => setDakshinaData({ ...dakshinaData, customPuja: e.target.value })}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                />
               )}
 
-              {/* Amount Selection Chips */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Select Shubh Dakshina (₹)
-                </label>
-                <div className="grid grid-cols-3 gap-2 mb-2">
+                <label className="block font-bold text-slate-700 mb-1">Select Shubh Dakshina (₹)</label>
+                <div className="grid grid-cols-3 gap-1.5 mb-1.5">
                   {DAKSHINA_PRESETS.map((amt) => (
                     <button
                       key={amt}
                       type="button"
-                      onClick={() =>
-                        setDakshinaData({ ...dakshinaData, amount: amt.toString() })
-                      }
-                      className={`py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      onClick={() => setDakshinaData({ ...dakshinaData, amount: amt.toString() })}
+                      className={`py-1 rounded-lg font-bold border ${
                         dakshinaData.amount === amt.toString()
-                          ? "bg-orange-600 text-white border-orange-600 shadow-sm"
-                          : "bg-orange-50/50 text-slate-700 border-orange-200 hover:bg-orange-100"
+                          ? "bg-orange-600 text-white border-orange-600"
+                          : "bg-orange-50 text-slate-700 border-orange-200"
                       }`}
                     >
                       ₹{amt}
@@ -1425,42 +1310,26 @@ export default function Home() {
                   ))}
                 </div>
 
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center font-bold text-slate-400 text-sm">
-                    ₹
-                  </span>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    placeholder="Custom amount"
-                    value={dakshinaData.amount}
-                    onChange={(e) =>
-                      setDakshinaData({ ...dakshinaData, amount: e.target.value })
-                    }
-                    className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm font-bold text-slate-900"
-                  />
-                </div>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={dakshinaData.amount}
+                  onChange={(e) => setDakshinaData({ ...dakshinaData, amount: e.target.value })}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 font-bold"
+                />
               </div>
 
-              {/* Submit Razorpay Checkout Button */}
               <button
                 type="submit"
                 disabled={dakshinaProcessing}
-                className="w-full mt-2 py-3.5 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-orange-500/25 hover:brightness-105 active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full mt-2 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 text-white font-bold shadow disabled:opacity-50"
               >
-                {dakshinaProcessing ? (
-                  "Opening Payment Gateway..."
-                ) : (
-                  <>
-                    <span>Proceed to Pay ₹{dakshinaData.amount || 0}</span>
-                    <span className="text-[10px] font-normal opacity-90">(UPI / QR / Cards)</span>
-                  </>
-                )}
+                {dakshinaProcessing ? "Opening..." : `Proceed to Pay ₹${dakshinaData.amount || 0}`}
               </button>
 
-              <p className="text-[10px] text-center text-slate-400">
-                🔒 Secured by Razorpay. Supports PhonePe, Google Pay, Paytm, UPI, and NetBanking.
+              <p className="text-[9px] text-center text-slate-400">
+                🔒 Secured by Razorpay. Supports PhonePe, GPay, Paytm, Cards & UPI.
               </p>
             </form>
           </div>
