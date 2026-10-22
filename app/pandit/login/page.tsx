@@ -6,18 +6,23 @@ import { useRouter } from 'next/navigation';
 type Mode = 'login' | 'register' | 'forgot';
 type Step = 'form' | 'otp';
 
-const cleanNumber = (val: string) => val.replace(/\D/g, '').slice(-10);
+const cleanNumber = (val: string) => (val || '').replace(/\D/g, '').slice(-10);
 
-// Login ke baad number localStorage aur cookie dono me rakhte hain (dashboard bhi yahi padhta hai)
 const saveSession = (phone: string) => {
-  localStorage.setItem('pandit_phone', phone);
-  document.cookie = `pandit_phone=${phone}; path=/; max-age=31536000; SameSite=Lax`;
+  if (typeof window === 'undefined') return;
+  const clean = cleanNumber(phone);
+  localStorage.setItem('pandit_phone', clean);
+  localStorage.setItem('pandit_logged_in', 'true');
+  document.cookie = `pandit_phone=${clean}; path=/; max-age=31536000; SameSite=Lax`;
 };
 
 const readSavedPhone = (): string => {
-  const cookieMatch = document.cookie.match(/(^| )pandit_phone=([^;]+)/);
-  const saved = localStorage.getItem('pandit_phone') || (cookieMatch ? cookieMatch[2] : '');
-  return cleanNumber(saved);
+  if (typeof window === 'undefined') return '';
+  const fromStorage = localStorage.getItem('pandit_phone') || '';
+  if (fromStorage) return cleanNumber(fromStorage);
+
+  const match = document.cookie.match(/(^| )pandit_phone=([^;]+)/);
+  return match ? cleanNumber(match[2]) : '';
 };
 
 const inputBase =
@@ -33,7 +38,6 @@ export default function PanditAuthPage() {
   const [mode, setMode] = useState<Mode>('login');
   const [step, setStep] = useState<Step>('form');
 
-  // Form fields
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -46,7 +50,7 @@ export default function PanditAuthPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
 
-  // App login page se khulta hai. Session pehle se saved ho to seedha dashboard bhejo.
+  // Persistent check on app mount
   useEffect(() => {
     const saved = readSavedPhone();
     if (saved.length === 10) {
@@ -72,7 +76,7 @@ export default function PanditAuthPage() {
     router.replace('/pandit/dashboard');
   };
 
-  /* ---------- Password login (OTP nahi chahiye) ---------- */
+  /* ---------- Password login ---------- */
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     clearMessages();
@@ -108,7 +112,7 @@ export default function PanditAuthPage() {
     }
   };
 
-  /* ---------- OTP bhejna (registration / forgot password) ---------- */
+  /* ---------- OTP Send ---------- */
   const handleSendOtp = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     clearMessages();
@@ -152,7 +156,7 @@ export default function PanditAuthPage() {
     }
   };
 
-  /* ---------- OTP verify (registration / password reset) ---------- */
+  /* ---------- OTP Verify ---------- */
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     clearMessages();
@@ -201,7 +205,6 @@ export default function PanditAuthPage() {
     }
   };
 
-  /* ---------- Reusable pieces ---------- */
   const phoneField = (label: string) => (
     <div>
       <label className="block text-xs font-bold text-gray-700 mb-1">{label}</label>
@@ -244,34 +247,33 @@ export default function PanditAuthPage() {
     </div>
   );
 
-  // Session check chal raha ho to form ki jagah halka sa loader dikhao (form flash nahi hoga)
   if (checkingSession) {
     return (
       <div className="min-h-screen bg-stone-100 flex items-center justify-center">
-        <p className="text-sm font-semibold text-gray-500">Loading...</p>
+        <p className="text-sm font-semibold text-gray-500 animate-pulse">Loading Acharya Portal...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-stone-200 p-8 space-y-6">
+    <div className="min-h-screen w-full bg-stone-100 flex flex-col justify-center items-center p-3 sm:p-4 overflow-x-hidden">
+      <div className="w-full max-w-sm sm:max-w-md bg-white rounded-3xl shadow-xl border border-stone-200 p-5 sm:p-8 space-y-5 sm:space-y-6">
         {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-orange-500 bg-white p-1 shadow-md flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <div className="w-14 h-14 mx-auto rounded-full overflow-hidden border-2 border-orange-500 bg-white p-1 shadow-md flex items-center justify-center">
             <img src="/pandit-logo.png" alt="PurohitSetu Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">PurohitSetu Acharya Portal</h1>
-            <p className="text-xs text-gray-500 mt-1">Verified Vedic Pandits & Purohits Gateway</p>
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">PurohitSetu Acharya</h1>
+            <p className="text-[11px] sm:text-xs text-gray-500">Verified Vedic Pandits & Purohits Gateway</p>
           </div>
 
           {mode !== 'forgot' && (
-            <div className="flex bg-stone-100 p-1 rounded-2xl mt-4">
+            <div className="flex bg-stone-100 p-1 rounded-2xl mt-3">
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                   mode === 'login' ? 'bg-white text-orange-800 shadow-sm' : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
@@ -280,11 +282,11 @@ export default function PanditAuthPage() {
               <button
                 type="button"
                 onClick={() => switchMode('register')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                   mode === 'register' ? 'bg-white text-orange-800 shadow-sm' : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
-                New Acharya Registration
+                New Registration
               </button>
             </div>
           )}
@@ -292,19 +294,19 @@ export default function PanditAuthPage() {
 
         {/* Alerts */}
         {errorMsg && (
-          <div className="p-3 text-xs bg-red-50 border border-red-200 text-red-700 rounded-xl font-medium">
+          <div className="p-2.5 text-xs bg-red-50 border border-red-200 text-red-700 rounded-xl font-medium">
             {errorMsg}
           </div>
         )}
         {infoMsg && (
-          <div className="p-3 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl font-medium">
+          <div className="p-2.5 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl font-medium">
             {infoMsg}
           </div>
         )}
 
         {/* 1. SIGN IN */}
         {mode === 'login' && (
-          <form onSubmit={handlePasswordLogin} className="space-y-4">
+          <form onSubmit={handlePasswordLogin} className="space-y-3.5">
             {phoneField('Mobile Number')}
 
             <div>
@@ -329,7 +331,7 @@ export default function PanditAuthPage() {
 
         {/* 2. REGISTRATION */}
         {mode === 'register' && step === 'form' && (
-          <form onSubmit={handleSendOtp} className="space-y-4">
+          <form onSubmit={handleSendOtp} className="space-y-3.5">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Full Name (Acharya Name)</label>
               <input
@@ -381,9 +383,9 @@ export default function PanditAuthPage() {
 
         {/* 3. FORGOT PASSWORD */}
         {mode === 'forgot' && step === 'form' && (
-          <form onSubmit={handleSendOtp} className="space-y-4">
+          <form onSubmit={handleSendOtp} className="space-y-3.5">
             <div className="text-left">
-              <h3 className="font-bold text-gray-900 text-sm">Reset Account Password</h3>
+              <h3 className="font-bold text-gray-900 text-sm">Reset Password</h3>
               <p className="text-xs text-gray-500">
                 We will send a 4-digit SMS verification code to your registered mobile.
               </p>
@@ -400,7 +402,7 @@ export default function PanditAuthPage() {
               {loading ? 'Sending Code...' : 'Send Verification Code'}
             </button>
 
-            <div className="text-center">
+            <div className="text-center pt-1">
               <button
                 type="button"
                 onClick={() => switchMode('login')}
@@ -414,16 +416,16 @@ export default function PanditAuthPage() {
 
         {/* 4. OTP ENTRY */}
         {step === 'otp' && (
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <form onSubmit={handleVerifyOtp} className="space-y-3.5">
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-bold text-gray-700">Enter 4-Digit Verification Code</label>
+                <label className="text-xs font-bold text-gray-700">Enter Verification Code</label>
                 <button
                   type="button"
                   onClick={() => setStep('form')}
                   className="text-xs text-orange-700 hover:underline font-semibold cursor-pointer"
                 >
-                  Change Details
+                  Change
                 </button>
               </div>
               <input
@@ -434,7 +436,7 @@ export default function PanditAuthPage() {
                 placeholder="• • • •"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                className="w-full border-2 border-orange-400 rounded-xl py-3 text-center font-mono text-2xl font-bold tracking-widest text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
+                className="w-full border-2 border-orange-400 rounded-xl py-2.5 text-center font-mono text-2xl font-bold tracking-widest text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"
               />
             </div>
 
@@ -457,7 +459,7 @@ export default function PanditAuthPage() {
                 disabled={loading}
                 className="text-xs text-gray-500 hover:text-gray-900 font-semibold cursor-pointer"
               >
-                Did not receive SMS? Resend code
+                Resend SMS Code
               </button>
             </div>
           </form>
