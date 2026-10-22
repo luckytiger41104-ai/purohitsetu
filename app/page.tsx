@@ -22,7 +22,7 @@ interface PujaItem {
   seoKeyword: string;
 }
 
-const DAKSHINA_PRESETS = [101, 251, 501, 1100, 2100, 5100];
+const BOOKING_TOKEN_PRESETS = [101, 251, 501, 1100, 2100, 5100];
 
 const BENGALURU_LOCALITIES = [
   "Whitefield",
@@ -113,17 +113,17 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const [isDakshinaOpen, setIsDakshinaOpen] = useState(false);
-  const [dakshinaData, setDakshinaData] = useState({
+  const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
+  const [tokenData, setTokenData] = useState({
     yajmanName: "",
     phone: "",
     panditName: "",
-    pujaName: "General Vedic Dakshina",
+    pujaName: "General Puja Booking Token",
     customPuja: "",
     amount: "501",
   });
-  const [dakshinaProcessing, setDakshinaProcessing] = useState(false);
-  const [dakshinaNotice, setDakshinaNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [tokenProcessing, setTokenProcessing] = useState(false);
+  const [tokenNotice, setTokenNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const categories = [
     "All",
@@ -133,7 +133,6 @@ export default function Home() {
     "Antim Sanskar & Shradh",
   ];
 
-  // Aage chalkar aap jitni marzi pooja yahan add karein, UI khud count manage karega
   const pujaList: PujaItem[] = [
     {
       id: "vivah-sanskar",
@@ -271,7 +270,7 @@ export default function Home() {
       id: "diwali-puja",
       name: "Deepawali Lakshmi-Ganesh Pujan",
       category: "Festivals",
-      desc: "Complete Shodashopachara Lakshmi-Ganesha pujan with Bahi-Khata invocation, Kuber puja, deepak daan, and authentic Vedic Aarti.",
+      desc: "Complete Shodashopachara Lakshmi-Ganesha pujan with Bahi-Khata invocation, Kuber puja, deepak samarpana, and authentic Vedic Aarti.",
       duration: "2 - 3 Hours",
       rating: "5.0",
       conductedCount: "2,980+",
@@ -474,36 +473,36 @@ export default function Home() {
     }
   };
 
-  const handleInitiateDakshinaPayment = async (e: React.FormEvent) => {
+  const handleInitiateTokenPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    setDakshinaNotice(null);
+    setTokenNotice(null);
 
-    const amountNum = parseFloat(dakshinaData.amount);
+    const amountNum = parseFloat(tokenData.amount);
     if (!amountNum || amountNum < 1) {
-      setDakshinaNotice({ type: "error", text: "Kripya sahi rashi chunein (Minimum ₹1)." });
+      setTokenNotice({ type: "error", text: "Kripya sahi rashi chunein (Minimum ₹1)." });
       return;
     }
 
-    if (!dakshinaData.yajmanName.trim() || !dakshinaData.phone.trim()) {
-      setDakshinaNotice({ type: "error", text: "Yajman Name aur Mobile Number zaroori hai." });
+    if (!tokenData.yajmanName.trim() || !tokenData.phone.trim()) {
+      setTokenNotice({ type: "error", text: "Yajman Name aur Mobile Number zaroori hai." });
       return;
     }
 
     const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     if (!razorpayKey) {
-      setDakshinaNotice({
+      setTokenNotice({
         type: "error",
         text: "Payment configuration pending hai. Support se sampark karein.",
       });
       return;
     }
 
-    setDakshinaProcessing(true);
+    setTokenProcessing(true);
 
     const sdkLoaded = await loadRazorpayScript();
     if (!sdkLoaded) {
-      setDakshinaProcessing(false);
-      setDakshinaNotice({
+      setTokenProcessing(false);
+      setTokenNotice({
         type: "error",
         text: "Payment gateway load nahi ho paya. Internet connection check karein.",
       });
@@ -511,24 +510,25 @@ export default function Home() {
     }
 
     const finalPujaName =
-      dakshinaData.pujaName === "Other Custom Ritual"
-        ? dakshinaData.customPuja || "Custom Ritual"
-        : dakshinaData.pujaName;
+      tokenData.pujaName === "Other Custom Ritual"
+        ? tokenData.customPuja || "Custom Ritual"
+        : tokenData.pujaName;
 
     const options = {
       key: razorpayKey,
       amount: Math.round(amountNum * 100),
       currency: "INR",
       name: "PurohitSetu Bengaluru",
-      description: `Shubh Dakshina - ${finalPujaName}`,
+      description: `Puja Booking Token - ${finalPujaName}`,
       image: "/pandit-logo.png",
       prefill: {
-        name: dakshinaData.yajmanName,
-        contact: dakshinaData.phone,
+        name: tokenData.yajmanName,
+        contact: tokenData.phone,
       },
       notes: {
-        pandit_name: dakshinaData.panditName || "General / Platform Acharya",
+        pandit_name: tokenData.panditName || "General / Platform Acharya",
         puja_name: finalPujaName,
+        service_type: "puja_advance_booking",
       },
       theme: {
         color: "#ea580c",
@@ -538,41 +538,41 @@ export default function Home() {
           const paymentId = response?.razorpay_payment_id || "PAY_CONFIRMED";
 
           await supabase.from("token_transactions").insert({
-            pandit_id: dakshinaData.panditName || "general_dakshina",
-            pandit_phone: dakshinaData.phone,
-            pandit_name: dakshinaData.panditName || "General Acharya",
-            pack_name: `Dakshina: ${finalPujaName}`,
+            pandit_id: tokenData.panditName || "general_booking",
+            pandit_phone: tokenData.phone,
+            pandit_name: tokenData.panditName || "General Acharya",
+            pack_name: `Booking Token: ${finalPujaName}`,
             amount: amountNum,
             tokens_credited: 0,
             razorpay_payment_id: paymentId,
           });
 
-          setDakshinaNotice({
+          setTokenNotice({
             type: "success",
-            text: `🙏 Shubh Dakshina ₹${amountNum} safalta se prapt hui! ID: ${paymentId}. Har Har Mahadev!`,
+            text: `🙏 Booking Token ₹${amountNum} safalta se prapt hua! Booking ID: ${paymentId}. Har Har Mahadev!`,
           });
 
-          setDakshinaData({
+          setTokenData({
             yajmanName: "",
             phone: "",
             panditName: "",
-            pujaName: "General Vedic Dakshina",
+            pujaName: "General Puja Booking Token",
             customPuja: "",
             amount: "501",
           });
         } catch (dbErr: any) {
           console.error(dbErr);
-          setDakshinaNotice({
+          setTokenNotice({
             type: "success",
             text: `Payment safal raha (Ref ID: ${response?.razorpay_payment_id}). Dhanyawad!`,
           });
         } finally {
-          setDakshinaProcessing(false);
+          setTokenProcessing(false);
         }
       },
       modal: {
         ondismiss: () => {
-          setDakshinaProcessing(false);
+          setTokenProcessing(false);
         },
       },
     };
@@ -580,16 +580,16 @@ export default function Home() {
     try {
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", (response: any) => {
-        setDakshinaProcessing(false);
-        setDakshinaNotice({
+        setTokenProcessing(false);
+        setTokenNotice({
           type: "error",
           text: `Payment asafal raha: ${response?.error?.description || "Cancelled."}`,
         });
       });
       rzp.open();
     } catch (err: any) {
-      setDakshinaProcessing(false);
-      setDakshinaNotice({
+      setTokenProcessing(false);
+      setTokenNotice({
         type: "error",
         text: "Gateway open karne me truti: " + err.message,
       });
@@ -663,10 +663,10 @@ export default function Home() {
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setIsDakshinaOpen(true)}
+                onClick={() => setIsTokenModalOpen(true)}
                 className="bg-amber-100 hover:bg-amber-200 text-amber-950 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-amber-300 transition flex items-center gap-1"
               >
-                <span>🪔</span> Shubh Dakshina
+                <span>🪙</span> Puja Token
               </button>
 
               <a
@@ -734,10 +734,10 @@ export default function Home() {
               📅 Schedule Puja Muhurat
             </a>
             <button
-              onClick={() => setIsDakshinaOpen(true)}
+              onClick={() => setIsTokenModalOpen(true)}
               className="px-5 py-2.5 rounded-xl bg-white border border-orange-300 text-orange-950 font-extrabold text-xs shadow hover:bg-orange-50 transition flex items-center gap-1.5"
             >
-              <span>🪔</span> Offer Shubh Dakshina
+              <span>🪙</span> Puja Booking Token
             </button>
           </div>
 
@@ -803,7 +803,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PUJA SERVICES DIRECTORY (DYNAMIC COUNT) */}
+      {/* PUJA SERVICES DIRECTORY */}
       <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 border-b border-amber-200 pb-3">
           <div>
@@ -813,7 +813,6 @@ export default function Home() {
             </h2>
           </div>
           <div className="mt-2 sm:mt-0">
-            {/* Auto-updates dynamically whether you have 22, 30 or 50 pujas */}
             <span className="text-[11px] font-bold text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full border border-orange-300">
               Showing {filteredPujas.length} Auspicious Services
             </span>
@@ -1135,8 +1134,8 @@ export default function Home() {
             <span>•</span>
             <a href="#contact-section" className="hover:text-white transition">Contact Us</a>
             <span>•</span>
-            <button onClick={() => setIsDakshinaOpen(true)} className="hover:text-white font-bold transition">
-              Online Dakshina
+            <button onClick={() => setIsTokenModalOpen(true)} className="hover:text-white font-bold transition">
+              Puja Booking Token
             </button>
           </div>
 
@@ -1159,22 +1158,22 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* SHUBH DAKSHINA RAZORPAY MODAL */}
-      {isDakshinaOpen && (
+      {/* PUJA BOOKING TOKEN RAZORPAY MODAL */}
+      {isTokenModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-orange-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b pb-2.5 mb-3">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg">🪔</span>
+                <span className="text-lg">🪙</span>
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-900 leading-tight">Shubh Dakshina</h3>
-                  <p className="text-[10px] text-slate-500">Official Vedic Ritual Dakshina Portal</p>
+                  <h3 className="text-sm font-extrabold text-slate-900 leading-tight">Puja Booking Token</h3>
+                  <p className="text-[10px] text-slate-500">Advance Service Fee & Muhurat Confirmation</p>
                 </div>
               </div>
               <button
                 onClick={() => {
-                  setIsDakshinaOpen(false);
-                  setDakshinaNotice(null);
+                  setIsTokenModalOpen(false);
+                  setTokenNotice(null);
                 }}
                 className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold text-xs"
               >
@@ -1182,27 +1181,27 @@ export default function Home() {
               </button>
             </div>
 
-            {dakshinaNotice && (
+            {tokenNotice && (
               <div
                 className={`p-2.5 rounded-xl text-xs font-semibold mb-3 ${
-                  dakshinaNotice.type === "success"
+                  tokenNotice.type === "success"
                     ? "bg-green-50 text-green-900 border border-green-200"
                     : "bg-red-50 text-red-900 border border-red-200"
                 }`}
               >
-                {dakshinaNotice.text}
+                {tokenNotice.text}
               </div>
             )}
 
-            <form onSubmit={handleInitiateDakshinaPayment} className="space-y-2.5 text-xs">
+            <form onSubmit={handleInitiateTokenPayment} className="space-y-2.5 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-0.5">Yajman Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="Rahul Sharma"
-                  value={dakshinaData.yajmanName}
-                  onChange={(e) => setDakshinaData({ ...dakshinaData, yajmanName: e.target.value })}
+                  value={tokenData.yajmanName}
+                  onChange={(e) => setTokenData({ ...tokenData, yajmanName: e.target.value })}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
                 />
               </div>
@@ -1213,34 +1212,34 @@ export default function Home() {
                   type="tel"
                   required
                   placeholder="10-digit number"
-                  value={dakshinaData.phone}
-                  onChange={(e) => setDakshinaData({ ...dakshinaData, phone: e.target.value })}
+                  value={tokenData.phone}
+                  onChange={(e) => setTokenData({ ...tokenData, phone: e.target.value })}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between mb-0.5">
-                  <label className="font-bold text-slate-700">Pandit Ji Name</label>
+                  <label className="font-bold text-slate-700">Preferred Acharya</label>
                   <span className="text-[9px] text-slate-400">Optional</span>
                 </div>
                 <input
                   type="text"
                   placeholder="e.g. Acharya Prince Pandey"
-                  value={dakshinaData.panditName}
-                  onChange={(e) => setDakshinaData({ ...dakshinaData, panditName: e.target.value })}
+                  value={tokenData.panditName}
+                  onChange={(e) => setTokenData({ ...tokenData, panditName: e.target.value })}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-stone-50"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-0.5">Puja Ritual / Purpose</label>
+                <label className="block font-bold text-slate-700 mb-0.5">Puja Ritual / Service</label>
                 <select
-                  value={dakshinaData.pujaName}
-                  onChange={(e) => setDakshinaData({ ...dakshinaData, pujaName: e.target.value })}
+                  value={tokenData.pujaName}
+                  onChange={(e) => setTokenData({ ...tokenData, pujaName: e.target.value })}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white"
                 >
-                  <option value="General Vedic Dakshina">General Vedic Dakshina</option>
+                  <option value="General Puja Booking Token">General Puja Booking Token</option>
                   <option value="Griha Pravesh Puja">Griha Pravesh Puja</option>
                   <option value="Satyanarayan Katha">Satyanarayan Katha</option>
                   <option value="Vivah Sanskar (Marriage)">Vivah Sanskar (Marriage)</option>
@@ -1251,26 +1250,26 @@ export default function Home() {
                 </select>
               </div>
 
-              {dakshinaData.pujaName === "Other Custom Ritual" && (
+              {tokenData.pujaName === "Other Custom Ritual" && (
                 <input
                   type="text"
                   placeholder="Specify ritual..."
-                  value={dakshinaData.customPuja}
-                  onChange={(e) => setDakshinaData({ ...dakshinaData, customPuja: e.target.value })}
+                  value={tokenData.customPuja}
+                  onChange={(e) => setTokenData({ ...tokenData, customPuja: e.target.value })}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
                 />
               )}
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Shubh Dakshina (₹)</label>
+                <label className="block font-bold text-slate-700 mb-1">Select Advance Token Amount (₹)</label>
                 <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-                  {DAKSHINA_PRESETS.map((amt) => (
+                  {BOOKING_TOKEN_PRESETS.map((amt) => (
                     <button
                       key={amt}
                       type="button"
-                      onClick={() => setDakshinaData({ ...dakshinaData, amount: amt.toString() })}
+                      onClick={() => setTokenData({ ...tokenData, amount: amt.toString() })}
                       className={`py-1 rounded-lg font-bold border ${
-                        dakshinaData.amount === amt.toString()
+                        tokenData.amount === amt.toString()
                           ? "bg-orange-600 text-white border-orange-600"
                           : "bg-orange-50 text-slate-700 border-orange-200"
                       }`}
@@ -1284,18 +1283,18 @@ export default function Home() {
                   type="number"
                   min="1"
                   required
-                  value={dakshinaData.amount}
-                  onChange={(e) => setDakshinaData({ ...dakshinaData, amount: e.target.value })}
+                  value={tokenData.amount}
+                  onChange={(e) => setTokenData({ ...tokenData, amount: e.target.value })}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 font-bold"
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={dakshinaProcessing}
+                disabled={tokenProcessing}
                 className="w-full mt-2 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 text-white font-bold shadow disabled:opacity-50"
               >
-                {dakshinaProcessing ? "Opening Gateway..." : `Proceed to Pay ₹${dakshinaData.amount || 0}`}
+                {tokenProcessing ? "Opening Gateway..." : `Confirm Booking Token ₹${tokenData.amount || 0}`}
               </button>
 
               <p className="text-[9px] text-center text-slate-400">

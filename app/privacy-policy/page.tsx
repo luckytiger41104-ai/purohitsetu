@@ -1,54 +1,64 @@
-﻿import React from 'react';
+﻿import React from "react";
 
-export default function PrivacyPolicyPage() {
+export default function PublicPrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-stone-50 py-12 px-4 sm:px-6 lg:px-8 text-gray-800">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-stone-200 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900 border-b pb-4">
-          Privacy Policy - PurohitSetu
-        </h1>
-        <p className="text-xs text-gray-500">Last updated: October 2026</p>
-
-        <section className="space-y-2">
-          <h2 className="text-base font-bold text-gray-900">1. Information We Collect</h2>
-          <p className="text-sm leading-relaxed text-gray-600">
-            When you register on PurohitSetu (as an Acharya or user), we collect essential details 
-            such as your full name, mobile number, city, and ritual experience to enable Vedic 
-            puja coordination and account management.
+    <div className="min-h-screen bg-[#FFFDF7] text-slate-800 py-12 px-4 sm:px-8 font-sans">
+      <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 rounded-3xl border border-amber-200 shadow-sm">
+        
+        <div className="border-b border-amber-200 pb-6 mb-8">
+          <span className="text-orange-600 font-extrabold uppercase text-[11px] tracking-wider">
+            Yajman Protection & Trust
+          </span>
+          <h1 className="text-3xl font-black text-slate-900 mt-1">Privacy Policy</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Last updated: October 2026 • PurohitSetu (Bengaluru, Karnataka)
           </p>
-        </section>
+        </div>
 
-        <section className="space-y-2">
-          <h2 className="text-base font-bold text-gray-900">2. How We Use Information</h2>
-          <p className="text-sm leading-relaxed text-gray-600">
-            Your information is used strictly to verify accounts via SMS OTP, match Acharyas with 
-            puja inquiries, and deliver service notifications. We do not sell or rent personal information 
-            to third-party advertisers.
-          </p>
-        </section>
+        <div className="space-y-6 text-sm leading-relaxed text-slate-700">
+          <section>
+            <h2 className="text-base font-bold text-slate-900 mb-1.5">1. Overview</h2>
+            <p>
+              PurohitSetu (purohitsetu.in) operates an on-demand marketplace connecting devotees (Yajmans) with verified Vedic Pandits across Bengaluru. We collect only necessary details to schedule and facilitate your sacred ceremonies.
+            </p>
+          </section>
 
-        <section className="space-y-2">
-          <h2 className="text-base font-bold text-gray-900">3. Data Security & Storage</h2>
-          <p className="text-sm leading-relaxed text-gray-600">
-            All data transmitted through our web and mobile apps is encrypted using HTTPS. Your records 
-            are stored securely on managed cloud databases with restricted access.
-          </p>
-        </section>
+          <section>
+            <h2 className="text-base font-bold text-slate-900 mb-1.5">2. Devotee Data Collected</h2>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Contact Information:</strong> Yajman full name and phone number.</li>
+              <li><strong>Venue Details:</strong> Locality, apartment name, full address, and pincode in Bengaluru.</li>
+              <li><strong>Ritual Choices:</strong> Puja name, preferred date, time slot, and preferred language (Hindi, Maithili, Bhojpuri, Sanskrit, Kannada, Telugu).</li>
+            </ul>
+          </section>
 
-        <section className="space-y-2">
-          <h2 className="text-base font-bold text-gray-900">4. Account and Data Deletion</h2>
-          <p className="text-sm leading-relaxed text-gray-600">
-            Users retain the right to delete their profile and personal records. You can request account 
-            deletion at any time through our Account Deletion portal or by contacting our team.
-          </p>
-        </section>
+          <section>
+            <h2 className="text-base font-bold text-slate-900 mb-1.5">3. Purpose & Confidentiality</h2>
+            <p>
+              Your ceremony details are shared exclusively with the allotted Acharya to arrange travel, samagri, and muhurat timings. We never sell, rent, or lease devotee personal data to third-party commercial marketing entities.
+            </p>
+          </section>
 
-        <section className="space-y-2">
-          <h2 className="text-base font-bold text-gray-900">5. Contact Information</h2>
-          <p className="text-sm text-gray-600">
-            For privacy inquiries or data requests, contact us at: <a href="mailto:support.purohitsetu@gmail.com" className="font-semibold text-orange-600 underline">support.purohitsetu@gmail.com</a>
-          </p>
-        </section>
+          <section>
+            <h2 className="text-base font-bold text-slate-900 mb-1.5">4. Payment Security</h2>
+            <p>
+              All online service tokens and advance payments are processed directly via RBI-approved payment gateways (Razorpay) using 256-bit SSL encryption. We do not store card numbers, PINs, or UPI credentials.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-bold text-slate-900 mb-1.5">5. Support & Contact</h2>
+            <div className="bg-amber-50 border border-amber-300 p-4 rounded-2xl text-xs space-y-1">
+              <p><strong>Support Email:</strong> support.purohitsetu@gmail.com</p>
+              <p><strong>Operating City:</strong> Bengaluru, Karnataka, India</p>
+            </div>
+          </section>
+        </div>
+
+        <div className="mt-10 pt-6 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500">
+          <a href="/" className="text-orange-600 font-bold hover:underline">← Back to Homepage</a>
+          <p>© 2026 PurohitSetu</p>
+        </div>
       </div>
     </div>
   );
