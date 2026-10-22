@@ -10,6 +10,10 @@ declare global {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Types & constants                                                  */
+/* ------------------------------------------------------------------ */
+
 interface Lead {
   id: string | number;
   yajman_name: string;
@@ -28,7 +32,11 @@ interface Lead {
   refund_status?: string;
 }
 
+type TabId = 'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules';
+
 const TOKEN_COST = 150;
+const PRIORITY_WINDOW_SECONDS = 60; // pehle itne second sirf token wale pandit accept kar sakte hain
+const COMMISSION_PERCENT = 30;
 
 const TOKEN_PACKS = [
   { name: 'Micro Trial', tokens: 35, amount: 50, tag: '' },
@@ -48,8 +56,71 @@ const TOKEN_PACKS = [
   { name: 'Maharishi Crown', tokens: 4050, amount: 5000, tag: '👑 +300 Bonus Free' },
 ];
 
-const loadRazorpaySDK = (): Promise<boolean> => {
-  return new Promise((resolve) => {
+const YAJMAN_CANCEL_REASONS = [
+  'Yajman cancelled / changed mind',
+  'Family out of town / postponed',
+  'Puja arranged locally / already conducted',
+  'Yajman unreachable / phone switched off',
+  'Other Yajman side reason',
+];
+
+const PANDIT_CANCEL_REASONS = [
+  'Acharya emergency / health issue',
+  'Date and time clash with another ceremony',
+  'Travel distance / transport unavailable',
+  'Dakshina / Samagri misalignment',
+  'Other Acharya reason',
+];
+
+/* ------------------------------------------------------------------ */
+/*  Small helpers (component ke bahar)                                 */
+/* ------------------------------------------------------------------ */
+
+const cleanPhone = (value: string) => (value || '').replace(/\D/g, '').slice(-10);
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+};
+
+// Login ke baad number localStorage aur cookie dono me rakhte hain
+const readSavedPhone = (): string => {
+  if (typeof window === 'undefined') return '';
+  const saved = localStorage.getItem('pandit_phone') || getCookie('pandit_phone') || '';
+  return cleanPhone(saved);
+};
+
+const saveSession = (phone: string) => {
+  localStorage.setItem('pandit_phone', phone);
+  document.cookie = `pandit_phone=${phone}; path=/; max-age=31536000; SameSite=Lax`;
+};
+
+const clearSession = () => {
+  localStorage.removeItem('pandit_phone');
+  document.cookie = 'pandit_phone=; path=/; max-age=0;';
+};
+
+// Capacitor app ke andar "Install App" button dikhana bekaar hai
+const isNativeApp = (): boolean =>
+  typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
+
+const maskPhone = (raw: string) => {
+  if (!raw || raw.length < 6) return '••••••••••';
+  return raw.slice(0, 3) + '••••' + raw.slice(-3);
+};
+
+// Supabase ka time kabhi 'Z' ke bina aata hai, isliye UTC maan kar parse karte hain
+const parseUtcSeconds = (dateStr: string): number => {
+  if (!dateStr) return 0;
+  const iso = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+  const normalized = iso.endsWith('Z') || iso.includes('+') ? iso : `${iso}Z`;
+  const ms = new Date(normalized).getTime();
+  return isNaN(ms) ? 0 : Math.floor(ms / 1000);
+};
+
+const loadRazorpaySDK = (): Promise<boolean> =>
+  new Promise((resolve) => {
     if (typeof window !== 'undefined' && window.Razorpay) {
       resolve(true);
       return;
@@ -60,92 +131,105 @@ const loadRazorpaySDK = (): Promise<boolean> => {
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
-};
 
-// Safe UTC Time Parser to prevent countdown timer jumps
-const parseUtcSeconds = (dateStr: string): number => {
-  if (!dateStr) return 0;
-  const isoStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
-  const normalized = isoStr.endsWith('Z') || isoStr.includes('+') ? isoStr : `${isoStr}Z`;
-  const ms = new Date(normalized).getTime();
-  return isNaN(ms) ? 0 : Math.floor(ms / 1000);
-};
+// Photo ko chhota karke base64 banate hain taaki database row bhaari na ho
+const fileToCompressedDataUrl = (file: File, maxSize = 900, quality = 0.8): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('File read nahi ho payi.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Image open nahi ho payi.'));
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas available nahi hai.'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
 
 export default function PanditDashboardPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState<string>('');
-  const [panditId, setPanditId] = useState<string>('');
-  const [panditName, setPanditName] = useState<string>('Acharya');
-  const [profilePhoto, setProfilePhoto] = useState<string>('');
-  const [baseCity, setBaseCity] = useState<string>('Bengaluru, Karnataka');
-  const [experience, setExperience] = useState<string>('12+ Years Vedic Rituals');
-  const [bio, setBio] = useState<string>(
+
+  // Pandit ki profile
+  const [phone, setPhone] = useState('');
+  const [panditId, setPanditId] = useState('');
+  const [panditName, setPanditName] = useState('Acharya');
+  const [profilePhoto, setProfilePhoto] = useState('');
+  const [baseCity, setBaseCity] = useState('Bengaluru, Karnataka');
+  const [experience, setExperience] = useState('12+ Years Vedic Rituals');
+  const [bio, setBio] = useState(
     'Specialized in Vedic Karmakand, Griha Pravesh, and authentic ceremonies adhering strictly to Vedic traditions.'
   );
-  const [upiId, setUpiId] = useState<string>('');
+  const [upiId, setUpiId] = useState('');
   const [gallery, setGallery] = useState<string[]>([]);
 
-  const [tokenBalance, setTokenBalance] = useState<number>(0);
-  const [earningsBalance, setEarningsBalance] = useState<number>(0);
-  const [strikeCount, setStrikeCount] = useState<number>(0);
-  const [isBlocked, setIsBlocked] = useState<boolean>(false);
+  // Wallet aur account status
+  const [tokenBalance, setTokenBalance] = useState(0);
+  const [earningsBalance, setEarningsBalance] = useState(0);
+  const [strikeCount, setStrikeCount] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules'>('leads');
-  const [currentTime, setCurrentTime] = useState<number>(0);
+  // UI state
+  const [activeTab, setActiveTab] = useState<TabId>('leads');
+  const [currentTime, setCurrentTime] = useState(0);
+  const [showRechargeModal, setShowRechargeModal] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
 
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editName, setEditName] = useState<string>(panditName);
-  const [editCity, setEditCity] = useState<string>(baseCity);
-  const [editExp, setEditExp] = useState<string>(experience);
-  const [editBio, setEditBio] = useState<string>(bio);
-  const [editUpi, setEditUpi] = useState<string>(upiId);
+  // Profile edit
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editExp, setEditExp] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editUpi, setEditUpi] = useState('');
 
-  const [showRechargeModal, setShowRechargeModal] = useState<boolean>(false);
+  // Completion OTP
   const [activeOtpLead, setActiveOtpLead] = useState<Lead | null>(null);
-  const [enteredOtp, setEnteredOtp] = useState<string>('');
+  const [enteredOtp, setEnteredOtp] = useState('');
 
-  // Cancellation State
+  // Cancellation
   const [activeCancelLead, setActiveCancelLead] = useState<Lead | null>(null);
   const [cancelBy, setCancelBy] = useState<'yajman' | 'pandit'>('yajman');
-  const [cancelReasonPreset, setCancelReasonPreset] = useState<string>('Yajman cancelled / changed mind');
-  const [cancelCustomReason, setCancelCustomReason] = useState<string>('');
-  const [cancelSubmitting, setCancelSubmitting] = useState<boolean>(false);
+  const [cancelReasonPreset, setCancelReasonPreset] = useState(YAJMAN_CANCEL_REASONS[0]);
+  const [cancelCustomReason, setCancelCustomReason] = useState('');
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallBtn, setShowInstallBtn] = useState<boolean>(false);
-
+  // Lead lists
   const [leads, setLeads] = useState<Lead[]>([]);
   const [confirmedBookings, setConfirmedBookings] = useState<Lead[]>([]);
   const [missingLeads, setMissingLeads] = useState<Lead[]>([]);
 
-  const maskPhone = (rawPhone: string) => {
-    if (!rawPhone || rawPhone.length < 6) return '••••••••••';
-    return rawPhone.slice(0, 3) + '••••' + rawPhone.slice(-3);
-  };
-
-  const getCookie = (name: string) => {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? match[2] : null;
-  };
-
-  // 1. Session Guard
+  /* ---------------- Session guard ---------------- */
   useEffect(() => {
-    const savedPhone = (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') : null) || getCookie('pandit_phone');
-    if (!savedPhone) {
+    const saved = readSavedPhone();
+    if (!saved) {
       router.replace('/pandit/login');
-    } else {
-      const clean = savedPhone.replace(/\D/g, '').slice(-10);
-      setPhone(clean);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('pandit_phone', clean);
-        document.cookie = `pandit_phone=${clean}; path=/; max-age=31536000; SameSite=Lax`;
-      }
+      return;
     }
+    setPhone(saved);
+    saveSession(saved); // cookie ki expiry dobara 1 saal aage badh jaati hai
   }, [router]);
 
-  // 2. Install App Listener
+  /* ---------------- PWA install button (sirf browser me) ---------------- */
   useEffect(() => {
+    if (isNativeApp()) return;
+
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -156,36 +240,36 @@ export default function PanditDashboardPage() {
   }, []);
 
   const handleInstallApp = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowInstallBtn(false);
-      }
-      setDeferredPrompt(null);
-    }
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setShowInstallBtn(false);
+    setDeferredPrompt(null);
   };
 
-  // 3. 1-Second Timer for Lead Countdown (Hydrated cleanly inside useEffect)
+  /* ---------------- Har second ka timer (lead countdown) ---------------- */
   useEffect(() => {
     setCurrentTime(Math.floor(Date.now() / 1000));
-    const timer = setInterval(() => {
-      setCurrentTime(Math.floor(Date.now() / 1000));
-    }, 1000);
+    const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // 4. Load Dashboard Data
+  const secondsLeftFor = (lead: Lead) => {
+    const now = currentTime || Math.floor(Date.now() / 1000);
+    const elapsed = Math.max(0, now - parseUtcSeconds(lead.created_at));
+    return Math.max(0, PRIORITY_WINDOW_SECONDS - elapsed);
+  };
+
+  /* ---------------- Dashboard data load ---------------- */
   const loadDashboardData = async () => {
     try {
-      const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
-      const cleanPhone = activePhone.replace(/\D/g, '').slice(-10);
-      if (!cleanPhone) return;
+      const myPhone = phone || readSavedPhone();
+      if (!myPhone) return;
 
       const { data: pData } = await supabase
         .from('pandits')
         .select('*')
-        .eq('phone', cleanPhone)
+        .eq('phone', myPhone)
         .maybeSingle();
 
       if (pData) {
@@ -215,205 +299,218 @@ export default function PanditDashboardPage() {
           setEditUpi(pData.upi_id);
         }
         if (pData.avatar_url) setProfilePhoto(pData.avatar_url);
-        if (pData.puja_gallery && Array.isArray(pData.puja_gallery)) setGallery(pData.puja_gallery);
+        if (Array.isArray(pData.puja_gallery)) setGallery(pData.puja_gallery);
       }
 
       const { data: allBookings, error: bError } = await supabase
         .from('bookings')
         .select('*')
-        .order('id', { ascending: false });
+        .order('id', { ascending: false })
+        .limit(300);
 
       if (bError) {
         console.error('Error fetching bookings:', bError.message);
-      } else if (allBookings) {
-        const formatted: Lead[] = allBookings.map((b: any) => ({
-          id: b.id,
-          yajman_name: b.name || b.yajman_name || 'Yajman',
-          phone: b.phone || '',
-          puja_name: b.puja_name || 'Vedic Ceremony',
-          event_date: b.event_date || 'As per Shubh Muhurat',
-          location: b.location || 'Bengaluru',
-          created_at: b.created_at || new Date().toISOString(),
-          status: b.status || 'available',
-          accepted_via: b.accepted_via,
-          accepted_by: b.accepted_by,
-          assigned_to_phone: b.assigned_to_phone,
-          completion_otp: b.completion_otp,
-          cancellation_reason: b.cancellation_reason,
-          cancelled_by: b.cancelled_by,
-          refund_status: b.refund_status,
-        }));
-
-        // 1. Available New Leads (Unclaimed)
-        setLeads(
-          formatted.filter(
-            (item) =>
-              item.status === 'available' ||
-              !item.status ||
-              item.status.toLowerCase() === 'pending'
-          )
-        );
-
-        // 2. Confirmed Bookings: ONLY leads claimed by or assigned to THIS Pandit
-        setConfirmedBookings(
-          formatted.filter(
-            (item) =>
-              (item.status === 'confirmed' || item.status === 'in_progress') &&
-              (item.accepted_by === cleanPhone || item.assigned_to_phone === cleanPhone)
-          )
-        );
-
-        // 3. Missing Leads: Leads claimed by others OR cancelled
-        setMissingLeads(
-          formatted.filter((item) => {
-            const isClaimedByOther =
-              (item.status === 'confirmed' || item.status === 'in_progress' || item.status === 'completed') &&
-              item.accepted_by !== cleanPhone &&
-              item.assigned_to_phone !== cleanPhone;
-
-            const isCancelled =
-              item.status === 'cancelled_by_yajman' ||
-              item.status === 'cancelled_by_pandit' ||
-              item.status === 'cancellation_under_review' ||
-              item.status === 'cancelled';
-
-            return isClaimedByOther || isCancelled;
-          })
-        );
+        return;
       }
+      if (!allBookings) return;
+
+      const formatted: Lead[] = allBookings.map((b: any) => ({
+        id: b.id,
+        yajman_name: b.name || b.yajman_name || 'Yajman',
+        phone: b.phone || '',
+        puja_name: b.puja_name || 'Vedic Ceremony',
+        event_date: b.event_date || 'As per Shubh Muhurat',
+        location: b.location || 'Bengaluru',
+        created_at: b.created_at || new Date().toISOString(),
+        status: b.status || 'available',
+        accepted_via: b.accepted_via,
+        accepted_by: b.accepted_by,
+        assigned_to_phone: b.assigned_to_phone,
+        completion_otp: b.completion_otp,
+        cancellation_reason: b.cancellation_reason,
+        cancelled_by: b.cancelled_by,
+        refund_status: b.refund_status,
+      }));
+
+      const isMine = (item: Lead) =>
+        item.accepted_by === myPhone || item.assigned_to_phone === myPhone;
+
+      // 1. Naye leads jo abhi kisi ne nahi liye
+      setLeads(
+        formatted.filter(
+          (item) => item.status === 'available' || item.status.toLowerCase() === 'pending'
+        )
+      );
+
+      // 2. Sirf is pandit ke confirmed bookings
+      setConfirmedBookings(
+        formatted.filter(
+          (item) => (item.status === 'confirmed' || item.status === 'in_progress') && isMine(item)
+        )
+      );
+
+      // 3. Doosre pandit ne le liye ya cancel ho gaye
+      setMissingLeads(
+        formatted.filter((item) => {
+          const claimedByOther =
+            ['confirmed', 'in_progress', 'completed'].includes(item.status) && !isMine(item);
+          const cancelled = [
+            'cancelled_by_yajman',
+            'cancelled_by_pandit',
+            'cancellation_under_review',
+            'cancelled',
+          ].includes(item.status);
+          return claimedByOther || cancelled;
+        })
+      );
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     }
   };
 
   useEffect(() => {
-    if (phone) {
-      loadDashboardData();
-    }
+    if (phone) loadDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phone]);
 
-  // 5. Accept Lead Flow with Correct Timer Calculation
+  /* ---------------- Lead accept ---------------- */
+
+  // Lead tabhi claim hoti hai jab wo abhi bhi available ho (do pandit ek saath tap karein to ek hi jeete)
+  const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
+    const completionOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({
+        status: 'confirmed',
+        accepted_by: phone,
+        accepted_via: via,
+        completion_otp: completionOtp,
+      })
+      .eq('id', lead.id)
+      .or('status.is.null,status.eq.available,status.eq.pending')
+      .select('id');
+
+    if (error) {
+      alert('Could not claim ceremony: ' + error.message);
+      return false;
+    }
+    if (!data || data.length === 0) {
+      alert('Ye ceremony kisi aur Acharya ne abhi claim kar li hai.');
+      await loadDashboardData();
+      return false;
+    }
+    return true;
+  };
+
   const handleAcceptLead = async (lead: Lead) => {
+    if (!phone) return;
+
     if (isBlocked || strikeCount >= 2) {
       alert('Your account is currently suspended due to active strikes. Please contact support.');
       return;
     }
 
-    const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
-    const currentPanditIdentifier = cleanPhone || panditId || 'Acharya';
-    const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const secondsLeft = secondsLeftFor(lead);
+    const inPriorityWindow = secondsLeft > 0;
 
-    const createdSec = parseUtcSeconds(lead.created_at);
-    const effectiveCurrent = currentTime || Math.floor(Date.now() / 1000);
-    const elapsed = Math.max(0, effectiveCurrent - createdSec);
-    const isWithin60s = elapsed < 60;
-
-    if (isWithin60s) {
+    if (inPriorityWindow) {
       if (tokenBalance < TOKEN_COST) {
-        alert(`This ceremony is in the priority window (${Math.max(0, 60 - elapsed)}s remaining). It requires ${TOKEN_COST} tokens.`);
+        alert(
+          `This ceremony is in the priority window (${secondsLeft}s remaining). It requires ${TOKEN_COST} tokens.`
+        );
         return;
       }
 
-      const remainingTokens = tokenBalance - TOKEN_COST;
-      if (cleanPhone) {
-        await supabase.from('pandits').update({ wallet_balance: remainingTokens }).eq('phone', cleanPhone);
-      }
-      setTokenBalance(remainingTokens);
+      // Pehle lead claim karo, tokens uske baad kaato (claim fail ho to tokens na jaayein)
+      const claimed = await claimLead(lead, 'token');
+      if (!claimed) return;
 
+      const remaining = tokenBalance - TOKEN_COST;
       const { error } = await supabase
-        .from('bookings')
-        .update({
-          status: 'confirmed',
-          accepted_by: currentPanditIdentifier,
-          accepted_via: 'token',
-          completion_otp: generatedOtp,
-        })
-        .eq('id', lead.id);
-
-      if (error) {
-        alert('Could not claim ceremony: ' + error.message);
-        return;
-      }
+        .from('pandits')
+        .update({ wallet_balance: remaining })
+        .eq('phone', phone);
+      if (error) console.error('Token deduction failed:', error.message);
+      setTokenBalance(remaining);
 
       alert(`Ceremony Claimed Successfully! ${TOKEN_COST} priority tokens deducted. Direct contact unlocked.`);
-      await loadDashboardData();
-      setActiveTab('bookings');
     } else {
-      const { error } = await supabase
-        .from('bookings')
-        .update({
-          status: 'confirmed',
-          accepted_by: currentPanditIdentifier,
-          accepted_via: 'free',
-          completion_otp: generatedOtp,
-        })
-        .eq('id', lead.id);
+      const claimed = await claimLead(lead, 'free');
+      if (!claimed) return;
 
-      if (error) {
-        alert('Could not claim ceremony: ' + error.message);
-        return;
-      }
-
-      alert('Ceremony Claimed in Open Mode! Direct contact unlocked (30% platform commission applies upon completion).');
-      await loadDashboardData();
-      setActiveTab('bookings');
+      alert(
+        `Ceremony Claimed in Open Mode! Direct contact unlocked (${COMMISSION_PERCENT}% platform commission applies upon completion).`
+      );
     }
+
+    await loadDashboardData();
+    setActiveTab('bookings');
   };
 
-  // 6. Verify OTP
+  /* ---------------- Completion OTP ---------------- */
   const handleVerifyCompletionOtp = async () => {
     if (!activeOtpLead) return;
 
-    if (!enteredOtp || enteredOtp.trim() === '') {
+    const code = enteredOtp.trim();
+    if (!code) {
       alert('Please enter the 4-digit verification code provided by the Yajman.');
       return;
     }
-
-    if (activeOtpLead.completion_otp && enteredOtp.trim() !== activeOtpLead.completion_otp) {
+    if (activeOtpLead.completion_otp && code !== activeOtpLead.completion_otp) {
       alert('Invalid verification code. Please confirm the correct 4-digit code with the Yajman.');
       return;
     }
 
     const { error } = await supabase
       .from('bookings')
-      .update({
-        status: 'completed',
-      })
+      .update({ status: 'completed' })
       .eq('id', activeOtpLead.id);
 
     if (error) {
       alert('Error updating ceremony status: ' + error.message);
-    } else {
-      alert('Ceremony marked as completed and verified successfully.');
-      setActiveOtpLead(null);
-      setEnteredOtp('');
-      await loadDashboardData();
+      return;
     }
+
+    alert('Ceremony marked as completed and verified successfully.');
+    setActiveOtpLead(null);
+    setEnteredOtp('');
+    await loadDashboardData();
   };
 
-  // 7. Cancellation Submission Handler
+  /* ---------------- Cancellation ---------------- */
+  const openCancelModal = (lead: Lead) => {
+    setActiveCancelLead(lead);
+    setCancelBy('yajman');
+    setCancelReasonPreset(YAJMAN_CANCEL_REASONS[0]);
+    setCancelCustomReason('');
+  };
+
+  const chooseCancelSide = (side: 'yajman' | 'pandit') => {
+    setCancelBy(side);
+    setCancelReasonPreset(side === 'yajman' ? YAJMAN_CANCEL_REASONS[0] : PANDIT_CANCEL_REASONS[0]);
+  };
+
   const handleConfirmCancellation = async () => {
     if (!activeCancelLead) return;
 
-    const finalReason = cancelCustomReason.trim()
-      ? `${cancelReasonPreset}: ${cancelCustomReason.trim()}`
-      : cancelReasonPreset;
+    const custom = cancelCustomReason.trim();
+    const finalReason = custom ? `${cancelReasonPreset}: ${custom}` : cancelReasonPreset;
+    const isPriorityClaim = activeCancelLead.accepted_via === 'token';
+
+    let refundStatus = 'No Refund Applicable (Pandit Initiated)';
+    if (cancelBy === 'yajman') {
+      refundStatus = isPriorityClaim
+        ? `Pending Admin Verification (Eligible for +${TOKEN_COST} Token Refund)`
+        : 'Pending Admin Verification (0 Refund - Claimed via Free Mode)';
+    }
 
     setCancelSubmitting(true);
     try {
-      const newStatus = 'cancellation_under_review';
-      const isPriorityClaim = activeCancelLead.accepted_via === 'token';
-      const refundStatus =
-        cancelBy === 'yajman'
-          ? isPriorityClaim
-            ? 'Pending Admin Verification (Eligible for +150 Token Refund)'
-            : 'Pending Admin Verification (0 Refund - Claimed via Free Mode)'
-          : 'No Refund Applicable (Pandit Initiated)';
-
       const { error } = await supabase
         .from('bookings')
         .update({
-          status: newStatus,
+          status: 'cancellation_under_review',
           cancelled_by: cancelBy,
           cancellation_reason: finalReason,
           refund_status: refundStatus,
@@ -422,19 +519,25 @@ export default function PanditDashboardPage() {
 
       if (error) {
         alert('Failed to report cancellation: ' + error.message);
+        return;
+      }
+
+      if (cancelBy === 'yajman') {
+        alert(
+          isPriorityClaim
+            ? `Cancellation reported. Admin is reviewing this case with the Yajman. Once verified genuine, ${TOKEN_COST} Tokens will be credited back to your wallet.`
+            : 'Cancellation reported. Since this ceremony was claimed in Free Mode, no token refund is applicable.'
+        );
       } else {
         alert(
-          cancelBy === 'yajman'
-            ? isPriorityClaim
-              ? 'Cancellation reported. Admin is reviewing this case with the Yajman. Once verified genuine, 150 Tokens will be credited back to your wallet.'
-              : 'Cancellation reported. Since this ceremony was claimed in Free Mode, no token refund is applicable.'
-            : 'Cancellation reported. Please note that cancellations caused by the Acharya do not qualify for a token refund.'
+          'Cancellation reported. Please note that cancellations caused by the Acharya do not qualify for a token refund.'
         );
-        setActiveCancelLead(null);
-        setCancelCustomReason('');
-        await loadDashboardData();
-        setActiveTab('missing');
       }
+
+      setActiveCancelLead(null);
+      setCancelCustomReason('');
+      await loadDashboardData();
+      setActiveTab('missing');
     } catch (err: any) {
       alert('Error: ' + err.message);
     } finally {
@@ -442,77 +545,92 @@ export default function PanditDashboardPage() {
     }
   };
 
-  // 8. Token Purchase & Recharge
-  const recordTokenTransaction = async (packName: string, amount: number, tokensCount: number, razorpayId: string) => {
-    try {
-      await supabase.from('token_transactions').insert({
-        pandit_id: panditId || phone || 'unknown',
-        pandit_phone: phone || 'unknown',
-        pandit_name: panditName || 'Acharya',
-        pack_name: packName,
-        amount: amount,
-        tokens_credited: tokensCount,
-        razorpay_payment_id: razorpayId,
-      });
-    } catch (err) {
-      console.error('Error logging token transaction:', err);
-    }
+  /* ---------------- Token purchase ---------------- */
+  const recordTokenTransaction = async (
+    packName: string,
+    amount: number,
+    tokensCount: number,
+    razorpayId: string
+  ) => {
+    const { error } = await supabase.from('token_transactions').insert({
+      pandit_id: panditId || phone || 'unknown',
+      pandit_phone: phone || 'unknown',
+      pandit_name: panditName || 'Acharya',
+      pack_name: packName,
+      amount,
+      tokens_credited: tokensCount,
+      razorpay_payment_id: razorpayId,
+    });
+    if (error) console.error('Error logging token transaction:', error.message);
   };
 
   const handleBuyTokens = async (packName: string, amount: number, tokensCount: number) => {
-    const isLoaded = await loadRazorpaySDK();
+    const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    if (!razorpayKey) {
+      alert('Payment abhi configure nahi hai. Please support se sampark karein.');
+      return;
+    }
 
-    if (!isLoaded) {
+    const sdkLoaded = await loadRazorpaySDK();
+    if (!sdkLoaded) {
       alert('Payment gateway failed to load. Please verify your internet connection.');
       return;
     }
 
     const options = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_purohitsetu',
+      key: razorpayKey,
       amount: amount * 100,
       currency: 'INR',
       name: 'PurohitSetu',
       description: `Recharge: ${packName} (${tokensCount} Tokens)`,
       image: '/pandit-logo.png',
-      handler: async function (response: any) {
-        const newTokens = tokenBalance + tokensCount;
-        setTokenBalance(newTokens);
-        if (phone) {
-          await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('phone', phone);
+      handler: async (response: any) => {
+        const paymentId = response?.razorpay_payment_id || 'RZP_SUCCESS';
+
+        // Latest balance database se lo, phir naye tokens jodo
+        const { data: fresh } = await supabase
+          .from('pandits')
+          .select('wallet_balance')
+          .eq('phone', phone)
+          .maybeSingle();
+        const currentBalance = Number(fresh?.wallet_balance ?? tokenBalance);
+        const newBalance = currentBalance + tokensCount;
+
+        const { error } = await supabase
+          .from('pandits')
+          .update({ wallet_balance: newBalance })
+          .eq('phone', phone);
+
+        if (error) {
+          alert(
+            `Payment mil gaya (${paymentId}) lekin tokens add nahi ho paaye. Is ID ke saath support ko batayein.`
+          );
+          return;
         }
-        await recordTokenTransaction(packName, amount, tokensCount, response?.razorpay_payment_id || 'RZP_SUCCESS');
+
+        setTokenBalance(newBalance);
+        await recordTokenTransaction(packName, amount, tokensCount, paymentId);
         setShowRechargeModal(false);
-        alert(`Payment Verified (${response.razorpay_payment_id || 'Success'}). ${tokensCount} tokens added to your wallet.`);
+        alert(`Payment Verified (${paymentId}). ${tokensCount} tokens added to your wallet.`);
         await loadDashboardData();
       },
-      prefill: {
-        name: panditName,
-        contact: phone,
-      },
-      theme: {
-        color: '#c2410c',
-      },
+      prefill: { name: panditName, contact: phone },
+      theme: { color: '#c2410c' },
     };
 
     try {
       const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
+      rzp.on('payment.failed', (response: any) => {
         alert('Payment Failed: ' + response.error.description);
       });
       rzp.open();
     } catch {
-      const newTokens = tokenBalance + tokensCount;
-      setTokenBalance(newTokens);
-      if (phone) {
-        await supabase.from('pandits').update({ wallet_balance: newTokens }).eq('phone', phone);
-      }
-      await recordTokenTransaction(packName, amount, tokensCount, 'DIRECT_OFFLINE');
-      setShowRechargeModal(false);
-      alert(`Tokens Credited: ${tokensCount} tokens added to wallet.`);
+      // Payment window na khule to tokens nahi milte
+      alert('Payment window open nahi ho payi. Please dobara try karein.');
     }
   };
 
-  // 9. Request Payout
+  /* ---------------- Payout ---------------- */
   const handleRequestPayout = async () => {
     if (earningsBalance <= 0) {
       alert('No withdrawable ceremony earnings available right now.');
@@ -523,9 +641,7 @@ export default function PanditDashboardPage() {
       setActiveTab('profile');
       return;
     }
-
-    const confirmReq = confirm(`Request payout of ₹${earningsBalance} to UPI ID: ${upiId}?`);
-    if (!confirmReq) return;
+    if (!confirm(`Request payout of ₹${earningsBalance} to UPI ID: ${upiId}?`)) return;
 
     try {
       const { error } = await supabase.from('withdrawals').insert({
@@ -540,47 +656,36 @@ export default function PanditDashboardPage() {
       if (error) {
         alert('Could not submit payout request: ' + error.message);
       } else {
-        alert(`Payout request for ₹${earningsBalance} submitted successfully. Disbursal will be processed to ${upiId} within 3-4 hours.`);
+        alert(
+          `Payout request for ₹${earningsBalance} submitted successfully. Disbursal will be processed to ${upiId} within 3-4 hours.`
+        );
       }
     } catch (err: any) {
       alert('Error requesting payout: ' + err.message);
     }
   };
 
-  // 10. Profile Save
+  /* ---------------- Profile ---------------- */
   const handleSaveProfile = async () => {
-    const activePhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
-    const cleanPhone = activePhone.replace(/\D/g, '').slice(-10);
-
-    if (!cleanPhone) {
+    if (!phone) {
       alert('Active mobile session not detected. Please sign in again.');
       return;
     }
 
-    const payload = {
-      phone: cleanPhone,
-      full_name: editName,
-      city: editCity,
-      experience: editExp,
-      bio: editBio,
-      upi_id: editUpi,
-      avatar_url: profilePhoto,
-    };
-
     const { error } = await supabase
       .from('pandits')
-      .upsert(payload, { onConflict: 'phone' });
+      .update({
+        full_name: editName,
+        city: editCity,
+        experience: editExp,
+        bio: editBio,
+        upi_id: editUpi,
+      })
+      .eq('phone', phone);
 
     if (error) {
-      const { error: updateError } = await supabase
-        .from('pandits')
-        .update(payload)
-        .eq('phone', cleanPhone);
-
-      if (updateError) {
-        alert('Failed to save profile changes: ' + updateError.message);
-        return;
-      }
+      alert('Failed to save profile changes: ' + error.message);
+      return;
     }
 
     setPanditName(editName);
@@ -593,69 +698,105 @@ export default function PanditDashboardPage() {
     await loadDashboardData();
   };
 
-  // 11. Photo Uploads
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        setProfilePhoto(base64String);
-        const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
-        if (cleanPhone) {
-          await supabase.from('pandits').update({ avatar_url: base64String }).eq('phone', cleanPhone);
-        }
-        alert('Profile photo updated successfully.');
-      };
-      reader.readAsDataURL(file);
+    e.target.value = ''; // same photo dobara chunne par bhi onChange chale
+    if (!file || !phone) return;
+
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file, 600);
+      const { error } = await supabase.from('pandits').update({ avatar_url: dataUrl }).eq('phone', phone);
+      if (error) {
+        alert('Photo save nahi ho payi: ' + error.message);
+        return;
+      }
+      setProfilePhoto(dataUrl);
+      alert('Profile photo updated successfully.');
+    } catch (err: any) {
+      alert('Photo upload failed: ' + err.message);
     }
   };
 
-  const handleAddGalleryImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddGalleryImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        const updatedGallery = [base64String, ...gallery];
-        setGallery(updatedGallery);
-        const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
-        if (cleanPhone) {
-          await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('phone', cleanPhone);
-        }
-        alert('Ceremony photo added to your public portfolio.');
-      };
-      reader.readAsDataURL(file);
+    e.target.value = '';
+    if (!file || !phone) return;
+
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file);
+      const updatedGallery = [dataUrl, ...gallery];
+      const { error } = await supabase
+        .from('pandits')
+        .update({ puja_gallery: updatedGallery })
+        .eq('phone', phone);
+      if (error) {
+        alert('Photo save nahi ho payi: ' + error.message);
+        return;
+      }
+      setGallery(updatedGallery);
+      alert('Ceremony photo added to your public portfolio.');
+    } catch (err: any) {
+      alert('Photo upload failed: ' + err.message);
     }
   };
 
   const handleDeleteGalleryImage = async (indexToDelete: number) => {
-    if (confirm('Are you sure you want to delete this photo from your portfolio?')) {
-      const updatedGallery = gallery.filter((_, idx) => idx !== indexToDelete);
-      setGallery(updatedGallery);
-      const cleanPhone = phone || (typeof window !== 'undefined' ? localStorage.getItem('pandit_phone') || '' : '') || getCookie('pandit_phone') || '';
-      if (cleanPhone) {
-        await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('phone', cleanPhone);
-      }
+    if (!confirm('Are you sure you want to delete this photo from your portfolio?')) return;
+
+    const updatedGallery = gallery.filter((_, idx) => idx !== indexToDelete);
+    const { error } = await supabase
+      .from('pandits')
+      .update({ puja_gallery: updatedGallery })
+      .eq('phone', phone);
+    if (error) {
+      alert('Photo delete nahi ho payi: ' + error.message);
+      return;
     }
+    setGallery(updatedGallery);
   };
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to log out from the Acharya Portal?')) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('pandit_phone');
-        document.cookie = 'pandit_phone=; path=/; max-age=0;';
-      }
-      router.replace('/pandit/login');
-    }
+    if (!confirm('Are you sure you want to log out from the Acharya Portal?')) return;
+    clearSession();
+    router.replace('/pandit/login');
   };
 
+  /* ---------------- Render helpers ---------------- */
+  const tabs: { id: TabId; label: string }[] = [
+    { id: 'leads', label: `🌟 New Leads (${leads.length})` },
+    { id: 'bookings', label: `📅 Confirmed Bookings (${confirmedBookings.length})` },
+    { id: 'missing', label: `⏳ Missing / Cancelled (${missingLeads.length})` },
+    { id: 'wallet', label: '🪙 Tokens & Wallet' },
+    { id: 'profile', label: '👤 Profile & Portfolio' },
+    { id: 'rules', label: '📜 Platform Rules' },
+  ];
+
+  const tabClass = (id: TabId) => {
+    const base = 'px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap cursor-pointer';
+    if (id === 'rules') {
+      return `${base} ${activeTab === id ? 'bg-amber-400 text-gray-950 font-bold shadow' : 'text-amber-200 hover:bg-white/10'}`;
+    }
+    return `${base} ${activeTab === id ? 'bg-white text-orange-800 shadow' : 'text-orange-100 hover:bg-white/10'}`;
+  };
+
+  const refreshButton = (
+    <button
+      onClick={loadDashboardData}
+      className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-3 py-1 rounded-lg hover:bg-orange-100 cursor-pointer"
+    >
+      🔄 Refresh
+    </button>
+  );
+
+  /* ---------------- UI ---------------- */
   return (
     <div className="min-h-screen bg-gray-50 pb-24 font-sans text-gray-900 relative">
       {strikeCount > 0 && (
         <div className="bg-red-600 text-white px-4 py-2.5 text-center text-xs font-semibold flex items-center justify-center gap-2">
           <span>⚠️</span>
-          <span>Account Alert: {strikeCount} Active Strike(s). Two strikes will automatically suspend lead access.</span>
+          <span>
+            Account Alert: {strikeCount} Active Strike(s). Two strikes will automatically suspend lead access.
+          </span>
         </div>
       )}
 
@@ -664,11 +805,7 @@ export default function PanditDashboardPage() {
         <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-amber-300 bg-white p-0.5 shadow-md flex items-center justify-center shrink-0">
-              <img
-                src="/pandit-logo.png"
-                alt="PurohitSetu Logo"
-                className="w-full h-full object-contain"
-              />
+              <img src="/pandit-logo.png" alt="PurohitSetu Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-bold leading-tight tracking-wide">PurohitSetu</h1>
@@ -685,7 +822,6 @@ export default function PanditDashboardPage() {
                 📲 Install App
               </button>
             )}
-
             <button
               onClick={() => setActiveTab('wallet')}
               className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
@@ -708,61 +844,18 @@ export default function PanditDashboardPage() {
           </div>
         </div>
 
-        {/* NAVIGATION TABS */}
+        {/* TABS */}
         <div className="max-w-6xl mx-auto px-4 bg-black/20 backdrop-blur border-t border-white/10 flex overflow-x-auto gap-2 py-1.5">
-          <button
-            onClick={() => setActiveTab('leads')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'leads' ? 'bg-white text-orange-800 shadow' : 'text-orange-100 hover:bg-white/10'
-            }`}
-          >
-            🌟 New Leads ({leads.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('bookings')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'bookings' ? 'bg-white text-orange-800 shadow' : 'text-orange-100 hover:bg-white/10'
-            }`}
-          >
-            📅 Confirmed Bookings ({confirmedBookings.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('missing')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'missing' ? 'bg-white text-orange-800 shadow' : 'text-orange-100 hover:bg-white/10'
-            }`}
-          >
-            ⏳ Missing / Cancelled ({missingLeads.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('wallet')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'wallet' ? 'bg-white text-orange-800 shadow' : 'text-orange-100 hover:bg-white/10'
-            }`}
-          >
-            🪙 Tokens & Wallet
-          </button>
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'profile' ? 'bg-white text-orange-800 shadow' : 'text-orange-100 hover:bg-white/10'
-            }`}
-          >
-            👤 Profile & Portfolio
-          </button>
-          <button
-            onClick={() => setActiveTab('rules')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap cursor-pointer ${
-              activeTab === 'rules' ? 'bg-amber-400 text-gray-950 font-bold shadow' : 'text-amber-200 hover:bg-white/10'
-            }`}
-          >
-            📜 Platform Rules
-          </button>
+          {tabs.map((tab) => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={tabClass(tab.id)}>
+              {tab.label}
+            </button>
+          ))}
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-        {/* TAB 1: NEW LEADS */}
+        {/* ============ NEW LEADS ============ */}
         {activeTab === 'leads' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
@@ -773,12 +866,7 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={loadDashboardData}
-                  className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-3 py-1 rounded-lg hover:bg-orange-100 cursor-pointer"
-                >
-                  🔄 Refresh
-                </button>
+                {refreshButton}
                 <span className="bg-orange-100 text-orange-800 text-xs font-bold px-3 py-1 rounded-full">
                   {leads.length} Available
                 </span>
@@ -789,16 +877,11 @@ export default function PanditDashboardPage() {
               <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 shadow-sm">
                 <span className="text-4xl block mb-2">🪔</span>
                 <h3 className="font-bold text-gray-800 text-base">No Live Ceremonies Right Now</h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  New ceremony requests will appear here in real time.
-                </p>
+                <p className="text-xs text-gray-500 mt-1">New ceremony requests will appear here in real time.</p>
               </div>
             ) : (
               leads.map((lead) => {
-                const createdSec = parseUtcSeconds(lead.created_at);
-                const effectiveCurrent = currentTime || Math.floor(Date.now() / 1000);
-                const elapsed = Math.max(0, effectiveCurrent - createdSec);
-                const secondsLeft = Math.max(0, 60 - elapsed);
+                const secondsLeft = secondsLeftFor(lead);
                 const isExclusive = secondsLeft > 0;
                 const hasTokens = tokenBalance >= TOKEN_COST;
 
@@ -816,7 +899,7 @@ export default function PanditDashboardPage() {
                         </span>
                       ) : (
                         <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold px-3 py-1.5 rounded-xl self-start sm:self-auto">
-                          🔓 Open for All (30% Platform Fee)
+                          🔓 Open for All ({COMMISSION_PERCENT}% Platform Fee)
                         </span>
                       )}
                     </div>
@@ -837,7 +920,7 @@ export default function PanditDashboardPage() {
                           </span>
                         ) : (
                           <span className="text-gray-600">
-                            Open Mode: No tokens required. 30% platform commission applies upon completion.
+                            Open Mode: No tokens required. {COMMISSION_PERCENT}% platform commission applies upon completion.
                           </span>
                         )}
                       </p>
@@ -867,7 +950,7 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 2: CONFIRMED BOOKINGS */}
+        {/* ============ CONFIRMED BOOKINGS ============ */}
         {activeTab === 'bookings' && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
@@ -877,13 +960,9 @@ export default function PanditDashboardPage() {
                   Direct client contacts unlocked. Complete the ritual and enter the OTP, or report cancellation if required.
                 </p>
               </div>
-              <button
-                onClick={loadDashboardData}
-                className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-3 py-1 rounded-lg hover:bg-orange-100 cursor-pointer"
-              >
-                🔄 Refresh
-              </button>
+              {refreshButton}
             </div>
+
             {confirmedBookings.length === 0 ? (
               <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 shadow-sm">
                 <p className="text-sm text-gray-400">No active confirmed bookings yet. Claim an available lead to begin.</p>
@@ -895,7 +974,10 @@ export default function PanditDashboardPage() {
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">{b.puja_name}</h3>
                       <span className="text-xs font-semibold text-gray-500">
-                        Claimed via: {b.accepted_via === 'token' ? 'Priority Token (0% fee)' : 'Open Mode (30% fee)'}
+                        Claimed via:{' '}
+                        {b.accepted_via === 'token'
+                          ? 'Priority Token (0% fee)'
+                          : `Open Mode (${COMMISSION_PERCENT}% fee)`}
                       </span>
                     </div>
                     {b.accepted_via === 'admin_assigned' && (
@@ -920,7 +1002,6 @@ export default function PanditDashboardPage() {
                       >
                         📞 Call Yajman
                       </a>
-
                       <button
                         onClick={() => setActiveOtpLead(b)}
                         className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
@@ -930,12 +1011,7 @@ export default function PanditDashboardPage() {
                     </div>
 
                     <button
-                      onClick={() => {
-                        setActiveCancelLead(b);
-                        setCancelBy('yajman');
-                        setCancelReasonPreset('Yajman cancelled / changed mind');
-                        setCancelCustomReason('');
-                      }}
+                      onClick={() => openCancelModal(b)}
                       className="text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold py-2 px-3.5 rounded-xl transition cursor-pointer"
                     >
                       ✕ Report Cancellation
@@ -947,7 +1023,7 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 3: MISSING & CANCELLED LEADS */}
+        {/* ============ MISSING & CANCELLED ============ */}
         {activeTab === 'missing' && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
@@ -957,12 +1033,7 @@ export default function PanditDashboardPage() {
                   Ceremonies claimed by other Acharyas or cancelled ceremonies under review.
                 </p>
               </div>
-              <button
-                onClick={loadDashboardData}
-                className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-3 py-1 rounded-lg hover:bg-orange-100 cursor-pointer"
-              >
-                🔄 Refresh
-              </button>
+              {refreshButton}
             </div>
 
             {missingLeads.length === 0 ? (
@@ -971,9 +1042,40 @@ export default function PanditDashboardPage() {
               </div>
             ) : (
               missingLeads.map((m) => {
-                const isClaimedByOther =
-                  (m.status === 'confirmed' || m.status === 'in_progress' || m.status === 'completed') &&
-                  m.accepted_by !== phone;
+                const claimedByOther =
+                  ['confirmed', 'in_progress', 'completed'].includes(m.status) &&
+                  m.accepted_by !== phone &&
+                  m.assigned_to_phone !== phone;
+
+                let badgeClass = 'bg-red-100 text-red-900 border border-red-300';
+                let badgeText = 'Cancelled by Acharya';
+                if (claimedByOther) {
+                  badgeClass = 'bg-stone-100 text-stone-700 border border-stone-200';
+                  badgeText = 'Missed • Claimed by another Acharya';
+                } else if (m.status === 'cancellation_under_review') {
+                  badgeClass = 'bg-amber-100 text-amber-900 border border-amber-300';
+                  badgeText = '⏳ Cancellation Under Review';
+                } else if (m.cancelled_by === 'yajman') {
+                  badgeClass = 'bg-emerald-100 text-emerald-900 border border-emerald-300';
+                  badgeText = 'Cancelled by Yajman';
+                }
+
+                const refundText =
+                  m.refund_status ||
+                  (m.cancelled_by === 'yajman'
+                    ? 'Eligible for Token Refund (Admin Verification Pending)'
+                    : 'No Refund Applicable');
+
+                let refundColor = 'text-amber-700';
+                if (m.refund_status?.includes('+150') || m.refund_status?.includes('Refund Approved')) {
+                  refundColor = 'text-emerald-700';
+                } else if (
+                  m.refund_status?.includes('No Refund') ||
+                  m.refund_status?.includes('0 Tokens') ||
+                  m.cancelled_by === 'pandit'
+                ) {
+                  refundColor = 'text-red-700';
+                }
 
                 return (
                   <div key={m.id} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3">
@@ -984,49 +1086,23 @@ export default function PanditDashboardPage() {
                           Yajman: {m.yajman_name} • {m.location} • 🔒 {maskPhone(m.phone)}
                         </p>
                       </div>
-
-                      <span
-                        className={`text-xs font-bold px-3 py-1 rounded-full self-start sm:self-auto ${
-                          isClaimedByOther
-                            ? 'bg-stone-100 text-stone-700 border border-stone-200'
-                            : m.status === 'cancellation_under_review'
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                            : m.cancelled_by === 'yajman'
-                            ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                            : 'bg-red-100 text-red-900 border border-red-300'
-                        }`}
-                      >
-                        {isClaimedByOther
-                          ? 'Missed • Claimed by another Acharya'
-                          : m.status === 'cancellation_under_review'
-                          ? '⏳ Cancellation Under Review'
-                          : m.cancelled_by === 'yajman'
-                          ? 'Cancelled by Yajman'
-                          : 'Cancelled by Acharya'}
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full self-start sm:self-auto ${badgeClass}`}>
+                        {badgeText}
                       </span>
                     </div>
 
-                    {!isClaimedByOther && (
+                    {!claimedByOther && (
                       <div className="bg-stone-50 rounded-xl p-3.5 border border-stone-200 text-xs space-y-1.5">
                         <p className="text-gray-700">
                           <strong>Cancellation Reason:</strong> {m.cancellation_reason || 'Reason not specified.'}
                         </p>
                         <p className="text-gray-700">
-                          <strong>Reported Initiator:</strong> {m.cancelled_by === 'yajman' ? 'Yajman Side' : 'Acharya Side'}
+                          <strong>Reported Initiator:</strong>{' '}
+                          {m.cancelled_by === 'yajman' ? 'Yajman Side' : 'Acharya Side'}
                         </p>
                         <div className="pt-1">
                           <span className="font-bold text-gray-900">Token Refund Status: </span>
-                          <span
-                            className={`font-semibold ${
-                              m.refund_status?.includes('+150') || m.refund_status?.includes('Refund Approved')
-                                ? 'text-emerald-700'
-                                : m.refund_status?.includes('No Refund') || m.refund_status?.includes('0 Tokens') || m.cancelled_by === 'pandit'
-                                ? 'text-red-700'
-                                : 'text-amber-700'
-                            }`}
-                          >
-                            {m.refund_status || (m.cancelled_by === 'yajman' ? 'Eligible for Token Refund (Admin Verification Pending)' : 'No Refund Applicable')}
-                          </span>
+                          <span className={`font-semibold ${refundColor}`}>{refundText}</span>
                         </div>
                       </div>
                     )}
@@ -1037,7 +1113,7 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 4: WALLET & RECHARGE */}
+        {/* ============ WALLET ============ */}
         {activeTab === 'wallet' && (
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-green-800 text-white p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -1076,7 +1152,6 @@ export default function PanditDashboardPage() {
               </button>
             </div>
 
-            {/* RECHARGE PACKS MODAL */}
             {showRechargeModal && (
               <div className="bg-white p-6 md:p-8 rounded-3xl border border-orange-200 shadow-2xl space-y-5">
                 <div className="flex justify-between items-center border-b pb-4">
@@ -1095,29 +1170,38 @@ export default function PanditDashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 max-h-[65vh] overflow-y-auto p-1">
-                  {TOKEN_PACKS.map((pack, idx) => {
+                  {TOKEN_PACKS.map((pack) => {
                     const isTopTier = pack.amount === 5000;
                     const hasBonus = pack.tag.includes('Bonus');
+
+                    const cardClass = isTopTier
+                      ? 'border-2 border-orange-600 bg-gradient-to-b from-orange-50/80 to-amber-50/40 shadow-md ring-2 ring-orange-400/30'
+                      : hasBonus
+                      ? 'border-2 border-amber-300 bg-amber-50/30'
+                      : 'border border-gray-200 bg-white';
+
+                    const tagClass = isTopTier
+                      ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white animate-pulse'
+                      : hasBonus
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-orange-100 text-orange-900';
+
+                    const priceColor = isTopTier ? 'text-orange-700' : hasBonus ? 'text-emerald-700' : 'text-orange-600';
+
+                    const buttonClass = isTopTier
+                      ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:brightness-110 font-black'
+                      : hasBonus
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-orange-600 hover:bg-orange-700';
+
                     return (
                       <div
-                        key={idx}
-                        className={`p-4 rounded-2xl text-center space-y-2 hover:border-orange-500 transition shadow-sm flex flex-col justify-between relative ${
-                          isTopTier
-                            ? 'border-2 border-orange-600 bg-gradient-to-b from-orange-50/80 to-amber-50/40 shadow-md ring-2 ring-orange-400/30'
-                            : hasBonus
-                            ? 'border-2 border-amber-300 bg-amber-50/30'
-                            : 'border border-gray-200 bg-white'
-                        }`}
+                        key={pack.name}
+                        className={`p-4 rounded-2xl text-center space-y-2 hover:border-orange-500 transition shadow-sm flex flex-col justify-between relative ${cardClass}`}
                       >
                         {pack.tag && (
                           <span
-                            className={`absolute -top-2.5 right-2 text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-xs ${
-                              isTopTier
-                                ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white animate-pulse'
-                                : hasBonus
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-orange-100 text-orange-900'
-                            }`}
+                            className={`absolute -top-2.5 right-2 text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${tagClass}`}
                           >
                             {pack.tag}
                           </span>
@@ -1126,22 +1210,12 @@ export default function PanditDashboardPage() {
                           <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider block">
                             {pack.name}
                           </span>
-                          <p className={`text-xl font-black mt-1 ${isTopTier ? 'text-orange-700' : hasBonus ? 'text-emerald-700' : 'text-orange-600'}`}>
-                            {pack.tokens} Tokens
-                          </p>
-                          <p className="text-sm font-extrabold text-gray-900">
-                            ₹{pack.amount.toLocaleString('en-IN')}
-                          </p>
+                          <p className={`text-xl font-black mt-1 ${priceColor}`}>{pack.tokens} Tokens</p>
+                          <p className="text-sm font-extrabold text-gray-900">₹{pack.amount.toLocaleString('en-IN')}</p>
                         </div>
                         <button
                           onClick={() => handleBuyTokens(pack.name, pack.amount, pack.tokens)}
-                          className={`w-full font-bold py-2 rounded-xl text-xs transition cursor-pointer text-white shadow-xs ${
-                            isTopTier
-                              ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:brightness-110 font-black'
-                              : hasBonus
-                              ? 'bg-emerald-600 hover:bg-emerald-700'
-                              : 'bg-orange-600 hover:bg-orange-700'
-                          }`}
+                          className={`w-full font-bold py-2 rounded-xl text-xs transition cursor-pointer text-white ${buttonClass}`}
                         >
                           Pay ₹{pack.amount.toLocaleString('en-IN')}
                         </button>
@@ -1154,14 +1228,14 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 5: PROFILE & PORTFOLIO */}
+        {/* ============ PROFILE & PORTFOLIO ============ */}
         {activeTab === 'profile' && (
           <div className="space-y-6">
             <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b pb-6">
                 <div className="flex items-center gap-5">
                   <div className="relative group">
-                    <div className="w-22 h-22 rounded-full overflow-hidden border-2 border-orange-400 bg-orange-50 flex items-center justify-center shadow-md">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-orange-400 bg-orange-50 flex items-center justify-center shadow-md">
                       {profilePhoto ? (
                         <img src={profilePhoto} alt={panditName} className="w-full h-full object-cover" />
                       ) : (
@@ -1228,7 +1302,7 @@ export default function PanditDashboardPage() {
               </div>
             </div>
 
-            {/* Portfolio Gallery */}
+            {/* Portfolio */}
             <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
                 <div>
@@ -1273,7 +1347,7 @@ export default function PanditDashboardPage() {
                       <button
                         onClick={() => handleDeleteGalleryImage(index)}
                         title="Delete Photo"
-                        className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-700 text-white p-1.5 rounded-full text-xs shadow opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                        className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-700 text-white p-1.5 rounded-full text-xs shadow opacity-100 md:opacity-0 md:group-hover:opacity-100 transition cursor-pointer"
                       >
                         🗑️
                       </button>
@@ -1285,31 +1359,39 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* TAB 6: RULES */}
+        {/* ============ RULES ============ */}
         {activeTab === 'rules' && (
           <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">PurohitSetu Operating Guidelines & Standards</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div className="p-5 rounded-2xl border border-orange-200 bg-orange-50/40">
                 <h4 className="font-bold text-gray-900 mb-1">1. Priority Window & Token Claims</h4>
-                <p className="text-xs text-gray-600">The first 60 seconds are reserved exclusively for Token Holders with 0% platform commission.</p>
+                <p className="text-xs text-gray-600">
+                  The first {PRIORITY_WINDOW_SECONDS} seconds are reserved exclusively for Token Holders with 0% platform commission.
+                </p>
               </div>
               <div className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/40">
                 <h4 className="font-bold text-gray-900 mb-1">2. Open Access Mode</h4>
-                <p className="text-xs text-gray-600">After 60 seconds, ceremonies are opened for all Acharyas with a 30% platform service fee upon completion.</p>
+                <p className="text-xs text-gray-600">
+                  After {PRIORITY_WINDOW_SECONDS} seconds, ceremonies are opened for all Acharyas with a {COMMISSION_PERCENT}% platform service fee upon completion.
+                </p>
               </div>
               <div className="p-5 rounded-2xl border border-blue-200 bg-blue-50/40">
                 <h4 className="font-bold text-gray-900 mb-1">3. Completion Verification</h4>
-                <p className="text-xs text-gray-600">Always collect the 4-digit verification code directly from the Yajman once rituals conclude.</p>
+                <p className="text-xs text-gray-600">
+                  Always collect the 4-digit verification code directly from the Yajman once rituals conclude.
+                </p>
               </div>
               <div className="p-5 rounded-2xl border border-red-200 bg-red-50/40">
                 <h4 className="font-bold text-gray-900 mb-1">4. Settlement Windows & Account Strikes</h4>
-                <p className="text-xs text-gray-600">Settlements are cleared within 24 hours (48 hours for Saturdays). Reaching two strikes will pause lead assignments.</p>
+                <p className="text-xs text-gray-600">
+                  Settlements are cleared within 24 hours (48 hours for Saturdays). Reaching two strikes will pause lead assignments.
+                </p>
               </div>
               <div className="p-5 rounded-2xl border border-purple-200 bg-purple-50/40 md:col-span-2">
                 <h4 className="font-bold text-gray-900 mb-1">5. Cancellation, Token Refunds & Anti-Fraud Policy</h4>
                 <p className="text-xs text-gray-600 leading-relaxed">
-                  • <strong>Priority Lead Cancellation:</strong> If a ceremony claimed with priority tokens is cancelled by the Yajman, 150 priority tokens are refunded to the Acharya’s wallet after admin review.<br />
+                  • <strong>Priority Lead Cancellation:</strong> If a ceremony claimed with priority tokens is cancelled by the Yajman, {TOKEN_COST} priority tokens are refunded to the Acharya’s wallet after admin review.<br />
                   • <strong>Free Mode Cancellation:</strong> Ceremonies claimed under Open Free Mode do not qualify for any token refund.<br />
                   • <strong>Acharya Cancellation:</strong> If a ceremony is cancelled due to an Acharya issue (dakshina disputes, delays, unprofessional conduct), no refund is granted.<br />
                   • <strong>False Claim Penalty:</strong> Reporting false cancellation claims will result in an immediate <strong>7-Day Platform Account Suspension</strong>.
@@ -1320,10 +1402,10 @@ export default function PanditDashboardPage() {
         )}
       </main>
 
-      {/* CANCELLATION REPORTING MODAL */}
+      {/* ============ CANCELLATION MODAL ============ */}
       {activeCancelLead && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="border-b pb-3">
               <h3 className="text-lg font-bold text-gray-900">Report Ceremony Cancellation</h3>
               <p className="text-xs text-gray-500 mt-0.5">
@@ -1335,34 +1417,20 @@ export default function PanditDashboardPage() {
               <div>
                 <label className="block font-bold text-gray-700 mb-1.5">Who initiated this cancellation?</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCancelBy('yajman');
-                      setCancelReasonPreset('Yajman cancelled / changed mind');
-                    }}
-                    className={`p-2.5 rounded-xl border text-center font-bold transition cursor-pointer ${
-                      cancelBy === 'yajman'
-                        ? 'border-orange-600 bg-orange-50 text-orange-900'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    Yajman Side
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCancelBy('pandit');
-                      setCancelReasonPreset('Acharya schedule clash / emergency');
-                    }}
-                    className={`p-2.5 rounded-xl border text-center font-bold transition cursor-pointer ${
-                      cancelBy === 'pandit'
-                        ? 'border-orange-600 bg-orange-50 text-orange-900'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    Acharya Side
-                  </button>
+                  {(['yajman', 'pandit'] as const).map((side) => (
+                    <button
+                      key={side}
+                      type="button"
+                      onClick={() => chooseCancelSide(side)}
+                      className={`p-2.5 rounded-xl border text-center font-bold transition cursor-pointer ${
+                        cancelBy === side
+                          ? 'border-orange-600 bg-orange-50 text-orange-900'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {side === 'yajman' ? 'Yajman Side' : 'Acharya Side'}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1373,23 +1441,11 @@ export default function PanditDashboardPage() {
                   onChange={(e) => setCancelReasonPreset(e.target.value)}
                   className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:border-orange-600"
                 >
-                  {cancelBy === 'yajman' ? (
-                    <>
-                      <option value="Yajman cancelled / changed mind">Yajman cancelled / changed mind</option>
-                      <option value="Family out of town / postponed">Family out of town / postponed</option>
-                      <option value="Puja arranged locally / already conducted">Puja arranged locally / already conducted</option>
-                      <option value="Yajman unreachable / phone switched off">Yajman unreachable / phone switched off</option>
-                      <option value="Other Yajman side reason">Other Yajman side reason</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="Acharya emergency / health issue">Acharya emergency / health issue</option>
-                      <option value="Date and time clash with another ceremony">Date and time clash with another ceremony</option>
-                      <option value="Travel distance / transport unavailable">Travel distance / transport unavailable</option>
-                      <option value="Dakshina / Samagri misalignment">Dakshina / Samagri misalignment</option>
-                      <option value="Other Acharya reason">Other Acharya reason</option>
-                    </>
-                  )}
+                  {(cancelBy === 'yajman' ? YAJMAN_CANCEL_REASONS : PANDIT_CANCEL_REASONS).map((reason) => (
+                    <option key={reason} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1407,7 +1463,7 @@ export default function PanditDashboardPage() {
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 space-y-1">
                 <p className="font-bold">⚠️ Platform Dispute & Token Policy:</p>
                 <p>
-                  • If claimed with tokens and verified genuine on Yajman side, 150 priority tokens will be refunded.
+                  • If claimed with tokens and verified genuine on Yajman side, {TOKEN_COST} priority tokens will be refunded.
                   <br />
                   • If claimed in Free Mode, no tokens will be credited.
                   <br />
@@ -1437,7 +1493,7 @@ export default function PanditDashboardPage() {
         </div>
       )}
 
-      {/* OTP VERIFICATION MODAL */}
+      {/* ============ COMPLETION OTP MODAL ============ */}
       {activeOtpLead && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
@@ -1449,6 +1505,7 @@ export default function PanditDashboardPage() {
 
             <input
               type="text"
+              inputMode="numeric"
               maxLength={4}
               value={enteredOtp}
               onChange={(e) => setEnteredOtp(e.target.value)}
@@ -1477,11 +1534,12 @@ export default function PanditDashboardPage() {
         </div>
       )}
 
-      {/* EDIT PROFILE MODAL */}
+      {/* ============ EDIT PROFILE MODAL ============ */}
       {isEditing && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-gray-900">Edit Acharya Profile</h3>
+
             <div className="space-y-3 text-left">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Registered Phone Number</label>
@@ -1539,6 +1597,7 @@ export default function PanditDashboardPage() {
                 />
               </div>
             </div>
+
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setIsEditing(false)}
