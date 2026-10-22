@@ -790,7 +790,7 @@ export default function PanditDashboardPage() {
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 font-sans text-gray-900 relative">
+    <div className="min-h-screen bg-gray-50 pb-24 font-sans text-gray-900 relative overflow-x-clip">
       {strikeCount > 0 && (
         <div className="bg-red-600 text-white px-4 py-2.5 text-center text-xs font-semibold flex items-center justify-center gap-2">
           <span>⚠️</span>
@@ -802,42 +802,42 @@ export default function PanditDashboardPage() {
 
       {/* HEADER */}
       <header className="bg-gradient-to-r from-orange-700 via-amber-700 to-orange-800 text-white shadow-lg sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-amber-300 bg-white p-0.5 shadow-md flex items-center justify-center shrink-0">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-amber-300 bg-white p-0.5 shadow-md flex items-center justify-center shrink-0">
               <img src="/pandit-logo.png" alt="PurohitSetu Logo" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold leading-tight tracking-wide">PurohitSetu</h1>
-              <p className="text-xs text-orange-200">Acharya Portal • {panditName}</p>
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-2xl font-bold leading-tight tracking-wide truncate">PurohitSetu</h1>
+              <p className="text-[11px] md:text-xs text-orange-200 truncate">Acharya Portal • {panditName}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             {showInstallBtn && (
               <button
                 onClick={handleInstallApp}
-                className="bg-amber-400 hover:bg-amber-500 text-gray-950 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow cursor-pointer animate-pulse"
+                className="bg-amber-400 hover:bg-amber-500 text-gray-950 px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shadow cursor-pointer animate-pulse"
               >
                 📲 Install App
               </button>
             )}
             <button
               onClick={() => setActiveTab('wallet')}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 cursor-pointer"
             >
               <span>🪙</span> {tokenBalance} Tokens
             </button>
             <button
               onClick={() => setActiveTab('wallet')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow flex items-center gap-1.5 cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition shadow flex items-center gap-1 cursor-pointer"
             >
               <span>₹</span> {earningsBalance} Balance
             </button>
             <button
               onClick={handleLogout}
               title="Logout"
-              className="bg-red-700/60 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+              className="bg-red-700/60 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 cursor-pointer"
             >
               🚪 Sign Out
             </button>
@@ -845,7 +845,7 @@ export default function PanditDashboardPage() {
         </div>
 
         {/* TABS */}
-        <div className="max-w-6xl mx-auto px-4 bg-black/20 backdrop-blur border-t border-white/10 flex overflow-x-auto gap-2 py-1.5">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 bg-black/20 backdrop-blur border-t border-white/10 flex overflow-x-auto gap-2 py-1.5">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={tabClass(tab.id)}>
               {tab.label}
@@ -858,7 +858,7 @@ export default function PanditDashboardPage() {
         {/* ============ NEW LEADS ============ */}
         {activeTab === 'leads' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Live Ceremony Requests</h2>
                 <p className="text-xs text-gray-500">
@@ -953,7 +953,7 @@ export default function PanditDashboardPage() {
         {/* ============ CONFIRMED BOOKINGS ============ */}
         {activeTab === 'bookings' && (
           <div className="space-y-4">
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Confirmed Bookings</h2>
                 <p className="text-xs text-gray-500">
@@ -1026,7 +1026,7 @@ export default function PanditDashboardPage() {
         {/* ============ MISSING & CANCELLED ============ */}
         {activeTab === 'missing' && (
           <div className="space-y-4">
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Cancelled & Missed Requests</h2>
                 <p className="text-xs text-gray-500">
@@ -1237,7 +1237,12 @@ export default function PanditDashboardPage() {
                   <div className="relative group">
                     <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-orange-400 bg-orange-50 flex items-center justify-center shadow-md">
                       {profilePhoto ? (
-                        <img src={profilePhoto} alt={panditName} className="w-full h-full object-cover" />
+                        <img
+                          src={profilePhoto}
+                          alt={panditName}
+                          className="w-full h-full object-cover"
+                          onError={() => setProfilePhoto('')}
+                        />
                       ) : (
                         <span className="text-4xl">🕉️</span>
                       )}
@@ -1343,6 +1348,9 @@ export default function PanditDashboardPage() {
                         src={imgUrl}
                         alt={`Ceremony Portfolio ${index + 1}`}
                         className="w-full h-full object-cover transition transform group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                       <button
                         onClick={() => handleDeleteGalleryImage(index)}
