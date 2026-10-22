@@ -134,7 +134,6 @@ const loadRazorpaySDK = (): Promise<boolean> =>
     document.body.appendChild(script);
   });
 
-// Optimized image compression: 600px width/height and 0.7 JPEG quality for WebView stability
 const fileToCompressedDataUrl = (file: File, maxSize = 600, quality = 0.7): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1084,6 +1083,26 @@ export default function PanditDashboardPage() {
                   <span className="font-bold text-emerald-900">{upiId || 'Not Configured'}</span>
                 </div>
               </div>
+
+              {/* In-App Account Safety Actions */}
+              <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+                <a
+                  href="/privacy-policy"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gray-500 hover:text-gray-800 underline underline-offset-4"
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  href="/delete-account"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-red-600 hover:text-red-700 font-semibold underline underline-offset-4"
+                >
+                  Delete Account
+                </a>
+              </div>
             </div>
 
             {/* Portfolio */}
@@ -1135,19 +1154,77 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* RULES TAB */}
+        {/* RULES TAB: Full 5 Platform Rules & Google Play Policies */}
         {activeTab === 'rules' && (
-          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3 text-xs">
-            <h2 className="text-base font-bold text-gray-900">Platform Rules</h2>
-            <div className="space-y-2">
-              <div className="p-3 rounded-xl border border-orange-200 bg-orange-50/40">
-                <strong className="text-gray-900 block mb-0.5">1. Priority Window</strong>
-                <p className="text-gray-600">First 60s reserved for token holders (0% commission).</p>
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+            <div className="border-b pb-3">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">Platform Rules & Policies</h2>
+              <p className="text-[11px] text-gray-500 mt-0.5">Acharya Code of Conduct, Lead Allocation & Service Guidelines</p>
+            </div>
+
+            <div className="space-y-3">
+              {/* Rule 1 */}
+              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50">
+                <h3 className="text-xs font-bold text-amber-950">1. Priority Window & Token Claims</h3>
+                <p className="text-xs text-amber-900 mt-1 leading-relaxed">
+                  Pehle 60 seconds sirf Token Holders ke liye reserved hote hain, jisme platform commission 0% lagta hai.
+                </p>
               </div>
-              <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/40">
-                <strong className="text-gray-900 block mb-0.5">2. Open Mode</strong>
-                <p className="text-gray-600">Open to all after 60s (30% platform commission upon completion).</p>
+
+              {/* Rule 2 */}
+              <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                <h3 className="text-xs font-bold text-emerald-950">2. Open Access Mode</h3>
+                <p className="text-xs text-emerald-900 mt-1 leading-relaxed">
+                  60 seconds ke baad puja sabhi Acharyas ke liye open ho jaati hai, jisme completion ke baad 30% platform service fee lagti hai.
+                </p>
               </div>
+
+              {/* Rule 3 */}
+              <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50">
+                <h3 className="text-xs font-bold text-blue-950">3. Completion Verification</h3>
+                <p className="text-xs text-blue-900 mt-1 leading-relaxed">
+                  Ritual khatam hone ke baad Yajman se direct 4-digit verification code (OTP) lekar system me enter karna zaroori hai.
+                </p>
+              </div>
+
+              {/* Rule 4 */}
+              <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/50">
+                <h3 className="text-xs font-bold text-purple-950">4. Settlement Windows & Account Strikes</h3>
+                <p className="text-xs text-purple-900 mt-1 leading-relaxed">
+                  Settlement 24 ghante (Saturday ko 48 ghante) ke andar clear hota hai. 2 strikes hone par lead assignment pause ho jayega.
+                </p>
+              </div>
+
+              {/* Rule 5 */}
+              <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50">
+                <h3 className="text-xs font-bold text-rose-950">5. Cancellation, Token Refunds & Anti-Fraud Policy</h3>
+                <ul className="text-xs text-rose-900 mt-1.5 space-y-1 list-disc list-inside leading-relaxed">
+                  <li><strong>Priority Lead Cancellation:</strong> Agar token se claim ki gayi lead ko Yajman cancel karta hai, to admin review ke baad 150 priority tokens wapas wallet me refund ho jate hain.</li>
+                  <li><strong>Free Mode Cancellation:</strong> Free mode me claim ki gayi puja par koi token refund nahi milta.</li>
+                  <li><strong>Acharya Cancellation:</strong> Agar cancellation Acharya ki vajah se hota hai (deri, vivaad), to koi refund nahi milta.</li>
+                  <li><strong>False Claim Penalty:</strong> Galat cancellation report karne par account turant 7 dino ke liye suspend kar diya jayega.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Google Play Store Compliance Links */}
+            <div className="pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
+              <a
+                href="/privacy-policy"
+                target="_blank"
+                rel="noreferrer"
+                className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="/delete-account"
+                target="_blank"
+                rel="noreferrer"
+                className="text-rose-600 hover:text-rose-700 underline underline-offset-4"
+              >
+                Request Account Deletion
+              </a>
             </div>
           </div>
         )}
