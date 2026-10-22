@@ -1087,7 +1087,7 @@ export default function PanditDashboardPage() {
               {/* In-App Account Safety Actions */}
               <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
                 <a
-                  href="/privacy-policy"
+                 href="/pandit/terms"
                   target="_blank"
                   rel="noreferrer"
                   className="text-gray-500 hover:text-gray-800 underline underline-offset-4"
@@ -1210,13 +1210,13 @@ export default function PanditDashboardPage() {
             {/* Google Play Store Compliance Links */}
             <div className="pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
               <a
-                href="/privacy-policy"
-                target="_blank"
-                rel="noreferrer"
-                className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
-              >
-                Privacy Policy
-              </a>
+  href="/pandit/terms"
+  target="_blank"
+  rel="noreferrer"
+  className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
+>
+  Pandit Partner Terms & Operating Policy
+</a>
               <a
                 href="/delete-account"
                 target="_blank"
