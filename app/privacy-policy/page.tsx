@@ -46,7 +46,7 @@ export default function PrivacyPolicyPage() {
         <section className="space-y-2">
           <h2 className="text-base font-bold text-gray-900">5. Contact Information</h2>
           <p className="text-sm text-gray-600">
-            For privacy inquiries or data requests, contact us at: <span className="font-semibold text-orange-600">support@purohitsetu.in</span>
+            For privacy inquiries or data requests, contact us at: <a href="mailto:support.purohitsetu@gmail.com" className="font-semibold text-orange-600 underline">support.purohitsetu@gmail.com</a>
           </p>
         </section>
       </div>
