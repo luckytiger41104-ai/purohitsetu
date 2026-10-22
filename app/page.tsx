@@ -623,9 +623,8 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      {/* UNIFIED STICKY HEADER (ZERO OVERLAP COLLISION) */}
+      {/* 1. SINGLE UNIFIED STICKY HEADER (ZERO COLLISION) */}
       <div className="sticky top-0 z-40 w-full shadow-md">
-        {/* Ticker */}
         <div className="bg-gradient-to-r from-red-800 via-orange-600 to-amber-700 text-white text-[11px] sm:text-xs py-1.5 px-3">
           <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
             <span className="relative flex h-2 w-2 shrink-0">
@@ -638,10 +637,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Navigation Bar */}
         <header className="bg-white/95 backdrop-blur-md border-b border-amber-200">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex justify-between items-center">
-            {/* Logo */}
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-red-600 flex items-center justify-center text-white text-xl font-bold shadow shrink-0">
                 ॐ
@@ -661,7 +658,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Desktop Links */}
             <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-700">
               <a href="#home-section" className="hover:text-orange-600 transition">Home</a>
               <a href="#services-section" className="hover:text-orange-600 transition">Puja Services</a>
@@ -670,7 +666,6 @@ export default function Home() {
               <a href="#contact-section" className="hover:text-orange-600 transition">Contact</a>
             </nav>
 
-            {/* Actions */}
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setIsDakshinaOpen(true)}
@@ -700,7 +695,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile Menu Dropdown */}
           {isMenuOpen && (
             <div className="bg-white border-b border-amber-200 shadow-xl px-5 py-4 animate-in fade-in duration-200 md:hidden">
               <div className="flex flex-col gap-3 text-xs font-bold text-slate-800">
@@ -737,7 +731,7 @@ export default function Home() {
         </header>
       </div>
 
-      {/* HERO SECTION */}
+      {/* 2. HERO SECTION */}
       <section id="home-section" className="bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-[#FFFDF7] pt-8 pb-10 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-4 shadow-xs">
@@ -809,7 +803,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* LOCALITIES COVERAGE BAR */}
+      {/* 3. LOCALITIES COVERAGE BAR */}
       <section id="localities-section" className="bg-amber-100/60 py-4 px-3 sm:px-6 border-y border-amber-200">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-1 mb-2.5 text-center sm:text-left">
@@ -832,7 +826,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PUJA SERVICES DIRECTORY */}
+      {/* 4. PUJA SERVICES DIRECTORY */}
       <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 border-b border-amber-200/80 pb-3">
           <div>
@@ -904,7 +898,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ABOUT US SECTION */}
+      {/* 5. ABOUT US SECTION */}
       <section id="about-section" className="bg-gradient-to-br from-amber-100/40 via-orange-50/30 to-amber-100/50 py-12 px-4 border-y border-amber-200 my-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
@@ -955,7 +949,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BOOKING FORM SECTION */}
+      {/* 6. BOOKING FORM SECTION */}
       <section id="booking-section" className="py-10 px-4">
         <div className="max-w-2xl mx-auto bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-8 relative">
           <div className="text-center mb-6">
@@ -1132,7 +1126,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CONTACT SECTION */}
+      {/* 7. CONTACT SECTION */}
       <section id="contact-section" className="bg-white py-8 px-4 border-t border-amber-200 text-center">
         <div className="max-w-4xl mx-auto">
           <span className="text-orange-600 font-extrabold uppercase text-[10px] tracking-widest">
@@ -1155,7 +1149,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* 8. FOOTER WITH VISIBLE CREDIT (NO OVERLAPPING BUTTON) */}
       <footer className="bg-slate-950 text-slate-400 py-8 px-4 text-xs border-t-4 border-orange-500">
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-800 pb-4 text-center sm:text-left">
@@ -1189,7 +1183,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* DAKSHINA MODAL */}
+      {/* 9. SHUBH DAKSHINA MODAL */}
       {isDakshinaOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-orange-200 max-h-[90vh] overflow-y-auto">
