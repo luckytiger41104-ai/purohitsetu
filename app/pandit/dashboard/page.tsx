@@ -8,6 +8,7 @@ declare global {
   interface Window {
     Razorpay: any;
     Capacitor?: any;
+    OneSignalDeferred?: any[];
   }
 }
 
@@ -20,7 +21,8 @@ interface Lead {
   yajman_name: string;
   phone: string;
   puja_name: string;
-  event_date: string;
+  puja_date: string;
+  puja_time: string;
   location: string;
   created_at: string;
   status: string;
@@ -113,12 +115,10 @@ const maskPhone = (raw: string) => {
   return raw.slice(0, 3) + '••••' + raw.slice(-3);
 };
 
-const parseUtcSeconds = (dateStr: string): number => {
-  if (!dateStr) return 0;
-  const iso = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
-  const normalized = iso.endsWith('Z') || iso.includes('+') ? iso : `${iso}Z`;
-  const ms = new Date(normalized).getTime();
-  return isNaN(ms) ? 0 : Math.floor(ms / 1000);
+const getTimestampSeconds = (dateStr?: string): number => {
+  if (!dateStr) return Math.floor(Date.now() / 1000);
+  const ms = new Date(dateStr).getTime();
+  return isNaN(ms) ? Math.floor(Date.now() / 1000) : Math.floor(ms / 1000);
 };
 
 const loadRazorpaySDK = (): Promise<boolean> =>
@@ -184,7 +184,7 @@ export default function PanditDashboardPage() {
   const [isBlocked, setIsBlocked] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>('leads');
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime, setCurrentTime] = useState(() => Math.floor(Date.now() / 1000));
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
@@ -208,6 +208,35 @@ export default function PanditDashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [confirmedBookings, setConfirmedBookings] = useState<Lead[]>([]);
   const [missingLeads, setMissingLeads] = useState<Lead[]>([]);
+
+  /* ---------------- OneSignal Initialization ---------------- */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+      if (!document.getElementById('onesignal-sdk-script')) {
+        const script = document.createElement('script');
+        script.id = 'onesignal-sdk-script';
+        script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+
+      window.OneSignalDeferred.push(async function (OneSignal: any) {
+        try {
+          await OneSignal.init({
+            appId: 'dcdfe5c2-7b44-42a9-a049-ac65061449be',
+            safari_web_id: '',
+            notifyButton: { enable: false },
+            allowLocalhostAsSecureOrigin: true,
+          });
+          await OneSignal.User.addTag('user_role', 'acharya');
+        } catch (e) {
+          console.error('OneSignal Init Error:', e);
+        }
+      });
+    }
+  }, []);
 
   /* ---------------- Session Guard ---------------- */
   useEffect(() => {
@@ -241,16 +270,17 @@ export default function PanditDashboardPage() {
     setDeferredPrompt(null);
   };
 
-  /* ---------------- Timer ---------------- */
+  /* ---------------- Realtime Second Counter for Timer ---------------- */
   useEffect(() => {
-    setCurrentTime(Math.floor(Date.now() / 1000));
-    const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
-    return () => clearInterval(timer);
+    const interval = setInterval(() => {
+      setCurrentTime(Math.floor(Date.now() / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const secondsLeftFor = (lead: Lead) => {
-    const now = currentTime || Math.floor(Date.now() / 1000);
-    const elapsed = Math.max(0, now - parseUtcSeconds(lead.created_at));
+    const createdSec = getTimestampSeconds(lead.created_at);
+    const elapsed = Math.max(0, currentTime - createdSec);
     return Math.max(0, PRIORITY_WINDOW_SECONDS - elapsed);
   };
 
@@ -304,23 +334,33 @@ export default function PanditDashboardPage() {
 
       if (bError || !allBookings) return;
 
-      const formatted: Lead[] = allBookings.map((b: any) => ({
-        id: b.id,
-        yajman_name: b.name || b.yajman_name || 'Yajman',
-        phone: b.phone || '',
-        puja_name: b.puja_name || 'Vedic Ceremony',
-        event_date: b.event_date || 'As per Shubh Muhurat',
-        location: b.location || 'Bengaluru',
-        created_at: b.created_at || new Date().toISOString(),
-        status: b.status || 'available',
-        accepted_via: b.accepted_via,
-        accepted_by: b.accepted_by,
-        assigned_to_phone: b.assigned_to_phone,
-        completion_otp: b.completion_otp,
-        cancellation_reason: b.cancellation_reason,
-        cancelled_by: b.cancelled_by,
-        refund_status: b.refund_status,
-      }));
+      const formatted: Lead[] = allBookings.map((b: any) => {
+        // Correct date mapping
+        const pDate = b.date || b.event_date || b.puja_date || 'Shubh Muhurat Date';
+        const pTime = b.time_slot || b.time || b.muhurat_time || 'Shubh Muhurat Slot';
+        const pLocation = b.area 
+          ? `${b.area}${b.pincode ? `, ${b.pincode}` : ''}, Bengaluru` 
+          : (b.location || b.address || 'Bengaluru');
+
+        return {
+          id: b.id,
+          yajman_name: b.name || b.yajman_name || 'Yajman',
+          phone: b.phone || '',
+          puja_name: b.puja_name || 'Vedic Ceremony',
+          puja_date: pDate,
+          puja_time: pTime,
+          location: pLocation,
+          created_at: b.created_at || new Date().toISOString(),
+          status: b.status || 'available',
+          accepted_via: b.accepted_via,
+          accepted_by: b.accepted_by,
+          assigned_to_phone: b.assigned_to_phone,
+          completion_otp: b.completion_otp,
+          cancellation_reason: b.cancellation_reason,
+          cancelled_by: b.cancelled_by,
+          refund_status: b.refund_status,
+        };
+      });
 
       const isMine = (item: Lead) =>
         item.accepted_by === myPhone || item.assigned_to_phone === myPhone;
@@ -814,33 +854,41 @@ export default function PanditDashboardPage() {
                         </span>
                       ) : (
                         <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-1 rounded-lg shrink-0">
-                          🔓 Free Mode
+                          🔓 Free Mode Unlocked
                         </span>
                       )}
                     </div>
 
                     <div className="bg-orange-50/60 p-3 rounded-xl border border-orange-100 text-xs space-y-1">
                       <p className="text-gray-700">📍 <strong>Location:</strong> {lead.location}</p>
-                      <p className="text-gray-700">🕒 <strong>Muhurat:</strong> {lead.event_date}</p>
+                      <p className="text-gray-700">📅 <strong>Puja Date:</strong> {lead.puja_date}</p>
+                      <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {lead.puja_time}</p>
                       <p className="text-gray-500">🔒 <strong>Phone:</strong> {maskPhone(lead.phone)}</p>
                     </div>
 
                     <div className="pt-1">
-                      {isExclusive && !hasTokens ? (
-                        <button
-                          disabled
-                          className="w-full bg-gray-100 text-gray-400 font-bold py-2.5 rounded-xl text-xs border border-gray-200"
-                        >
-                          Locked ({secondsLeft}s) • Requires 150 Tokens
-                        </button>
+                      {isExclusive ? (
+                        !hasTokens ? (
+                          <button
+                            disabled
+                            className="w-full bg-gray-100 text-gray-400 font-bold py-2.5 rounded-xl text-xs border border-gray-200"
+                          >
+                            Locked ({secondsLeft}s) • Requires 150 Tokens
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleAcceptLead(lead)}
+                            className="w-full font-bold py-2.5 rounded-xl text-xs shadow transition text-white bg-orange-600 hover:bg-orange-700"
+                          >
+                            Claim Priority ({TOKEN_COST} Tokens)
+                          </button>
+                        )
                       ) : (
                         <button
                           onClick={() => handleAcceptLead(lead)}
-                          className={`w-full font-bold py-2.5 rounded-xl text-xs shadow transition text-white ${
-                            isExclusive ? 'bg-orange-600 hover:bg-orange-700' : 'bg-emerald-600 hover:bg-emerald-700'
-                          }`}
+                          className="w-full font-bold py-2.5 rounded-xl text-xs shadow transition text-white bg-emerald-600 hover:bg-emerald-700"
                         >
-                          {isExclusive ? `Claim Priority (${TOKEN_COST} Tokens)` : 'Claim Ceremony (Free Mode)'}
+                          🎉 Claim Ceremony (Free Mode)
                         </button>
                       )}
                     </div>
@@ -887,7 +935,8 @@ export default function PanditDashboardPage() {
                     <p className="text-gray-800">👤 <strong>Yajman:</strong> {b.yajman_name}</p>
                     <p className="text-green-800 font-bold">📞 <strong>Direct:</strong> {b.phone}</p>
                     <p className="text-gray-700">📍 <strong>Address:</strong> {b.location}</p>
-                    <p className="text-gray-700">🕒 <strong>Timing:</strong> {b.event_date}</p>
+                    <p className="text-gray-700">📅 <strong>Puja Date:</strong> {b.puja_date}</p>
+                    <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {b.puja_time}</p>
                   </div>
 
                   <div className="flex items-center gap-2 pt-1">
@@ -1087,7 +1136,7 @@ export default function PanditDashboardPage() {
               {/* In-App Account Safety Actions */}
               <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
                 <a
-                 href="/pandit/terms"
+                  href="/pandit/terms"
                   target="_blank"
                   rel="noreferrer"
                   className="text-gray-500 hover:text-gray-800 underline underline-offset-4"
@@ -1154,7 +1203,7 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* RULES TAB: Full 5 Platform Rules & Google Play Policies */}
+        {/* RULES TAB */}
         {activeTab === 'rules' && (
           <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
             <div className="border-b pb-3">
@@ -1163,7 +1212,6 @@ export default function PanditDashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {/* Rule 1 */}
               <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50">
                 <h3 className="text-xs font-bold text-amber-950">1. Priority Window & Token Claims</h3>
                 <p className="text-xs text-amber-900 mt-1 leading-relaxed">
@@ -1171,7 +1219,6 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
-              {/* Rule 2 */}
               <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50">
                 <h3 className="text-xs font-bold text-emerald-950">2. Open Access Mode</h3>
                 <p className="text-xs text-emerald-900 mt-1 leading-relaxed">
@@ -1179,7 +1226,6 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
-              {/* Rule 3 */}
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50">
                 <h3 className="text-xs font-bold text-blue-950">3. Completion Verification</h3>
                 <p className="text-xs text-blue-900 mt-1 leading-relaxed">
@@ -1187,7 +1233,6 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
-              {/* Rule 4 */}
               <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/50">
                 <h3 className="text-xs font-bold text-purple-950">4. Settlement Windows & Account Strikes</h3>
                 <p className="text-xs text-purple-900 mt-1 leading-relaxed">
@@ -1195,7 +1240,6 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
-              {/* Rule 5 */}
               <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50">
                 <h3 className="text-xs font-bold text-rose-950">5. Cancellation, Token Refunds & Anti-Fraud Policy</h3>
                 <ul className="text-xs text-rose-900 mt-1.5 space-y-1 list-disc list-inside leading-relaxed">
@@ -1207,16 +1251,15 @@ export default function PanditDashboardPage() {
               </div>
             </div>
 
-            {/* Google Play Store Compliance Links */}
             <div className="pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
               <a
-  href="/pandit/terms"
-  target="_blank"
-  rel="noreferrer"
-  className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
->
-  Pandit Partner Terms & Operating Policy
-</a>
+                href="/pandit/terms"
+                target="_blank"
+                rel="noreferrer"
+                className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
+              >
+                Pandit Partner Terms & Operating Policy
+              </a>
               <a
                 href="/delete-account"
                 target="_blank"
