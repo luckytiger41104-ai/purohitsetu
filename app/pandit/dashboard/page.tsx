@@ -413,7 +413,7 @@ export default function PanditDashboardPage() {
     if (phone) loadDashboardData();
   }, [phone, loadDashboardData]);
 
-  /* ---------------- Claiming ---------------- */
+  /* ---------------- Claiming with Background Fast2SMS ---------------- */
   const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
     const completionOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -450,6 +450,18 @@ export default function PanditDashboardPage() {
       return false;
     }
 
+    // Fast2SMS direct SMS dispatch: Yajman ke mobile par SMS chala jayega (Pandit ko OTP nahi dikhega)
+    fetch('/api/send-completion-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: lead.phone,
+        otp: completionOtp,
+        yajmanName: lead.yajman_name,
+        pujaName: lead.puja_name,
+      }),
+    }).catch((err) => console.error('SMS Dispatch Error:', err));
+
     return true;
   };
 
@@ -479,12 +491,12 @@ export default function PanditDashboardPage() {
       await supabase.from('pandits').update({ wallet_balance: remaining }).eq('phone', phone);
       setTokenBalance(remaining);
 
-      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens deducted.`);
+      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens deducted. OTP has been sent to Yajman via SMS.`);
     } else {
       const claimed = await claimLead(lead, 'free');
       if (!claimed) return;
 
-      alert(`Ceremony claimed in Open Mode! A ${COMMISSION_PERCENT}% platform fee applies upon completion.`);
+      alert(`Ceremony claimed in Open Mode! A ${COMMISSION_PERCENT}% platform fee applies upon completion. OTP has been sent to Yajman via SMS.`);
     }
 
     await loadDashboardData();
