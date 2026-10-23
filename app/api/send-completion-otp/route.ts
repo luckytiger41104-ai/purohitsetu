@@ -9,68 +9,47 @@ export async function POST(req: Request) {
 
     if (!apiKey) {
       return NextResponse.json(
-        { success: false, error: 'FAST2SMS_API_KEY missing in environment variables.' },
+        { success: false, error: 'FAST2SMS_API_KEY missing in environment variables' },
         { status: 500 }
       );
     }
 
     if (!cleanPhone || cleanPhone.length !== 10) {
       return NextResponse.json(
-        { success: false, error: 'Invalid 10-digit mobile number.' },
+        { success: false, error: 'Invalid 10-digit phone number' },
         { status: 400 }
       );
     }
 
-    // 1. First Attempt: Using Fast2SMS Quick SMS Route ('q') which bypasses the OTP domain lock
-    const quickMessage = `Pranam ${yajmanName || 'Yajman'}, your PurohitSetu verification code for ${pujaName || 'Puja'} is ${otp}. Please share this code with Pandit Ji only after ritual completion.`;
-
-    let response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+    // Fast2SMS Dedicated OTP Route (~₹0.20 per SMS)
+    const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
       method: 'POST',
       headers: {
         authorization: apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        route: 'q',
-        message: quickMessage,
+        route: 'otp',
+        variables_values: String(otp),
         numbers: cleanPhone,
-        flash: 0,
       }),
     });
 
-    let result = await response.json();
-    console.log('Fast2SMS Quick Route Response:', result);
-
-    // 2. If 'q' route requires DLT or fails, try the fallback OTP route with variables_values
-    if (!result.return && result.status_code !== 200) {
-      response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
-        method: 'POST',
-        headers: {
-          authorization: apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          route: 'otp',
-          variables_values: String(otp),
-          numbers: cleanPhone,
-        }),
-      });
-      result = await response.json();
-      console.log('Fast2SMS OTP Route Response:', result);
-    }
+    const result = await response.json();
+    console.log('Fast2SMS Dedicated OTP Route Response:', result);
 
     if (result.return === true || result.status_code === 200) {
       return NextResponse.json({ success: true, result });
     } else {
       return NextResponse.json(
-        { success: false, error: result.message || 'SMS delivery failed from provider' },
+        { success: false, error: result.message || 'OTP dispatch failed via Fast2SMS' },
         { status: 400 }
       );
     }
   } catch (error: any) {
-    console.error('Fast2SMS Dispatch Exception:', error);
+    console.error('Fast2SMS Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error while dispatching SMS.' },
+      { success: false, error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }
