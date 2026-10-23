@@ -182,6 +182,7 @@ export default function PanditDashboardPage() {
 
   const [activeOtpLead, setActiveOtpLead] = useState<Lead | null>(null);
   const [enteredOtp, setEnteredOtp] = useState('');
+  const [resendingId, setResendingId] = useState<string | number | null>(null);
 
   const [activeCancelLead, setActiveCancelLead] = useState<Lead | null>(null);
   const [cancelBy, setCancelBy] = useState<'yajman' | 'pandit'>('yajman');
@@ -413,13 +414,11 @@ export default function PanditDashboardPage() {
     if (phone) loadDashboardData();
   }, [phone, loadDashboardData]);
 
-  /* ---------------- Claiming with Background Fast2SMS ---------------- */
+  /* ---------------- Claiming ---------------- */
   const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
-    const completionOtp = Math.floor(1000 + Math.random() * 9000).toString();
-
     const { data: currentLead } = await supabase
       .from('bookings')
-      .select('status, accepted_by')
+      .select('status, accepted_by, completion_otp')
       .eq('id', lead.id)
       .maybeSingle();
 
@@ -428,6 +427,9 @@ export default function PanditDashboardPage() {
       await loadDashboardData();
       return false;
     }
+
+    // Agar pehle se code na ho tabhi naya banega, warna purana code hi rahega jo Yajman ko screen par mila hai
+    const completionOtp = currentLead?.completion_otp || Math.floor(1000 + Math.random() * 9000).toString();
 
     const { data, error } = await supabase
       .from('bookings')
@@ -450,7 +452,7 @@ export default function PanditDashboardPage() {
       return false;
     }
 
-    // Fast2SMS direct SMS dispatch: Yajman ke mobile par SMS chala jayega (Pandit ko OTP nahi dikhega)
+    // Direct background Fast2SMS dispatch
     fetch('/api/send-completion-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -491,16 +493,63 @@ export default function PanditDashboardPage() {
       await supabase.from('pandits').update({ wallet_balance: remaining }).eq('phone', phone);
       setTokenBalance(remaining);
 
-      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens deducted. OTP has been sent to Yajman via SMS.`);
+      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens deducted.`);
     } else {
       const claimed = await claimLead(lead, 'free');
       if (!claimed) return;
 
-      alert(`Ceremony claimed in Open Mode! A ${COMMISSION_PERCENT}% platform fee applies upon completion. OTP has been sent to Yajman via SMS.`);
+      alert(`Ceremony claimed in Open Mode! A ${COMMISSION_PERCENT}% platform fee applies upon completion.`);
     }
 
     await loadDashboardData();
     setActiveTab('bookings');
+  };
+
+  /* ---------------- Resend OTP via Fast2SMS ---------------- */
+  const handleResendOtp = async (booking: Lead) => {
+    if (resendingId === booking.id) return;
+    setResendingId(booking.id);
+
+    try {
+      const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+      // Database me naya OTP save karein
+      const { error } = await supabase
+        .from('bookings')
+        .update({ completion_otp: newOtp })
+        .eq('id', booking.id);
+
+      if (error) {
+        alert('Failed to generate new OTP: ' + error.message);
+        return;
+      }
+
+      // Fast2SMS call karein
+      const res = await fetch('/api/send-completion-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: booking.phone,
+          otp: newOtp,
+          yajmanName: booking.yajman_name,
+          pujaName: booking.puja_name,
+        }),
+      });
+
+      const resData = await res.json();
+
+      if (resData.success) {
+        alert(`Success! A fresh 4-digit code has been sent directly to Yajman via SMS.`);
+      } else {
+        alert(`SMS dispatch notice: ${resData.error || 'Request sent to provider.'}`);
+      }
+
+      await loadDashboardData();
+    } catch (err: any) {
+      alert('Error resending OTP: ' + err.message);
+    } finally {
+      setResendingId(null);
+    }
   };
 
   /* ---------------- Verify Completion OTP ---------------- */
@@ -513,7 +562,7 @@ export default function PanditDashboardPage() {
       return;
     }
     if (activeOtpLead.completion_otp && code !== activeOtpLead.completion_otp) {
-      alert('Invalid verification code. Please confirm with the Yajman.');
+      alert('Invalid verification code. Please ask Yajman for the code shown on their booking confirmation or SMS.');
       return;
     }
 
@@ -527,7 +576,7 @@ export default function PanditDashboardPage() {
       return;
     }
 
-    alert('Ceremony marked as completed and verified successfully.');
+    alert('Ceremony verified and marked as completed successfully.');
     setActiveOtpLead(null);
     setEnteredOtp('');
     await loadDashboardData();
@@ -945,13 +994,13 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* BOOKINGS TAB (ZERO OTP ON CARD - PANDIT DOES NOT SEE OTP) */}
+        {/* BOOKINGS TAB (ZERO OTP ON CARD - YAJMAN HOLDS THE CODE) */}
         {activeTab === 'bookings' && (
           <div className="space-y-3">
             <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Confirmed Bookings</h2>
-                <p className="text-[11px] text-gray-500">Call Yajman & ask for OTP to complete ceremony</p>
+                <p className="text-[11px] text-gray-500">Ask Yajman for their Completion Code upon ritual conclusion</p>
               </div>
               <button
                 onClick={loadDashboardData}
@@ -988,19 +1037,30 @@ export default function PanditDashboardPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
                     <a
                       href={`tel:${b.phone}`}
                       className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm"
                     >
-                      📞 Call Yajman
+                      📞 Call
                     </a>
+                    
+                    {/* RESEND OTP VIA FAST2SMS (PANDIT STILL CANNOT SEE CODE) */}
+                    <button
+                      onClick={() => handleResendOtp(b)}
+                      disabled={resendingId === b.id}
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition disabled:opacity-50"
+                    >
+                      {resendingId === b.id ? 'Sending...' : '📲 Resend OTP'}
+                    </button>
+
                     <button
                       onClick={() => setActiveOtpLead(b)}
                       className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm"
                     >
-                      ✓ Complete Puja
+                      ✓ Complete
                     </button>
+                    
                     <button
                       onClick={() => openCancelModal(b)}
                       className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2.5 px-3 rounded-xl"
@@ -1250,7 +1310,7 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* RULES TAB: Full 5 Platform Rules & Google Play Policies Restored */}
+        {/* RULES TAB */}
         {activeTab === 'rules' && (
           <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
             <div className="border-b pb-3">

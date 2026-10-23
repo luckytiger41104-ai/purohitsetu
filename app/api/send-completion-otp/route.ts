@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { phone, otp, yajmanName, pujaName } = await req.json();
+    const { phone, otp } = await req.json();
 
     const cleanPhone = (phone || '').replace(/\D/g, '').slice(-10);
     const apiKey = process.env.FAST2SMS_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
-        { success: false, error: 'FAST2SMS_API_KEY is not defined in environment.' },
+        { success: false, error: 'FAST2SMS_API_KEY missing in environment variables.' },
         { status: 500 }
       );
     }
@@ -21,11 +21,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fast2SMS Quick OTP Route via process.env
+    // Fast2SMS Quick OTP Route
     const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
       method: 'POST',
       headers: {
-        'authorization': apiKey,
+        authorization: apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -36,10 +36,20 @@ export async function POST(req: Request) {
     });
 
     const result = await response.json();
-    return NextResponse.json({ success: true, result });
+    console.log('Fast2SMS Response:', result);
+
+    if (result.return === true || result.status_code === 200) {
+      return NextResponse.json({ success: true, result });
+    } else {
+      return NextResponse.json(
+        { success: false, error: result.message || 'Fast2SMS returned false' },
+        { status: 400 }
+      );
+    }
   } catch (error: any) {
+    console.error('Fast2SMS API Route Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to dispatch SMS.' },
+      { success: false, error: error.message || 'Internal server error while sending SMS.' },
       { status: 500 }
     );
   }
