@@ -30,6 +30,7 @@ interface Lead {
   cancelled_by?: string;
   refund_status?: string;
   samagri?: boolean;
+  otp_dispatch_status?: string;
 }
 
 type TabId = 'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules';
@@ -180,9 +181,12 @@ export default function PanditDashboardPage() {
   const [editBio, setEditBio] = useState('');
   const [editUpi, setEditUpi] = useState('');
 
+  // Complete Pooja Verification Modal States
   const [activeOtpLead, setActiveOtpLead] = useState<Lead | null>(null);
   const [enteredOtp, setEnteredOtp] = useState('');
-  const [resendingId, setResendingId] = useState<string | number | null>(null);
+  const [resendingOtp, setResendingOtp] = useState(false);
+  const [otpNotice, setOtpNotice] = useState<string | null>(null);
+  const [reportedFail, setReportedFail] = useState(false);
 
   const [activeCancelLead, setActiveCancelLead] = useState<Lead | null>(null);
   const [cancelBy, setCancelBy] = useState<'yajman' | 'pandit'>('yajman');
@@ -194,7 +198,7 @@ export default function PanditDashboardPage() {
   const [confirmedBookings, setConfirmedBookings] = useState<Lead[]>([]);
   const [missingLeads, setMissingLeads] = useState<Lead[]>([]);
 
-  /* ---------------- OneSignal Notification Setup ---------------- */
+  /* ---------------- OneSignal Initialization ---------------- */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if ('Notification' in window) {
@@ -374,6 +378,7 @@ export default function PanditDashboardPage() {
           cancelled_by: b.cancelled_by,
           refund_status: b.refund_status,
           samagri: b.samagri,
+          otp_dispatch_status: b.otp_dispatch_status,
         };
       });
 
@@ -492,38 +497,90 @@ export default function PanditDashboardPage() {
     setActiveTab('bookings');
   };
 
-  /* ---------------- Direct WhatsApp OTP Dispatch ---------------- */
-  const handleSendWhatsAppOtp = async (booking: Lead) => {
-    if (resendingId === booking.id) return;
-    setResendingId(booking.id);
+  /* ---------------- Complete Pooja Verification Open Trigger ---------------- */
+  const handleOpenVerificationModal = async (booking: Lead) => {
+    setActiveOtpLead(booking);
+    setEnteredOtp('');
+    setOtpNotice('Sending OTP to Yajman via SMS...');
+    setReportedFail(false);
+
+    let activeOtp = booking.completion_otp;
+    if (!activeOtp) {
+      activeOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      await supabase.from('bookings').update({ completion_otp: activeOtp }).eq('id', booking.id);
+    }
+
+    // Trigger SMS to Yajman
+    try {
+      const res = await fetch('/api/send-completion-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: booking.phone,
+          otp: activeOtp,
+          yajmanName: booking.yajman_name,
+          pujaName: booking.puja_name,
+        }),
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        setOtpNotice('✓ OTP sent to Yajman via SMS. Please ask Yajman for the 4-digit code.');
+      } else {
+        setOtpNotice('⚠️ SMS delivery delay. If Yajman has not received OTP, click "Resend" or report below.');
+      }
+    } catch {
+      setOtpNotice('⚠️ Network error while dispatching SMS. You can try resending.');
+    }
+  };
+
+  /* ---------------- Resend OTP in Modal ---------------- */
+  const handleResendOtpInsideModal = async () => {
+    if (!activeOtpLead || resendingOtp) return;
+    setResendingOtp(true);
+    setOtpNotice('Generating new OTP and resending...');
 
     try {
       const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      await supabase.from('bookings').update({ completion_otp: newOtp }).eq('id', activeOtpLead.id);
 
-      // Database me naya OTP save karein
-      const { error } = await supabase
-        .from('bookings')
-        .update({ completion_otp: newOtp })
-        .eq('id', booking.id);
+      const res = await fetch('/api/send-completion-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: activeOtpLead.phone,
+          otp: newOtp,
+          yajmanName: activeOtpLead.yajman_name,
+          pujaName: activeOtpLead.puja_name,
+        }),
+      });
+      const resData = await res.json();
 
-      if (error) {
-        alert('Failed to update verification code: ' + error.message);
-        return;
+      if (resData.success) {
+        setOtpNotice('✓ Fresh OTP resent to Yajman via SMS.');
+      } else {
+        setOtpNotice('⚠️ SMS could not be sent. Please use "OTP Not Received" to alert Admin.');
       }
 
-      // WhatsApp URL prepare karein
-      const cleanNum = cleanPhone(booking.phone);
-      const text = `🚩 Pranam ${booking.yajman_name || 'Yajman'}, your PurohitSetu completion verification code for ${booking.puja_name || 'Puja'} is: [ ${newOtp} ]. Please share this code with Acharya Ji only after ritual completion.`;
-      const waUrl = `https://wa.me/91${cleanNum}?text=${encodeURIComponent(text)}`;
-
-      window.open(waUrl, '_blank');
-
-      alert(`Success! 4-digit code generated and WhatsApp opened for ${booking.yajman_name}.`);
-      await loadDashboardData();
-    } catch (err: any) {
-      alert('Error: ' + err.message);
+      activeOtpLead.completion_otp = newOtp;
+    } catch {
+      setOtpNotice('⚠️ Resend failed. Please check internet connection.');
     } finally {
-      setResendingId(null);
+      setResendingOtp(false);
+    }
+  };
+
+  /* ---------------- Report OTP Not Sent to Admin ---------------- */
+  const handleReportOtpNotSent = async () => {
+    if (!activeOtpLead) return;
+    try {
+      await supabase.from('bookings').update({
+        otp_dispatch_status: 'failed_reported_by_pandit',
+      }).eq('id', activeOtpLead.id);
+
+      setReportedFail(true);
+      alert('Issue reported to Admin. The Admin will verify the ceremony from the Admin Panel.');
+    } catch {
+      alert('Could not notify admin right now.');
     }
   };
 
@@ -536,14 +593,18 @@ export default function PanditDashboardPage() {
       alert('Please enter the 4-digit verification code.');
       return;
     }
+
     if (activeOtpLead.completion_otp && code !== activeOtpLead.completion_otp) {
-      alert('Invalid verification code. Please confirm the code with Yajman.');
+      alert('Invalid verification code. Please confirm the 4-digit code with Yajman.');
       return;
     }
 
     const { error } = await supabase
       .from('bookings')
-      .update({ status: 'completed' })
+      .update({
+        status: 'completed',
+        otp_dispatch_status: 'verified_completed',
+      })
       .eq('id', activeOtpLead.id);
 
     if (error) {
@@ -969,13 +1030,13 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* BOOKINGS TAB (ZERO OTP ON CARD - WHATSAPP OTP BUTTON WIRED) */}
+        {/* BOOKINGS TAB (ZERO WHATSAPP REDIRECT) */}
         {activeTab === 'bookings' && (
           <div className="space-y-3">
             <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Confirmed Bookings</h2>
-                <p className="text-[11px] text-gray-500">Contact Yajman & verify Completion Code after ritual</p>
+                <p className="text-[11px] text-gray-500">Tap below to trigger SMS verification code upon ritual end</p>
               </div>
               <button
                 onClick={loadDashboardData}
@@ -1015,25 +1076,17 @@ export default function PanditDashboardPage() {
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <a
                       href={`tel:${b.phone}`}
-                      className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm"
+                      className="text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-sm"
                     >
                       📞 Call
                     </a>
                     
-                    {/* DIRECT WHATSAPP OTP BUTTON */}
+                    {/* COMPLETE POOJA VERIFICATION BUTTON */}
                     <button
-                      onClick={() => handleSendWhatsAppOtp(b)}
-                      disabled={resendingId === b.id}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition disabled:opacity-50"
+                      onClick={() => handleOpenVerificationModal(b)}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition"
                     >
-                      {resendingId === b.id ? 'Opening...' : '📲 WhatsApp OTP'}
-                    </button>
-
-                    <button
-                      onClick={() => setActiveOtpLead(b)}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm"
-                    >
-                      ✓ Complete
+                      ✓ Complete Pooja Verification
                     </button>
                     
                     <button
@@ -1408,32 +1461,70 @@ export default function PanditDashboardPage() {
         </div>
       )}
 
-      {/* VERIFY COMPLETION OTP MODAL */}
+      {/* COMPLETE POOJA VERIFICATION MODAL */}
       {activeOtpLead && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xs w-full p-4 shadow-xl space-y-3 text-center">
-            <span className="text-2xl block">🪔</span>
-            <h3 className="text-base font-bold text-gray-900">Enter Completion OTP</h3>
-            <p className="text-xs text-gray-500">Collect the 4-digit code sent to Yajman via WhatsApp to complete ceremony</p>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={4}
-              value={enteredOtp}
-              onChange={(e) => setEnteredOtp(e.target.value)}
-              placeholder="4-digit OTP"
-              className="w-full text-center font-mono text-xl border rounded-xl py-2"
-            />
-            <div className="flex gap-2 pt-1">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4 text-center">
+            <span className="text-3xl block">🪔</span>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Complete Pooja Verification</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                SMS has been dispatched to Yajman (<strong>{activeOtpLead.yajman_name}</strong>). Collect the 4-digit code to finish.
+              </p>
+            </div>
+
+            {otpNotice && (
+              <div className="p-2.5 rounded-xl bg-orange-50 border border-orange-200 text-xs font-semibold text-orange-900 leading-snug">
+                {otpNotice}
+              </div>
+            )}
+
+            <div>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
+                value={enteredOtp}
+                onChange={(e) => setEnteredOtp(e.target.value)}
+                placeholder="Enter 4-digit OTP"
+                className="w-full text-center font-mono text-2xl tracking-widest border-2 border-orange-300 rounded-xl py-2.5 focus:border-orange-600 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-xs px-1">
               <button
-                onClick={() => setActiveOtpLead(null)}
-                className="flex-1 border py-2 rounded-xl text-xs font-bold"
+                type="button"
+                onClick={handleResendOtpInsideModal}
+                disabled={resendingOtp}
+                className="text-orange-700 font-bold hover:underline disabled:opacity-50"
               >
-                Cancel
+                {resendingOtp ? 'Resending...' : '📲 Resend OTP via SMS'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleReportOtpNotSent}
+                disabled={reportedFail}
+                className={`font-bold text-xs ${reportedFail ? 'text-gray-400' : 'text-red-600 hover:underline'}`}
+              >
+                {reportedFail ? '✓ Reported to Admin' : '⚠️ OTP Not Sent?'}
+              </button>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t">
+              <button
+                onClick={() => {
+                  setActiveOtpLead(null);
+                  setEnteredOtp('');
+                  setOtpNotice(null);
+                }}
+                className="flex-1 border border-gray-300 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+              >
+                Close
               </button>
               <button
                 onClick={handleVerifyCompletionOtp}
-                className="flex-1 bg-green-600 text-white py-2 rounded-xl text-xs font-bold"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition"
               >
                 Verify & Complete
               </button>
