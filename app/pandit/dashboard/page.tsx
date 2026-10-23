@@ -116,9 +116,9 @@ const maskPhone = (raw: string) => {
 };
 
 const getTimestampSeconds = (dateStr?: string): number => {
-  if (!dateStr) return Math.floor(Date.now() / 1000);
+  if (!dateStr) return 0;
   const ms = new Date(dateStr).getTime();
-  return isNaN(ms) ? Math.floor(Date.now() / 1000) : Math.floor(ms / 1000);
+  return isNaN(ms) ? 0 : Math.floor(ms / 1000);
 };
 
 const loadRazorpaySDK = (): Promise<boolean> =>
@@ -184,7 +184,8 @@ export default function PanditDashboardPage() {
   const [isBlocked, setIsBlocked] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>('leads');
-  const [currentTime, setCurrentTime] = useState(() => Math.floor(Date.now() / 1000));
+  // Safe initial state for Next.js prerender
+  const [currentTime, setCurrentTime] = useState(0);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
@@ -270,8 +271,9 @@ export default function PanditDashboardPage() {
     setDeferredPrompt(null);
   };
 
-  /* ---------------- Realtime Second Counter for Timer ---------------- */
+  /* ---------------- Realtime Timer Countdown ---------------- */
   useEffect(() => {
+    setCurrentTime(Math.floor(Date.now() / 1000));
     const interval = setInterval(() => {
       setCurrentTime(Math.floor(Date.now() / 1000));
     }, 1000);
@@ -279,7 +281,9 @@ export default function PanditDashboardPage() {
   }, []);
 
   const secondsLeftFor = (lead: Lead) => {
+    if (!currentTime) return 60;
     const createdSec = getTimestampSeconds(lead.created_at);
+    if (!createdSec) return 0;
     const elapsed = Math.max(0, currentTime - createdSec);
     return Math.max(0, PRIORITY_WINDOW_SECONDS - elapsed);
   };
@@ -335,7 +339,6 @@ export default function PanditDashboardPage() {
       if (bError || !allBookings) return;
 
       const formatted: Lead[] = allBookings.map((b: any) => {
-        // Correct date mapping
         const pDate = b.date || b.event_date || b.puja_date || 'Shubh Muhurat Date';
         const pTime = b.time_slot || b.time || b.muhurat_time || 'Shubh Muhurat Slot';
         const pLocation = b.area 
