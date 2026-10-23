@@ -170,6 +170,7 @@ export default function PanditDashboardPage() {
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [notifPermissionState, setNotifPermissionState] = useState('default');
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -191,9 +192,13 @@ export default function PanditDashboardPage() {
   const [confirmedBookings, setConfirmedBookings] = useState<Lead[]>([]);
   const [missingLeads, setMissingLeads] = useState<Lead[]>([]);
 
-  /* ---------------- OneSignal Initialization with Direct Opt-In Prompt ---------------- */
+  /* ---------------- OneSignal Initialization ---------------- */
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      if ('Notification' in window) {
+        setNotifPermissionState(Notification.permission);
+      }
+
       window.OneSignalDeferred = window.OneSignalDeferred || [];
 
       if (!document.getElementById('onesignal-sdk-script')) {
@@ -214,17 +219,28 @@ export default function PanditDashboardPage() {
           });
 
           await OneSignal.User.addTag('user_role', 'acharya');
-
-          // Explicit prompt check so re-installed apps trigger permission dialog
-          if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
-            await OneSignal.Notifications.requestPermission();
-          }
         } catch (e) {
           console.error('OneSignal initialization error:', e);
         }
       });
     }
   }, []);
+
+  const handleManualNotificationPermission = async () => {
+    if (typeof window !== 'undefined') {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function (OneSignal: any) {
+        try {
+          await OneSignal.Notifications.requestPermission();
+          if ('Notification' in window) {
+            setNotifPermissionState(Notification.permission);
+          }
+        } catch (err) {
+          console.error('Permission request failed:', err);
+        }
+      });
+    }
+  };
 
   /* ---------------- Session Guard ---------------- */
   useEffect(() => {
@@ -279,6 +295,14 @@ export default function PanditDashboardPage() {
       return 0;
     }
     return PRIORITY_WINDOW_SECONDS - elapsedSeconds;
+  };
+
+  /* ---------------- WhatsApp OTP Sender in English ---------------- */
+  const sendWhatsAppOtp = (yajmanPhone: string, yajmanName: string, pujaTitle: string, otpCode: string) => {
+    const rawNumber = cleanPhone(yajmanPhone);
+    const msg = `Greetings ${yajmanName || 'Yajman'}, Acharya ${panditName} has been confirmed for your ${pujaTitle} via PurohitSetu.\n\nPlease share this 4-digit completion code with the Acharya once the ceremony is concluded:\nCompletion Code: ${otpCode}\n\nHar Har Mahadev!`;
+    const url = `https://wa.me/91${rawNumber}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
   };
 
   /* ---------------- Data Loader ---------------- */
@@ -395,7 +419,7 @@ export default function PanditDashboardPage() {
     if (phone) loadDashboardData();
   }, [phone, loadDashboardData]);
 
-  /* ---------------- Claiming ---------------- */
+  /* ---------------- Claiming with Auto WhatsApp Trigger ---------------- */
   const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
     const completionOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -431,6 +455,9 @@ export default function PanditDashboardPage() {
       alert('Update blocked. Please check your Supabase Row-Level Security policies.');
       return false;
     }
+
+    // Auto open WhatsApp with English completion OTP message
+    sendWhatsAppOtp(lead.phone, lead.yajman_name, lead.puja_name, completionOtp);
 
     return true;
   };
@@ -473,7 +500,7 @@ export default function PanditDashboardPage() {
     setActiveTab('bookings');
   };
 
-  /* ---------------- Completion OTP ---------------- */
+  /* ---------------- Verify OTP ---------------- */
   const handleVerifyCompletionOtp = async () => {
     if (!activeOtpLead) return;
 
@@ -762,6 +789,15 @@ export default function PanditDashboardPage() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            {notifPermissionState !== 'granted' && (
+              <button
+                onClick={handleManualNotificationPermission}
+                className="bg-amber-400 hover:bg-amber-300 text-gray-950 px-2 py-1 rounded-lg text-[10px] font-extrabold shadow animate-pulse flex items-center gap-1"
+                title="Enable Push Notifications"
+              >
+                <span>🔔</span> Allow Alerts
+              </button>
+            )}
             {showInstallBtn && (
               <button
                 onClick={handleInstallApp}
@@ -903,13 +939,13 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* BOOKINGS TAB */}
+        {/* BOOKINGS TAB (OTP badge completely removed from Pandit card) */}
         {activeTab === 'bookings' && (
           <div className="space-y-3">
             <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Confirmed Bookings</h2>
-                <p className="text-[11px] text-gray-500">Contact Yajman to perform the ceremony</p>
+                <p className="text-[11px] text-gray-500">Contact Yajman & deliver OTP to verify ceremony</p>
               </div>
               <button
                 onClick={loadDashboardData}
@@ -933,11 +969,6 @@ export default function PanditDashboardPage() {
                         {b.accepted_via === 'token' ? 'Priority (0% commission)' : `Open (${COMMISSION_PERCENT}% platform fee)`}
                       </span>
                     </div>
-                    {b.completion_otp && (
-                      <span className="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-mono font-bold">
-                        OTP: {b.completion_otp}
-                      </span>
-                    )}
                   </div>
 
                   <div className="bg-green-50/70 p-3 rounded-xl border border-green-100 text-xs space-y-1">
@@ -948,13 +979,19 @@ export default function PanditDashboardPage() {
                     <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {b.puja_time}</p>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
                     <a
                       href={`tel:${b.phone}`}
                       className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm"
                     >
                       📞 Call
                     </a>
+                    <button
+                      onClick={() => sendWhatsAppOtp(b.phone, b.yajman_name, b.puja_name, b.completion_otp || '----')}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"
+                    >
+                      <span>💬</span> WhatsApp OTP
+                    </button>
                     <button
                       onClick={() => setActiveOtpLead(b)}
                       className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm"
@@ -1162,7 +1199,6 @@ export default function PanditDashboardPage() {
               </div>
             </div>
 
-            {/* Portfolio */}
             <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3">
               <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-sm font-bold text-gray-900">Rituals Gallery</h3>
@@ -1220,7 +1256,6 @@ export default function PanditDashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {/* Rule 1 */}
               <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50">
                 <h3 className="text-xs font-bold text-amber-950">1. Priority Window & Token Claims</h3>
                 <p className="text-xs text-amber-900 mt-1 leading-relaxed">
@@ -1228,7 +1263,6 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
-              {/* Rule 2 */}
               <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50">
                 <h3 className="text-xs font-bold text-emerald-950">2. Open Access Mode</h3>
                 <p className="text-xs text-emerald-900 mt-1 leading-relaxed">
@@ -1236,7 +1270,6 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
-              {/* Rule 3 */}
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50">
                 <h3 className="text-xs font-bold text-blue-950">3. Verification OTP</h3>
                 <p className="text-xs text-blue-900 mt-1 leading-relaxed">
@@ -1244,7 +1277,6 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
-              {/* Rule 4 */}
               <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/50">
                 <h3 className="text-xs font-bold text-purple-950">4. Settlement Windows & Account Strikes</h3>
                 <p className="text-xs text-purple-900 mt-1 leading-relaxed">
@@ -1252,7 +1284,6 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
-              {/* Rule 5 */}
               <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50">
                 <h3 className="text-xs font-bold text-rose-950">5. Cancellation, Token Refunds & Anti-Fraud Policy</h3>
                 <ul className="text-xs text-rose-900 mt-1.5 space-y-1 list-disc list-inside leading-relaxed">
@@ -1264,7 +1295,6 @@ export default function PanditDashboardPage() {
               </div>
             </div>
 
-            {/* Google Play Store Compliance Links */}
             <div className="pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
               <a
                 href="/pandit/terms"
@@ -1346,6 +1376,7 @@ export default function PanditDashboardPage() {
           <div className="bg-white rounded-2xl max-w-xs w-full p-4 shadow-xl space-y-3 text-center">
             <span className="text-2xl block">🪔</span>
             <h3 className="text-base font-bold text-gray-900">Enter Completion OTP</h3>
+            <p className="text-xs text-gray-500">Collect this 4-digit code directly from Yajman</p>
             <input
               type="text"
               inputMode="numeric"

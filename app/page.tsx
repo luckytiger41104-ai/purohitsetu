@@ -24,6 +24,7 @@ interface PujaItem {
 }
 
 const BOOKING_TOKEN_PRESETS = [101, 251, 501, 1100, 2100, 5100];
+const SUPPORT_PHONE = "9449871293";
 
 const BENGALURU_LOCALITIES = [
   "Whitefield",
@@ -98,17 +99,14 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Simplified Form: Default area auto-fills "Bengaluru"
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     pujaName: "Vedic Vivah Sanskar (Marriage)",
     language: "Hindi",
-    area: "",
-    pincode: "",
-    address: "",
+    area: "Bengaluru",
     date: "",
-    timeSlot: "Morning (08:00 AM - 11:00 AM)",
-    samagri: true,
   });
 
   const [loading, setLoading] = useState(false);
@@ -420,8 +418,13 @@ export default function Home() {
   };
 
   const handleLocalityFilter = (loc: string) => {
-    setFormData((prev) => ({ ...prev, area: loc }));
+    setFormData((prev) => ({ ...prev, area: `${loc}, Bengaluru` }));
     setSearchQuery(loc);
+  };
+
+  const handleDirectWhatsAppBooking = () => {
+    const msg = `Namaste PurohitSetu Team, I want to book a Vedic Pandit for ${formData.pujaName || 'Puja Ceremony'} in Bengaluru. Please assist me with the muhurat and booking.`;
+    window.open(`https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -436,12 +439,9 @@ export default function Home() {
           phone: formData.phone,
           puja_name: formData.pujaName,
           language: formData.language,
-          area: formData.area,
-          pincode: formData.pincode,
-          address: formData.address,
+          area: formData.area || "Bengaluru",
+          location: formData.area || "Bengaluru",
           date: formData.date,
-          time_slot: formData.timeSlot,
-          samagri: formData.samagri,
           status: "available",
         },
       ]);
@@ -463,12 +463,8 @@ export default function Home() {
         phone: "",
         pujaName: "Vedic Vivah Sanskar (Marriage)",
         language: "Hindi",
-        area: "",
-        pincode: "",
-        address: "",
+        area: "Bengaluru",
         date: "",
-        timeSlot: "Morning (08:00 AM - 11:00 AM)",
-        samagri: true,
       });
     } catch (err: any) {
       setStatusMsg({
@@ -613,7 +609,7 @@ export default function Home() {
     "@type": "LocalBusiness",
     "name": "PurohitSetu - North Indian Vedic Pandits in Bangalore",
     "image": "https://www.purohitsetu.in/pandit-logo.png",
-    "telephone": "+91-7667984349",
+    "telephone": `+91-${SUPPORT_PHONE}`,
     "email": "support.purohitsetu@gmail.com",
     "url": "https://www.purohitsetu.in",
     "address": {
@@ -750,6 +746,12 @@ export default function Home() {
               className="px-5 py-2.5 rounded-xl bg-white border border-orange-300 text-orange-950 font-extrabold text-xs shadow hover:bg-orange-50 transition flex items-center gap-1.5"
             >
               <span>🪙</span> Puja Booking Token
+            </button>
+            <button
+              onClick={handleDirectWhatsAppBooking}
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow transition flex items-center gap-1.5"
+            >
+              <span>💬</span> WhatsApp Booking
             </button>
           </div>
 
@@ -931,207 +933,210 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BOOKING FORM SECTION */}
+      {/* COMPACT BOOKING FORM SECTION WITH TRUST BAR */}
       <section id="booking-section" className="py-10 px-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-8">
-          <div className="text-center mb-6">
-            <span className="bg-orange-100 text-orange-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              Yajman Portal
-            </span>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-              Book a Certified Vedic Pandit
-            </h2>
-            <p className="text-slate-500 text-xs mt-0.5">
-              Enter your details to request an ordained Acharya.
-            </p>
+        <div className="max-w-3xl mx-auto space-y-4">
+          
+          {/* TRUST BADGES BAR MATCHING SCREENSHOT 2 */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+            <div className="flex items-start gap-2.5">
+              <span className="text-orange-500 text-xl font-bold">🛡️</span>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 leading-tight">100% Secure Booking</h4>
+                <p className="text-[10px] text-slate-500 mt-0.5">Your data is safe with us</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5">
+              <span className="text-orange-500 text-xl font-bold">₹</span>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 leading-tight">Zero Upfront Cost</h4>
+                <p className="text-[10px] text-slate-500 mt-0.5">Pay after puja completion</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5">
+              <span className="text-orange-500 text-xl font-bold">🏅</span>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 leading-tight">Verified Pandits</h4>
+                <p className="text-[10px] text-slate-500 mt-0.5">Experienced & background verified</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5">
+              <span className="text-orange-500 text-xl font-bold">🎧</span>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 leading-tight">24/7 Support</h4>
+                <p className="text-[10px] text-slate-500 mt-0.5">We are here to help you</p>
+              </div>
+            </div>
           </div>
 
-          {statusMsg && (
-            <div
-              className={`p-3 rounded-xl text-xs font-semibold mb-4 ${
-                statusMsg.type === "success"
-                  ? "bg-green-100 text-green-950 border border-green-300"
-                  : "bg-red-100 text-red-950 border border-red-300"
-              }`}
-            >
-              {statusMsg.text}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Yajman Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Rahul Sharma"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Mobile Contact *</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="10-digit phone number"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
-                />
-              </div>
+          {/* SIMPLIFIED BOOKING FORM */}
+          <div className="bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-7">
+            <div className="text-center mb-5">
+              <span className="bg-orange-100 text-orange-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                Fast Booking
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+                Book a Verified Vedic Pandit
+              </h2>
+              <p className="text-slate-500 text-xs mt-0.5">
+                Fill this quick form or book directly on WhatsApp.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Select Sacred Ritual *</label>
-                <select
-                  value={formData.pujaName}
-                  onChange={(e) => setFormData({ ...formData, pujaName: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
+            {statusMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold mb-4 ${
+                  statusMsg.type === "success"
+                    ? "bg-green-100 text-green-950 border border-green-300"
+                    : "bg-red-100 text-red-950 border border-red-300"
+                }`}
+              >
+                {statusMsg.text}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Your Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Mobile Contact *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="10-digit phone number"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Bengaluru Area *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Bengaluru (e.g. HSR, Whitefield)"
+                    value={formData.area}
+                    onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-orange-50/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Select Sacred Ritual *</label>
+                  <select
+                    value={formData.pujaName}
+                    onChange={(e) => setFormData({ ...formData, pujaName: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
+                  >
+                    {pujaList.map((p) => (
+                      <option key={p.id} value={p.name}>
+                        {p.name}
+                      </option>
+                    ))}
+                    <option value="Other Custom Vedic Ritual">Other Custom Vedic Ritual</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Puja Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Preferred Language *</label>
+                  <select
+                    value={formData.language}
+                    onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
+                  >
+                    <option value="Hindi">Hindi (North Indian)</option>
+                    <option value="Maithili">Maithili (Mithila)</option>
+                    <option value="Bhojpuri">Bhojpuri</option>
+                    <option value="Sanskrit">Sanskrit (Pure Vedic)</option>
+                    <option value="Kannada">Kannada</option>
+                    <option value="Telugu">Telugu</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-600 text-white font-black text-xs sm:text-sm shadow hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
                 >
-                  {pujaList.map((p) => (
-                    <option key={p.id} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-                  <option value="Other Custom Vedic Ritual">Other Custom Vedic Ritual</option>
-                </select>
-              </div>
+                  {loading ? "Registering..." : "Book a Pandit →"}
+                </button>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Preferred Language *</label>
-                <select
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
+                <button
+                  type="button"
+                  onClick={handleDirectWhatsAppBooking}
+                  className="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition"
                 >
-                  <option value="Hindi">Hindi (North Indian)</option>
-                  <option value="Maithili">Maithili (Mithila)</option>
-                  <option value="Bhojpuri">Bhojpuri</option>
-                  <option value="Sanskrit">Sanskrit (Pure Vedic)</option>
-                  <option value="Kannada">Kannada</option>
-                  <option value="Telugu">Telugu</option>
-                </select>
+                  <span>💬</span> Book via WhatsApp
+                </button>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Bengaluru Locality *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. HSR Layout, Whitefield"
-                  value={formData.area}
-                  onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Pincode *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 560102"
-                  value={formData.pincode}
-                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Complete Address *</label>
-              <textarea
-                rows={2}
-                required
-                placeholder="Apartment/Villa No., Society Name, Landmark..."
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-3 py-1.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Puja Date *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Time Slot *</label>
-                <select
-                  value={formData.timeSlot}
-                  onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
-                >
-                  <option value="Morning (06:00 AM - 09:00 AM)">Early Morning (06:00 AM - 09:00 AM)</option>
-                  <option value="Morning (09:00 AM - 12:00 PM)">Morning (09:00 AM - 12:00 PM)</option>
-                  <option value="Afternoon (12:00 PM - 03:00 PM)">Afternoon (12:00 PM - 03:00 PM)</option>
-                  <option value="Evening (05:00 PM - 08:00 PM)">Evening (05:00 PM - 08:00 PM)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="samagri-box"
-                checked={formData.samagri}
-                onChange={(e) => setFormData({ ...formData, samagri: e.target.checked })}
-                className="w-3.5 h-3.5 accent-orange-600 rounded"
-              />
-              <label htmlFor="samagri-box" className="text-[11px] text-slate-800">
-                <strong>Include Complete Hawan & Samagri Kit</strong> (Acharya carries verified woods, herbs, Gangajal).
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-600 text-white font-black text-xs sm:text-sm shadow hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
-            >
-              {loading ? "Registering..." : "Confirm Booking & Request Acharya"}
-            </button>
-          </form>
+            </form>
+          </div>
         </div>
       </section>
 
-      {/* CONTACT SUPPORT */}
+      {/* CONTACT & DIRECT PHONE SUPPORT */}
       <section id="contact-section" className="bg-white py-8 px-4 border-t border-amber-200 text-center">
-        <div className="max-w-4xl mx-auto">
-          <span className="text-orange-600 font-extrabold uppercase text-[10px] tracking-widest">
-            Support Desk
-          </span>
-          <h2 className="text-lg font-black text-slate-900 mt-0.5 mb-1">
-            Contact Official Platform Support
-          </h2>
-          <p className="text-xs text-slate-600 max-w-md mx-auto mb-4">
-            For specialized anushthan bookings or muhurat queries across Bengaluru:
-          </p>
+        <div className="max-w-4xl mx-auto space-y-3">
+          <div>
+            <span className="text-orange-600 font-extrabold uppercase text-[10px] tracking-widest">
+              24/7 Support Desk
+            </span>
+            <h2 className="text-lg font-black text-slate-900 mt-0.5">
+              Contact Official Platform Support
+            </h2>
+          </div>
 
-          <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-300 px-4 py-2 rounded-xl text-xs">
-            <span>✉️</span>
-            <span className="font-semibold text-slate-700">Official Support Email:</span>
-            <a href="mailto:support.purohitsetu@gmail.com" className="font-extrabold text-orange-700 underline">
-              support.purohitsetu@gmail.com
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={`tel:+91${SUPPORT_PHONE}`}
+              className="inline-flex items-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-4 py-2 rounded-xl text-xs font-bold text-orange-950 transition"
+            >
+              <span>📞</span> Call / WhatsApp: +91 {SUPPORT_PHONE}
+            </a>
+
+            <a
+              href="mailto:support.purohitsetu@gmail.com"
+              className="inline-flex items-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-4 py-2 rounded-xl text-xs font-bold text-orange-950 transition"
+            >
+              <span>✉️</span> support.purohitsetu@gmail.com
             </a>
           </div>
         </div>
       </section>
 
-      {/* CLEAN ORANGE FOOTER */}
+      {/* CLEAN FOOTER */}
       <footer className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white py-7 px-4 border-t-2 border-amber-300">
         <div className="max-w-6xl mx-auto space-y-4 text-center">
           
@@ -1144,11 +1149,9 @@ export default function Home() {
             <span>•</span>
             <a href="#about-section" className="hover:text-white transition">About Us</a>
             <span>•</span>
-            <a href="#contact-section" className="hover:text-white transition">Contact Us</a>
-            <span>•</span>
-            <button onClick={() => setIsTokenModalOpen(true)} className="hover:text-white font-bold transition">
-              Puja Booking Token
-            </button>
+            <a href={`https://wa.me/91${SUPPORT_PHONE}`} target="_blank" rel="noreferrer" className="hover:text-white font-bold transition">
+              WhatsApp Support ({SUPPORT_PHONE})
+            </a>
           </div>
 
           <div className="text-[10px] text-orange-200/90 max-w-4xl mx-auto leading-relaxed border-t border-orange-500/60 pt-3">
@@ -1163,7 +1166,7 @@ export default function Home() {
           <div className="border-t border-orange-500/60 pt-3 flex flex-col sm:flex-row items-center justify-between text-[11px] text-orange-100 gap-2">
             <p>© 2026 PurohitSetu. Dedicated Vedic Puja Services • Bengaluru</p>
             <div className="bg-black/25 px-3.5 py-1 rounded-full text-white font-semibold border border-white/20">
-              Created and Designed by Prince Kumar Pandey | Mob: 7667984349
+              Helpline: +91 {SUPPORT_PHONE}
             </div>
           </div>
 
