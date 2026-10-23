@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { triggerNewBookingNotification } from "@/lib/notifyPandits";
 
 declare global {
   interface Window {
@@ -441,10 +442,17 @@ export default function Home() {
           date: formData.date,
           time_slot: formData.timeSlot,
           samagri: formData.samagri,
+          status: "available",
         },
       ]);
 
       if (error) throw error;
+
+      // Nayi booking bante hi verified Pandits ko live push notification trigger karein
+      triggerNewBookingNotification(
+        formData.pujaName || "Vedic Ceremony",
+        formData.area || "Bengaluru"
+      );
 
       setStatusMsg({
         type: "success",
@@ -546,6 +554,12 @@ export default function Home() {
             tokens_credited: 0,
             razorpay_payment_id: paymentId,
           });
+
+          // Token payment aane par bhi Acharyas ko alert bhej dein
+          triggerNewBookingNotification(
+            finalPujaName,
+            "Bengaluru (Token Booking)"
+          );
 
           setTokenNotice({
             type: "success",

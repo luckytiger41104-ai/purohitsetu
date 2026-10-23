@@ -76,7 +76,7 @@ const PANDIT_CANCEL_REASONS = [
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Small helpers                                                     */
+/*  Helper functions                                                  */
 /* ------------------------------------------------------------------ */
 
 const cleanPhone = (value: string) => (value || '').replace(/\D/g, '').slice(-10);
@@ -115,12 +115,6 @@ const maskPhone = (raw: string) => {
   return raw.slice(0, 3) + '••••' + raw.slice(-3);
 };
 
-const getTimestampSeconds = (dateStr?: string): number => {
-  if (!dateStr) return 0;
-  const ms = new Date(dateStr).getTime();
-  return isNaN(ms) ? 0 : Math.floor(ms / 1000);
-};
-
 const loadRazorpaySDK = (): Promise<boolean> =>
   new Promise((resolve) => {
     if (typeof window !== 'undefined' && window.Razorpay) {
@@ -137,10 +131,10 @@ const loadRazorpaySDK = (): Promise<boolean> =>
 const fileToCompressedDataUrl = (file: File, maxSize = 600, quality = 0.7): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('File read nahi ho payi.'));
+    reader.onerror = () => reject(new Error('File reading failed.'));
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error('Image open nahi ho payi.'));
+      img.onerror = () => reject(new Error('Image failed to open.'));
       img.onload = () => {
         const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
         const canvas = document.createElement('canvas');
@@ -148,7 +142,7 @@ const fileToCompressedDataUrl = (file: File, maxSize = 600, quality = 0.7): Prom
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          reject(new Error('Canvas available nahi hai.'));
+          reject(new Error('Canvas context not available.'));
           return;
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -184,7 +178,6 @@ export default function PanditDashboardPage() {
   const [isBlocked, setIsBlocked] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>('leads');
-  // Safe initial state for Next.js prerender
   const [currentTime, setCurrentTime] = useState(0);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -233,7 +226,7 @@ export default function PanditDashboardPage() {
           });
           await OneSignal.User.addTag('user_role', 'acharya');
         } catch (e) {
-          console.error('OneSignal Init Error:', e);
+          console.error('OneSignal initialization error:', e);
         }
       });
     }
@@ -250,7 +243,7 @@ export default function PanditDashboardPage() {
     saveSession(saved);
   }, [router]);
 
-  /* ---------------- PWA prompt ---------------- */
+  /* ---------------- PWA Prompt ---------------- */
   useEffect(() => {
     if (isNativeApp()) return;
 
@@ -271,7 +264,7 @@ export default function PanditDashboardPage() {
     setDeferredPrompt(null);
   };
 
-  /* ---------------- Realtime Timer Countdown ---------------- */
+  /* ---------------- Realtime Counter for Universal Countdown ---------------- */
   useEffect(() => {
     setCurrentTime(Math.floor(Date.now() / 1000));
     const interval = setInterval(() => {
@@ -281,11 +274,17 @@ export default function PanditDashboardPage() {
   }, []);
 
   const secondsLeftFor = (lead: Lead) => {
-    if (!currentTime) return 60;
-    const createdSec = getTimestampSeconds(lead.created_at);
-    if (!createdSec) return 0;
-    const elapsed = Math.max(0, currentTime - createdSec);
-    return Math.max(0, PRIORITY_WINDOW_SECONDS - elapsed);
+    if (!lead.created_at) return 0;
+    const createdMs = new Date(lead.created_at).getTime();
+    if (isNaN(createdMs)) return 0;
+
+    const nowMs = currentTime ? currentTime * 1000 : Date.now();
+    const elapsedSeconds = Math.floor((nowMs - createdMs) / 1000);
+
+    if (elapsedSeconds >= PRIORITY_WINDOW_SECONDS || elapsedSeconds < 0) {
+      return 0;
+    }
+    return PRIORITY_WINDOW_SECONDS - elapsedSeconds;
   };
 
   /* ---------------- Data Loader ---------------- */
@@ -339,10 +338,10 @@ export default function PanditDashboardPage() {
       if (bError || !allBookings) return;
 
       const formatted: Lead[] = allBookings.map((b: any) => {
-        const pDate = b.date || b.event_date || b.puja_date || 'Shubh Muhurat Date';
+        const pDate = b.date || b.event_date || b.puja_date || 'Shubh Muhurat';
         const pTime = b.time_slot || b.time || b.muhurat_time || 'Shubh Muhurat Slot';
-        const pLocation = b.area 
-          ? `${b.area}${b.pincode ? `, ${b.pincode}` : ''}, Bengaluru` 
+        const pLocation = b.area
+          ? `${b.area}${b.pincode ? `, ${b.pincode}` : ''}, Bengaluru`
           : (b.location || b.address || 'Bengaluru');
 
         return {
@@ -354,7 +353,7 @@ export default function PanditDashboardPage() {
           puja_time: pTime,
           location: pLocation,
           created_at: b.created_at || new Date().toISOString(),
-          status: b.status || 'available',
+          status: (b.status || 'available').toLowerCase(),
           accepted_via: b.accepted_via,
           accepted_by: b.accepted_by,
           assigned_to_phone: b.assigned_to_phone,
@@ -370,7 +369,7 @@ export default function PanditDashboardPage() {
 
       setLeads(
         formatted.filter(
-          (item) => item.status === 'available' || item.status.toLowerCase() === 'pending'
+          (item) => item.status === 'available' || item.status === 'pending'
         )
       );
 
@@ -394,7 +393,7 @@ export default function PanditDashboardPage() {
         })
       );
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+      console.error('Error fetching dashboard records:', err);
     }
   }, [phone]);
 
@@ -402,10 +401,24 @@ export default function PanditDashboardPage() {
     if (phone) loadDashboardData();
   }, [phone, loadDashboardData]);
 
-  /* ---------------- Claiming ---------------- */
+  /* ---------------- Lead Claiming Logic ---------------- */
   const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
     const completionOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
+    // Check if another Pandit has accepted the booking
+    const { data: currentLead } = await supabase
+      .from('bookings')
+      .select('status, accepted_by')
+      .eq('id', lead.id)
+      .maybeSingle();
+
+    if (currentLead && currentLead.accepted_by && currentLead.accepted_by !== phone) {
+      alert('This ceremony has already been claimed by another Acharya.');
+      await loadDashboardData();
+      return false;
+    }
+
+    // Direct update to prevent false rejections
     const { data, error } = await supabase
       .from('bookings')
       .update({
@@ -415,18 +428,18 @@ export default function PanditDashboardPage() {
         completion_otp: completionOtp,
       })
       .eq('id', lead.id)
-      .or('status.is.null,status.eq.available,status.eq.pending')
-      .select('id');
+      .select();
 
     if (error) {
-      alert('Could not claim ceremony: ' + error.message);
+      alert('Failed to claim lead: ' + error.message);
       return false;
     }
+
     if (!data || data.length === 0) {
-      alert('Ye ceremony kisi aur Acharya ne abhi claim kar li hai.');
-      await loadDashboardData();
+      alert('Update blocked. Please check your Supabase Row-Level Security policies.');
       return false;
     }
+
     return true;
   };
 
@@ -434,7 +447,7 @@ export default function PanditDashboardPage() {
     if (!phone) return;
 
     if (isBlocked || strikeCount >= 2) {
-      alert('Your account is currently suspended due to active strikes. Please contact support.');
+      alert('Your account is currently suspended due to active strikes. Please reach out to support.');
       return;
     }
 
@@ -444,7 +457,7 @@ export default function PanditDashboardPage() {
     if (inPriorityWindow) {
       if (tokenBalance < TOKEN_COST) {
         alert(
-          `This ceremony is in the priority window (${secondsLeft}s remaining). It requires ${TOKEN_COST} tokens.`
+          `This ceremony is inside the priority window (${secondsLeft}s remaining) and requires ${TOKEN_COST} tokens.`
         );
         return;
       }
@@ -456,12 +469,12 @@ export default function PanditDashboardPage() {
       await supabase.from('pandits').update({ wallet_balance: remaining }).eq('phone', phone);
       setTokenBalance(remaining);
 
-      alert(`Ceremony Claimed Successfully! ${TOKEN_COST} priority tokens deducted.`);
+      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens have been deducted.`);
     } else {
       const claimed = await claimLead(lead, 'free');
       if (!claimed) return;
 
-      alert(`Ceremony Claimed in Open Mode! ${COMMISSION_PERCENT}% platform commission applies upon completion.`);
+      alert(`Ceremony claimed in Open Mode! A ${COMMISSION_PERCENT}% platform fee applies upon completion.`);
     }
 
     await loadDashboardData();
@@ -488,7 +501,7 @@ export default function PanditDashboardPage() {
       .eq('id', activeOtpLead.id);
 
     if (error) {
-      alert('Error updating ceremony status: ' + error.message);
+      alert('Status update failed: ' + error.message);
       return;
     }
 
@@ -558,13 +571,13 @@ export default function PanditDashboardPage() {
   const handleBuyTokens = async (packName: string, amount: number, tokensCount: number) => {
     const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     if (!razorpayKey) {
-      alert('Payment configuration unavailable. Please contact support.');
+      alert('Payment configuration is unavailable. Please reach out to support.');
       return;
     }
 
     const sdkLoaded = await loadRazorpaySDK();
     if (!sdkLoaded) {
-      alert('Payment gateway failed to load. Please verify your internet connection.');
+      alert('Payment gateway failed to load. Please check your network connection.');
       return;
     }
 
@@ -610,14 +623,14 @@ export default function PanditDashboardPage() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch {
-      alert('Payment window could not be opened. Please try again.');
+      alert('The payment dialog could not be opened.');
     }
   };
 
-  /* ---------------- Payout ---------------- */
+  /* ---------------- Payouts ---------------- */
   const handleRequestPayout = async () => {
     if (earningsBalance <= 0) {
-      alert('No withdrawable earnings available right now.');
+      alert('No withdrawable earnings are available right now.');
       return;
     }
     if (!upiId) {
@@ -640,7 +653,7 @@ export default function PanditDashboardPage() {
       if (error) alert('Could not submit payout request: ' + error.message);
       else alert(`Payout request for ₹${earningsBalance} submitted successfully.`);
     } catch (err: any) {
-      alert('Error requesting payout: ' + err.message);
+      alert('Payout error: ' + err.message);
     }
   };
 
@@ -670,7 +683,7 @@ export default function PanditDashboardPage() {
     setBio(editBio);
     setUpiId(editUpi);
     setIsEditing(false);
-    alert('Profile updated and saved successfully.');
+    alert('Profile saved successfully.');
     await loadDashboardData();
   };
 
@@ -683,13 +696,13 @@ export default function PanditDashboardPage() {
       const dataUrl = await fileToCompressedDataUrl(file, 500, 0.7);
       const { error } = await supabase.from('pandits').update({ avatar_url: dataUrl }).eq('phone', phone);
       if (error) {
-        alert('Photo save nahi ho payi: ' + error.message);
+        alert('Could not update avatar: ' + error.message);
         return;
       }
       setProfilePhoto(dataUrl);
       alert('Profile photo updated successfully.');
     } catch (err: any) {
-      alert('Photo upload failed: ' + err.message);
+      alert('Avatar upload failed: ' + err.message);
     }
   };
 
@@ -703,18 +716,18 @@ export default function PanditDashboardPage() {
       const updatedGallery = [dataUrl, ...gallery];
       const { error } = await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('phone', phone);
       if (error) {
-        alert('Photo save nahi ho payi: ' + error.message);
+        alert('Failed to add portfolio picture: ' + error.message);
         return;
       }
       setGallery(updatedGallery);
       alert('Ceremony photo added to your public portfolio.');
     } catch (err: any) {
-      alert('Photo upload failed: ' + err.message);
+      alert('Portfolio upload failed: ' + err.message);
     }
   };
 
   const handleDeleteGalleryImage = async (indexToDelete: number) => {
-    if (!confirm('Are you sure you want to delete this photo from your portfolio?')) return;
+    if (!confirm('Are you sure you want to remove this photo from your portfolio?')) return;
 
     const updatedGallery = gallery.filter((_, idx) => idx !== indexToDelete);
     await supabase.from('pandits').update({ puja_gallery: updatedGallery }).eq('phone', phone);
@@ -722,7 +735,7 @@ export default function PanditDashboardPage() {
   };
 
   const handleLogout = () => {
-    if (!confirm('Are you sure you want to log out from the Acharya Portal?')) return;
+    if (!confirm('Are you sure you want to sign out from the Acharya Portal?')) return;
     clearSession();
     router.replace('/pandit/login');
   };
@@ -740,14 +753,13 @@ export default function PanditDashboardPage() {
     <div className="min-h-screen w-full max-w-full bg-gray-50 pb-24 font-sans text-gray-900 overflow-x-hidden">
       {strikeCount > 0 && (
         <div className="bg-red-600 text-white px-3 py-2 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
-          <span>⚠️ Alert: {strikeCount} Strike(s) Active. Two strikes suspend lead access.</span>
+          <span>⚠️ Warning: {strikeCount} Strike(s) Active. Two strikes suspend lead access.</span>
         </div>
       )}
 
-      {/* HEADER: Anti-overflow responsive wrap */}
+      {/* HEADER */}
       <header className="w-full bg-gradient-to-r from-orange-700 via-amber-700 to-orange-800 text-white shadow-md sticky top-0 z-30">
         <div className="w-full max-w-6xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
-          {/* Brand */}
           <div className="flex items-center gap-2 min-w-0 shrink">
             <div className="w-9 h-9 rounded-full overflow-hidden border border-amber-300 bg-white p-0.5 shrink-0 flex items-center justify-center">
               <img src="/pandit-logo.png" alt="Logo" className="w-full h-full object-contain" />
@@ -758,7 +770,6 @@ export default function PanditDashboardPage() {
             </div>
           </div>
 
-          {/* Quick Stats & Controls */}
           <div className="flex items-center gap-1.5 shrink-0">
             {showInstallBtn && (
               <button
@@ -791,7 +802,6 @@ export default function PanditDashboardPage() {
           </div>
         </div>
 
-        {/* TABS SCROLLER */}
         <div className="w-full bg-black/25 border-t border-white/10 px-3 py-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
             <button
@@ -817,7 +827,7 @@ export default function PanditDashboardPage() {
             <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm">
               <div>
                 <h2 className="text-base font-bold text-gray-900 leading-tight">Live Requests</h2>
-                <p className="text-[11px] text-gray-500">Contact unlocks after claiming</p>
+                <p className="text-[11px] text-gray-500">Contact details unlock upon claiming</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -876,7 +886,7 @@ export default function PanditDashboardPage() {
                             disabled
                             className="w-full bg-gray-100 text-gray-400 font-bold py-2.5 rounded-xl text-xs border border-gray-200"
                           >
-                            Locked ({secondsLeft}s) • Requires 150 Tokens
+                            Locked ({secondsLeft}s) • Requires {TOKEN_COST} Tokens
                           </button>
                         ) : (
                           <button
@@ -908,7 +918,7 @@ export default function PanditDashboardPage() {
             <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Confirmed Bookings</h2>
-                <p className="text-[11px] text-gray-500">Call Yajman and complete ritual</p>
+                <p className="text-[11px] text-gray-500">Contact Yajman to perform the ceremony</p>
               </div>
               <button
                 onClick={loadDashboardData}
@@ -920,7 +930,7 @@ export default function PanditDashboardPage() {
 
             {confirmedBookings.length === 0 ? (
               <div className="bg-white p-10 text-center rounded-2xl border border-gray-200 shadow-sm">
-                <p className="text-xs text-gray-400">No active confirmed bookings yet.</p>
+                <p className="text-xs text-gray-400">No active confirmed bookings found.</p>
               </div>
             ) : (
               confirmedBookings.map((b) => (
@@ -929,9 +939,14 @@ export default function PanditDashboardPage() {
                     <div>
                       <h3 className="text-base font-bold text-gray-900">{b.puja_name}</h3>
                       <span className="text-[11px] text-gray-500">
-                        {b.accepted_via === 'token' ? 'Priority (0% fee)' : `Open (${COMMISSION_PERCENT}% fee)`}
+                        {b.accepted_via === 'token' ? 'Priority (0% commission)' : `Open (${COMMISSION_PERCENT}% platform fee)`}
                       </span>
                     </div>
+                    {b.completion_otp && (
+                      <span className="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-mono font-bold">
+                        OTP: {b.completion_otp}
+                      </span>
+                    )}
                   </div>
 
                   <div className="bg-green-50/70 p-3 rounded-xl border border-green-100 text-xs space-y-1">
@@ -972,7 +987,7 @@ export default function PanditDashboardPage() {
         {activeTab === 'missing' && (
           <div className="space-y-3">
             <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-900">Cancelled / Missed</h2>
+              <h2 className="text-base font-bold text-gray-900">Cancelled / Missed Leads</h2>
               <button
                 onClick={loadDashboardData}
                 className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-2.5 py-1 rounded-lg"
@@ -983,7 +998,7 @@ export default function PanditDashboardPage() {
 
             {missingLeads.length === 0 ? (
               <div className="bg-white p-10 text-center rounded-2xl border border-gray-200 shadow-sm">
-                <p className="text-xs text-gray-400">No missed or cancelled records found.</p>
+                <p className="text-xs text-gray-400">No cancelled or missed ceremonies recorded.</p>
               </div>
             ) : (
               missingLeads.map((m) => (
@@ -1007,7 +1022,7 @@ export default function PanditDashboardPage() {
             <div className="bg-gradient-to-br from-emerald-600 to-green-800 text-white p-5 rounded-2xl shadow flex items-center justify-between">
               <div>
                 <span className="text-[10px] uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full font-bold">
-                  Earnings
+                  Total Earnings
                 </span>
                 <h3 className="text-3xl font-extrabold mt-1">₹{earningsBalance}</h3>
                 <p className="text-[10px] text-emerald-100 mt-1">Direct Settlement via UPI</p>
@@ -1023,7 +1038,7 @@ export default function PanditDashboardPage() {
             <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-5 rounded-2xl shadow flex items-center justify-between">
               <div>
                 <span className="text-[10px] uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full font-bold">
-                  Tokens
+                  Remaining Tokens
                 </span>
                 <h3 className="text-3xl font-extrabold mt-1">🪙 {tokenBalance}</h3>
                 <p className="text-[10px] text-amber-100 mt-1">150 Tokens = 1 Priority Ceremony</p>
@@ -1135,29 +1150,8 @@ export default function PanditDashboardPage() {
                   <span className="font-bold text-emerald-900">{upiId || 'Not Configured'}</span>
                 </div>
               </div>
-
-              {/* In-App Account Safety Actions */}
-              <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
-                <a
-                  href="/pandit/terms"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-gray-500 hover:text-gray-800 underline underline-offset-4"
-                >
-                  Privacy Policy
-                </a>
-                <a
-                  href="/delete-account"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-red-600 hover:text-red-700 font-semibold underline underline-offset-4"
-                >
-                  Delete Account
-                </a>
-              </div>
             </div>
 
-            {/* Portfolio */}
             <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3">
               <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-sm font-bold text-gray-900">Rituals Gallery</h3>
@@ -1211,66 +1205,30 @@ export default function PanditDashboardPage() {
           <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
             <div className="border-b pb-3">
               <h2 className="text-base sm:text-lg font-bold text-gray-900">Platform Rules & Policies</h2>
-              <p className="text-[11px] text-gray-500 mt-0.5">Acharya Code of Conduct, Lead Allocation & Service Guidelines</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Acharya Code of Conduct, Lead Allocation & Guidelines</p>
             </div>
 
             <div className="space-y-3">
               <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50">
                 <h3 className="text-xs font-bold text-amber-950">1. Priority Window & Token Claims</h3>
                 <p className="text-xs text-amber-900 mt-1 leading-relaxed">
-                  Pehle 60 seconds sirf Token Holders ke liye reserved hote hain, jisme platform commission 0% lagta hai.
+                  The initial 60 seconds are reserved exclusively for Token holders with 0% platform commission.
                 </p>
               </div>
 
               <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50">
                 <h3 className="text-xs font-bold text-emerald-950">2. Open Access Mode</h3>
                 <p className="text-xs text-emerald-900 mt-1 leading-relaxed">
-                  60 seconds ke baad puja sabhi Acharyas ke liye open ho jaati hai, jisme completion ke baad 30% platform service fee lagti hai.
+                  After 60 seconds, the ceremony becomes accessible to all verified Acharyas with a 30% platform service fee upon completion.
                 </p>
               </div>
 
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50">
-                <h3 className="text-xs font-bold text-blue-950">3. Completion Verification</h3>
+                <h3 className="text-xs font-bold text-blue-950">3. Verification OTP</h3>
                 <p className="text-xs text-blue-900 mt-1 leading-relaxed">
-                  Ritual khatam hone ke baad Yajman se direct 4-digit verification code (OTP) lekar system me enter karna zaroori hai.
+                  Upon finishing the ritual, collect the 4-digit completion code from the Yajman to verify and close out the ceremony.
                 </p>
               </div>
-
-              <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/50">
-                <h3 className="text-xs font-bold text-purple-950">4. Settlement Windows & Account Strikes</h3>
-                <p className="text-xs text-purple-900 mt-1 leading-relaxed">
-                  Settlement 24 ghante (Saturday ko 48 ghante) ke andar clear hota hai. 2 strikes hone par lead assignment pause ho jayega.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50">
-                <h3 className="text-xs font-bold text-rose-950">5. Cancellation, Token Refunds & Anti-Fraud Policy</h3>
-                <ul className="text-xs text-rose-900 mt-1.5 space-y-1 list-disc list-inside leading-relaxed">
-                  <li><strong>Priority Lead Cancellation:</strong> Agar token se claim ki gayi lead ko Yajman cancel karta hai, to admin review ke baad 150 priority tokens wapas wallet me refund ho jate hain.</li>
-                  <li><strong>Free Mode Cancellation:</strong> Free mode me claim ki gayi puja par koi token refund nahi milta.</li>
-                  <li><strong>Acharya Cancellation:</strong> Agar cancellation Acharya ki vajah se hota hai (deri, vivaad), to koi refund nahi milta.</li>
-                  <li><strong>False Claim Penalty:</strong> Galat cancellation report karne par account turant 7 dino ke liye suspend kar diya jayega.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
-              <a
-                href="/pandit/terms"
-                target="_blank"
-                rel="noreferrer"
-                className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
-              >
-                Pandit Partner Terms & Operating Policy
-              </a>
-              <a
-                href="/delete-account"
-                target="_blank"
-                rel="noreferrer"
-                className="text-rose-600 hover:text-rose-700 underline underline-offset-4"
-              >
-                Request Account Deletion
-              </a>
             </div>
           </div>
         )}
