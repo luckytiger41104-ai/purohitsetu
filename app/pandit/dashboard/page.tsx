@@ -12,10 +12,6 @@ declare global {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  Types & constants                                                 */
-/* ------------------------------------------------------------------ */
-
 interface Lead {
   id: string | number;
   yajman_name: string;
@@ -74,10 +70,6 @@ const PANDIT_CANCEL_REASONS = [
   'Dakshina / Samagri misalignment',
   'Other Acharya reason',
 ];
-
-/* ------------------------------------------------------------------ */
-/*  Helper functions                                                  */
-/* ------------------------------------------------------------------ */
 
 const cleanPhone = (value: string) => (value || '').replace(/\D/g, '').slice(-10);
 
@@ -153,10 +145,6 @@ const fileToCompressedDataUrl = (file: File, maxSize = 600, quality = 0.7): Prom
     reader.readAsDataURL(file);
   });
 
-/* ------------------------------------------------------------------ */
-/*  Main Component                                                    */
-/* ------------------------------------------------------------------ */
-
 export default function PanditDashboardPage() {
   const router = useRouter();
 
@@ -203,7 +191,7 @@ export default function PanditDashboardPage() {
   const [confirmedBookings, setConfirmedBookings] = useState<Lead[]>([]);
   const [missingLeads, setMissingLeads] = useState<Lead[]>([]);
 
-  /* ---------------- OneSignal Initialization ---------------- */
+  /* ---------------- OneSignal Initialization with Direct Opt-In Prompt ---------------- */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -224,7 +212,13 @@ export default function PanditDashboardPage() {
             notifyButton: { enable: false },
             allowLocalhostAsSecureOrigin: true,
           });
+
           await OneSignal.User.addTag('user_role', 'acharya');
+
+          // Explicit prompt check so re-installed apps trigger permission dialog
+          if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
+            await OneSignal.Notifications.requestPermission();
+          }
         } catch (e) {
           console.error('OneSignal initialization error:', e);
         }
@@ -264,7 +258,7 @@ export default function PanditDashboardPage() {
     setDeferredPrompt(null);
   };
 
-  /* ---------------- Realtime Counter for Universal Countdown ---------------- */
+  /* ---------------- Timer Sync ---------------- */
   useEffect(() => {
     setCurrentTime(Math.floor(Date.now() / 1000));
     const interval = setInterval(() => {
@@ -401,11 +395,10 @@ export default function PanditDashboardPage() {
     if (phone) loadDashboardData();
   }, [phone, loadDashboardData]);
 
-  /* ---------------- Lead Claiming Logic ---------------- */
+  /* ---------------- Claiming ---------------- */
   const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
     const completionOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // Check if another Pandit has accepted the booking
     const { data: currentLead } = await supabase
       .from('bookings')
       .select('status, accepted_by')
@@ -418,7 +411,6 @@ export default function PanditDashboardPage() {
       return false;
     }
 
-    // Direct update to prevent false rejections
     const { data, error } = await supabase
       .from('bookings')
       .update({
@@ -567,7 +559,7 @@ export default function PanditDashboardPage() {
     }
   };
 
-  /* ---------------- Razorpay Payment ---------------- */
+  /* ---------------- Payments ---------------- */
   const handleBuyTokens = async (packName: string, amount: number, tokensCount: number) => {
     const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     if (!razorpayKey) {
@@ -627,7 +619,6 @@ export default function PanditDashboardPage() {
     }
   };
 
-  /* ---------------- Payouts ---------------- */
   const handleRequestPayout = async () => {
     if (earningsBalance <= 0) {
       alert('No withdrawable earnings are available right now.');
@@ -657,7 +648,7 @@ export default function PanditDashboardPage() {
     }
   };
 
-  /* ---------------- Profile Updates ---------------- */
+  /* ---------------- Profile ---------------- */
   const handleSaveProfile = async () => {
     if (!phone) return;
 
@@ -1150,8 +1141,28 @@ export default function PanditDashboardPage() {
                   <span className="font-bold text-emerald-900">{upiId || 'Not Configured'}</span>
                 </div>
               </div>
+
+              <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+                <a
+                  href="/pandit/terms"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gray-500 hover:text-gray-800 underline underline-offset-4"
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  href="/delete-account"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-red-600 hover:text-red-700 font-semibold underline underline-offset-4"
+                >
+                  Delete Account
+                </a>
+              </div>
             </div>
 
+            {/* Portfolio */}
             <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3">
               <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-sm font-bold text-gray-900">Rituals Gallery</h3>
@@ -1200,15 +1211,16 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* RULES TAB */}
+        {/* RULES TAB: Full 5 Platform Rules & Google Play Policies Restored */}
         {activeTab === 'rules' && (
           <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
             <div className="border-b pb-3">
               <h2 className="text-base sm:text-lg font-bold text-gray-900">Platform Rules & Policies</h2>
-              <p className="text-[11px] text-gray-500 mt-0.5">Acharya Code of Conduct, Lead Allocation & Guidelines</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Acharya Code of Conduct, Lead Allocation & Service Guidelines</p>
             </div>
 
             <div className="space-y-3">
+              {/* Rule 1 */}
               <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50">
                 <h3 className="text-xs font-bold text-amber-950">1. Priority Window & Token Claims</h3>
                 <p className="text-xs text-amber-900 mt-1 leading-relaxed">
@@ -1216,6 +1228,7 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
+              {/* Rule 2 */}
               <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50">
                 <h3 className="text-xs font-bold text-emerald-950">2. Open Access Mode</h3>
                 <p className="text-xs text-emerald-900 mt-1 leading-relaxed">
@@ -1223,12 +1236,52 @@ export default function PanditDashboardPage() {
                 </p>
               </div>
 
+              {/* Rule 3 */}
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50">
                 <h3 className="text-xs font-bold text-blue-950">3. Verification OTP</h3>
                 <p className="text-xs text-blue-900 mt-1 leading-relaxed">
-                  Upon finishing the ritual, collect the 4-digit completion code from the Yajman to verify and close out the ceremony.
+                  Upon finishing the ritual, collect the 4-digit completion code directly from the Yajman to verify and close out the ceremony.
                 </p>
               </div>
+
+              {/* Rule 4 */}
+              <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/50">
+                <h3 className="text-xs font-bold text-purple-950">4. Settlement Windows & Account Strikes</h3>
+                <p className="text-xs text-purple-900 mt-1 leading-relaxed">
+                  Earnings settlements are cleared within 24 hours (48 hours on weekends). Accumulating 2 active strikes temporarily suspends lead allocation.
+                </p>
+              </div>
+
+              {/* Rule 5 */}
+              <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50">
+                <h3 className="text-xs font-bold text-rose-950">5. Cancellation, Token Refunds & Anti-Fraud Policy</h3>
+                <ul className="text-xs text-rose-900 mt-1.5 space-y-1 list-disc list-inside leading-relaxed">
+                  <li><strong>Priority Lead Cancellation:</strong> If a token-claimed lead is cancelled by the Yajman, 150 priority tokens are credited back to the wallet upon admin review.</li>
+                  <li><strong>Free Mode Cancellation:</strong> Ceremonies claimed under Open Free Mode do not carry token refund eligibility.</li>
+                  <li><strong>Acharya Cancellation:</strong> Cancellations initiated from the Acharya side due to scheduling clashes or delays are non-refundable.</li>
+                  <li><strong>False Reporting Penalty:</strong> Incorrect cancellation submissions will lead to an immediate 7-day account suspension.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Google Play Store Compliance Links */}
+            <div className="pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
+              <a
+                href="/pandit/terms"
+                target="_blank"
+                rel="noreferrer"
+                className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
+              >
+                Pandit Partner Terms & Operating Policy
+              </a>
+              <a
+                href="/delete-account"
+                target="_blank"
+                rel="noreferrer"
+                className="text-rose-600 hover:text-rose-700 underline underline-offset-4"
+              >
+                Request Account Deletion
+              </a>
             </div>
           </div>
         )}

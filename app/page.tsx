@@ -448,7 +448,6 @@ export default function Home() {
 
       if (error) throw error;
 
-      // Nayi booking bante hi verified Pandits ko live push notification trigger karein
       triggerNewBookingNotification(
         formData.pujaName || "Vedic Ceremony",
         formData.area || "Bengaluru"
@@ -456,7 +455,7 @@ export default function Home() {
 
       setStatusMsg({
         type: "success",
-        text: "🚩 Har Har Mahadev! Aapka anurodh darj ho gaya hai. Purohit Ji aapse jald hi sampark karenge.",
+        text: "Booking request confirmed successfully! A verified Acharya will reach out to you shortly.",
       });
 
       setFormData({
@@ -474,7 +473,7 @@ export default function Home() {
     } catch (err: any) {
       setStatusMsg({
         type: "error",
-        text: "Booking me truti aayi: " + (err.message || "Network check karein."),
+        text: "Error submitting booking: " + (err.message || "Please check your network connection."),
       });
     } finally {
       setLoading(false);
@@ -487,12 +486,12 @@ export default function Home() {
 
     const amountNum = parseFloat(tokenData.amount);
     if (!amountNum || amountNum < 1) {
-      setTokenNotice({ type: "error", text: "Kripya sahi rashi chunein (Minimum ₹1)." });
+      setTokenNotice({ type: "error", text: "Please enter a valid amount (Minimum ₹1)." });
       return;
     }
 
     if (!tokenData.yajmanName.trim() || !tokenData.phone.trim()) {
-      setTokenNotice({ type: "error", text: "Yajman Name aur Mobile Number zaroori hai." });
+      setTokenNotice({ type: "error", text: "Yajman Name and Contact Number are required." });
       return;
     }
 
@@ -500,7 +499,7 @@ export default function Home() {
     if (!razorpayKey) {
       setTokenNotice({
         type: "error",
-        text: "Payment configuration pending hai. Support se sampark karein.",
+        text: "Payment configuration is currently unavailable. Please contact support.",
       });
       return;
     }
@@ -512,7 +511,7 @@ export default function Home() {
       setTokenProcessing(false);
       setTokenNotice({
         type: "error",
-        text: "Payment gateway load nahi ho paya. Internet connection check karein.",
+        text: "Payment gateway failed to initialize. Please check your internet connection.",
       });
       return;
     }
@@ -555,7 +554,6 @@ export default function Home() {
             razorpay_payment_id: paymentId,
           });
 
-          // Token payment aane par bhi Acharyas ko alert bhej dein
           triggerNewBookingNotification(
             finalPujaName,
             "Bengaluru (Token Booking)"
@@ -563,7 +561,7 @@ export default function Home() {
 
           setTokenNotice({
             type: "success",
-            text: `🙏 Booking Token ₹${amountNum} safalta se prapt hua! Booking ID: ${paymentId}. Har Har Mahadev!`,
+            text: `Booking token of ₹${amountNum} received successfully! Reference ID: ${paymentId}.`,
           });
 
           setTokenData({
@@ -578,7 +576,7 @@ export default function Home() {
           console.error(dbErr);
           setTokenNotice({
             type: "success",
-            text: `Payment safal raha (Ref ID: ${response?.razorpay_payment_id}). Dhanyawad!`,
+            text: `Payment confirmed (Ref ID: ${response?.razorpay_payment_id}). Thank you!`,
           });
         } finally {
           setTokenProcessing(false);
@@ -597,7 +595,7 @@ export default function Home() {
         setTokenProcessing(false);
         setTokenNotice({
           type: "error",
-          text: `Payment asafal raha: ${response?.error?.description || "Cancelled."}`,
+          text: `Payment failed: ${response?.error?.description || "Transaction cancelled."}`,
         });
       });
       rzp.open();
@@ -605,7 +603,7 @@ export default function Home() {
       setTokenProcessing(false);
       setTokenNotice({
         type: "error",
-        text: "Gateway open karne me truti: " + err.message,
+        text: "Could not open payment gateway: " + err.message,
       });
     }
   };
@@ -967,7 +965,7 @@ export default function Home() {
                 <input
                   type="text"
                   required
-                  placeholder="Rahul Sharma"
+                  placeholder="e.g. Rahul Sharma"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
@@ -979,7 +977,7 @@ export default function Home() {
                 <input
                   type="tel"
                   required
-                  placeholder="10-digit number"
+                  placeholder="10-digit phone number"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
@@ -1039,7 +1037,7 @@ export default function Home() {
                 <input
                   type="text"
                   required
-                  placeholder="560xxx"
+                  placeholder="e.g. 560102"
                   value={formData.pincode}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs"
@@ -1078,7 +1076,7 @@ export default function Home() {
                   onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-500 text-xs bg-white"
                 >
-                  <option value="Morning (06:00 AM - 09:00 AM)">Pratah (06:00 AM - 09:00 AM)</option>
+                  <option value="Morning (06:00 AM - 09:00 AM)">Early Morning (06:00 AM - 09:00 AM)</option>
                   <option value="Morning (09:00 AM - 12:00 PM)">Morning (09:00 AM - 12:00 PM)</option>
                   <option value="Afternoon (12:00 PM - 03:00 PM)">Afternoon (12:00 PM - 03:00 PM)</option>
                   <option value="Evening (05:00 PM - 08:00 PM)">Evening (05:00 PM - 08:00 PM)</option>
@@ -1095,7 +1093,7 @@ export default function Home() {
                 className="w-3.5 h-3.5 accent-orange-600 rounded"
               />
               <label htmlFor="samagri-box" className="text-[11px] text-slate-800">
-                <strong>Include Complete Hawan & Samagri Kit</strong> (Purohit Ji carries woods, herbs, Gangajal).
+                <strong>Include Complete Hawan & Samagri Kit</strong> (Acharya carries verified woods, herbs, Gangajal).
               </label>
             </div>
 
@@ -1104,7 +1102,7 @@ export default function Home() {
               disabled={loading}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-600 text-white font-black text-xs sm:text-sm shadow hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
             >
-              {loading ? "Registering..." : "🚩 Confirm Booking & Request Pandit Ji"}
+              {loading ? "Registering..." : "Confirm Booking & Request Acharya"}
             </button>
           </form>
         </div>
@@ -1213,7 +1211,7 @@ export default function Home() {
                 <input
                   type="text"
                   required
-                  placeholder="Rahul Sharma"
+                  placeholder="e.g. Rahul Sharma"
                   value={tokenData.yajmanName}
                   onChange={(e) => setTokenData({ ...tokenData, yajmanName: e.target.value })}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
