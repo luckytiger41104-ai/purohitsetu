@@ -99,7 +99,6 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Simplified Form: Default area auto-fills "Bengaluru"
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -107,6 +106,7 @@ export default function Home() {
     language: "Hindi",
     area: "Bengaluru",
     date: "",
+    samagri: true,
   });
 
   const [loading, setLoading] = useState(false);
@@ -442,6 +442,7 @@ export default function Home() {
           area: formData.area || "Bengaluru",
           location: formData.area || "Bengaluru",
           date: formData.date,
+          samagri: formData.samagri,
           status: "available",
         },
       ]);
@@ -465,6 +466,7 @@ export default function Home() {
         language: "Hindi",
         area: "Bengaluru",
         date: "",
+        samagri: true,
       });
     } catch (err: any) {
       setStatusMsg({
@@ -972,7 +974,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* SIMPLIFIED BOOKING FORM */}
+          {/* SIMPLIFIED BOOKING FORM WITH SAMAGRI INCLUDED */}
           <div className="bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-7">
             <div className="text-center mb-5">
               <span className="bg-orange-100 text-orange-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
@@ -1082,6 +1084,20 @@ export default function Home() {
                     <option value="Telugu">Telugu</option>
                   </select>
                 </div>
+              </div>
+
+              {/* SAMAGRI KIT CHECKBOX RESTORED */}
+              <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="samagri-toggle"
+                  checked={formData.samagri}
+                  onChange={(e) => setFormData({ ...formData, samagri: e.target.checked })}
+                  className="w-4 h-4 accent-orange-600 rounded cursor-pointer"
+                />
+                <label htmlFor="samagri-toggle" className="text-xs text-slate-800 cursor-pointer select-none">
+                  <strong>Include Complete Hawan & Samagri Kit</strong> (Acharya carries verified woods, herbs, Gangajal).
+                </label>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 pt-2">

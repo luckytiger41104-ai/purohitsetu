@@ -29,6 +29,7 @@ interface Lead {
   cancellation_reason?: string;
   cancelled_by?: string;
   refund_status?: string;
+  samagri?: boolean;
 }
 
 type TabId = 'leads' | 'bookings' | 'missing' | 'wallet' | 'profile' | 'rules';
@@ -297,14 +298,6 @@ export default function PanditDashboardPage() {
     return PRIORITY_WINDOW_SECONDS - elapsedSeconds;
   };
 
-  /* ---------------- WhatsApp OTP Sender in English ---------------- */
-  const sendWhatsAppOtp = (yajmanPhone: string, yajmanName: string, pujaTitle: string, otpCode: string) => {
-    const rawNumber = cleanPhone(yajmanPhone);
-    const msg = `Greetings ${yajmanName || 'Yajman'}, Acharya ${panditName} has been confirmed for your ${pujaTitle} via PurohitSetu.\n\nPlease share this 4-digit completion code with the Acharya once the ceremony is concluded:\nCompletion Code: ${otpCode}\n\nHar Har Mahadev!`;
-    const url = `https://wa.me/91${rawNumber}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
-  };
-
   /* ---------------- Data Loader ---------------- */
   const loadDashboardData = useCallback(async () => {
     try {
@@ -379,6 +372,7 @@ export default function PanditDashboardPage() {
           cancellation_reason: b.cancellation_reason,
           cancelled_by: b.cancelled_by,
           refund_status: b.refund_status,
+          samagri: b.samagri,
         };
       });
 
@@ -419,7 +413,7 @@ export default function PanditDashboardPage() {
     if (phone) loadDashboardData();
   }, [phone, loadDashboardData]);
 
-  /* ---------------- Claiming with Auto WhatsApp Trigger ---------------- */
+  /* ---------------- Claiming ---------------- */
   const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
     const completionOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -456,9 +450,6 @@ export default function PanditDashboardPage() {
       return false;
     }
 
-    // Auto open WhatsApp with English completion OTP message
-    sendWhatsAppOtp(lead.phone, lead.yajman_name, lead.puja_name, completionOtp);
-
     return true;
   };
 
@@ -488,7 +479,7 @@ export default function PanditDashboardPage() {
       await supabase.from('pandits').update({ wallet_balance: remaining }).eq('phone', phone);
       setTokenBalance(remaining);
 
-      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens have been deducted.`);
+      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens deducted.`);
     } else {
       const claimed = await claimLead(lead, 'free');
       if (!claimed) return;
@@ -500,7 +491,7 @@ export default function PanditDashboardPage() {
     setActiveTab('bookings');
   };
 
-  /* ---------------- Verify OTP ---------------- */
+  /* ---------------- Verify Completion OTP ---------------- */
   const handleVerifyCompletionOtp = async () => {
     if (!activeOtpLead) return;
 
@@ -903,6 +894,9 @@ export default function PanditDashboardPage() {
                       <p className="text-gray-700">📍 <strong>Location:</strong> {lead.location}</p>
                       <p className="text-gray-700">📅 <strong>Puja Date:</strong> {lead.puja_date}</p>
                       <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {lead.puja_time}</p>
+                      {lead.samagri && (
+                        <p className="text-orange-800 font-bold">🌿 <strong>Samagri:</strong> Complete Hawan & Samagri Kit Included</p>
+                      )}
                       <p className="text-gray-500">🔒 <strong>Phone:</strong> {maskPhone(lead.phone)}</p>
                     </div>
 
@@ -939,13 +933,13 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* BOOKINGS TAB (OTP badge completely removed from Pandit card) */}
+        {/* BOOKINGS TAB (ZERO OTP ON CARD - PANDIT DOES NOT SEE OTP) */}
         {activeTab === 'bookings' && (
           <div className="space-y-3">
             <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Confirmed Bookings</h2>
-                <p className="text-[11px] text-gray-500">Contact Yajman & deliver OTP to verify ceremony</p>
+                <p className="text-[11px] text-gray-500">Call Yajman & ask for OTP to complete ceremony</p>
               </div>
               <button
                 onClick={loadDashboardData}
@@ -977,30 +971,27 @@ export default function PanditDashboardPage() {
                     <p className="text-gray-700">📍 <strong>Address:</strong> {b.location}</p>
                     <p className="text-gray-700">📅 <strong>Puja Date:</strong> {b.puja_date}</p>
                     <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {b.puja_time}</p>
+                    {b.samagri && (
+                      <p className="text-emerald-900 font-bold">🌿 <strong>Samagri:</strong> Complete Hawan & Samagri Kit Included</p>
+                    )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <div className="flex items-center gap-2 pt-1">
                     <a
                       href={`tel:${b.phone}`}
-                      className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm"
+                      className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm"
                     >
-                      📞 Call
+                      📞 Call Yajman
                     </a>
                     <button
-                      onClick={() => sendWhatsAppOtp(b.phone, b.yajman_name, b.puja_name, b.completion_otp || '----')}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"
-                    >
-                      <span>💬</span> WhatsApp OTP
-                    </button>
-                    <button
                       onClick={() => setActiveOtpLead(b)}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm"
+                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm"
                     >
-                      ✓ Complete
+                      ✓ Complete Puja
                     </button>
                     <button
                       onClick={() => openCancelModal(b)}
-                      className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2 px-2.5 rounded-xl"
+                      className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2.5 px-3 rounded-xl"
                     >
                       ✕
                     </button>
@@ -1370,13 +1361,13 @@ export default function PanditDashboardPage() {
         </div>
       )}
 
-      {/* OTP MODAL */}
+      {/* VERIFY COMPLETION OTP MODAL (PANDIT ENTERS CODE GIVEN BY YAJMAN) */}
       {activeOtpLead && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-xs w-full p-4 shadow-xl space-y-3 text-center">
             <span className="text-2xl block">🪔</span>
             <h3 className="text-base font-bold text-gray-900">Enter Completion OTP</h3>
-            <p className="text-xs text-gray-500">Collect this 4-digit code directly from Yajman</p>
+            <p className="text-xs text-gray-500">Collect the 4-digit code directly from Yajman to complete ceremony</p>
             <input
               type="text"
               inputMode="numeric"
@@ -1397,7 +1388,7 @@ export default function PanditDashboardPage() {
                 onClick={handleVerifyCompletionOtp}
                 className="flex-1 bg-green-600 text-white py-2 rounded-xl text-xs font-bold"
               >
-                Verify
+                Verify & Complete
               </button>
             </div>
           </div>
