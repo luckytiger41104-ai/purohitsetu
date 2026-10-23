@@ -194,7 +194,7 @@ export default function PanditDashboardPage() {
   const [confirmedBookings, setConfirmedBookings] = useState<Lead[]>([]);
   const [missingLeads, setMissingLeads] = useState<Lead[]>([]);
 
-  /* ---------------- OneSignal Initialization ---------------- */
+  /* ---------------- OneSignal Notification Setup ---------------- */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if ('Notification' in window) {
@@ -428,7 +428,6 @@ export default function PanditDashboardPage() {
       return false;
     }
 
-    // Agar pehle se code na ho tabhi naya banega, warna purana code hi rahega jo Yajman ko screen par mila hai
     const completionOtp = currentLead?.completion_otp || Math.floor(1000 + Math.random() * 9000).toString();
 
     const { data, error } = await supabase
@@ -451,18 +450,6 @@ export default function PanditDashboardPage() {
       alert('Update blocked. Please check your Supabase Row-Level Security policies.');
       return false;
     }
-
-    // Direct background Fast2SMS dispatch
-    fetch('/api/send-completion-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: lead.phone,
-        otp: completionOtp,
-        yajmanName: lead.yajman_name,
-        pujaName: lead.puja_name,
-      }),
-    }).catch((err) => console.error('SMS Dispatch Error:', err));
 
     return true;
   };
@@ -505,8 +492,8 @@ export default function PanditDashboardPage() {
     setActiveTab('bookings');
   };
 
-  /* ---------------- Resend OTP via Fast2SMS ---------------- */
-  const handleResendOtp = async (booking: Lead) => {
+  /* ---------------- Direct WhatsApp OTP Dispatch ---------------- */
+  const handleSendWhatsAppOtp = async (booking: Lead) => {
     if (resendingId === booking.id) return;
     setResendingId(booking.id);
 
@@ -520,33 +507,21 @@ export default function PanditDashboardPage() {
         .eq('id', booking.id);
 
       if (error) {
-        alert('Failed to generate new OTP: ' + error.message);
+        alert('Failed to update verification code: ' + error.message);
         return;
       }
 
-      // Fast2SMS call karein
-      const res = await fetch('/api/send-completion-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: booking.phone,
-          otp: newOtp,
-          yajmanName: booking.yajman_name,
-          pujaName: booking.puja_name,
-        }),
-      });
+      // WhatsApp URL prepare karein
+      const cleanNum = cleanPhone(booking.phone);
+      const text = `🚩 Pranam ${booking.yajman_name || 'Yajman'}, your PurohitSetu completion verification code for ${booking.puja_name || 'Puja'} is: [ ${newOtp} ]. Please share this code with Acharya Ji only after ritual completion.`;
+      const waUrl = `https://wa.me/91${cleanNum}?text=${encodeURIComponent(text)}`;
 
-      const resData = await res.json();
+      window.open(waUrl, '_blank');
 
-      if (resData.success) {
-        alert(`Success! A fresh 4-digit code has been sent directly to Yajman via SMS.`);
-      } else {
-        alert(`SMS dispatch notice: ${resData.error || 'Request sent to provider.'}`);
-      }
-
+      alert(`Success! 4-digit code generated and WhatsApp opened for ${booking.yajman_name}.`);
       await loadDashboardData();
     } catch (err: any) {
-      alert('Error resending OTP: ' + err.message);
+      alert('Error: ' + err.message);
     } finally {
       setResendingId(null);
     }
@@ -562,7 +537,7 @@ export default function PanditDashboardPage() {
       return;
     }
     if (activeOtpLead.completion_otp && code !== activeOtpLead.completion_otp) {
-      alert('Invalid verification code. Please ask Yajman for the code shown on their booking confirmation or SMS.');
+      alert('Invalid verification code. Please confirm the code with Yajman.');
       return;
     }
 
@@ -994,13 +969,13 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* BOOKINGS TAB (ZERO OTP ON CARD - YAJMAN HOLDS THE CODE) */}
+        {/* BOOKINGS TAB (ZERO OTP ON CARD - WHATSAPP OTP BUTTON WIRED) */}
         {activeTab === 'bookings' && (
           <div className="space-y-3">
             <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Confirmed Bookings</h2>
-                <p className="text-[11px] text-gray-500">Ask Yajman for their Completion Code upon ritual conclusion</p>
+                <p className="text-[11px] text-gray-500">Contact Yajman & verify Completion Code after ritual</p>
               </div>
               <button
                 onClick={loadDashboardData}
@@ -1045,13 +1020,13 @@ export default function PanditDashboardPage() {
                       📞 Call
                     </a>
                     
-                    {/* RESEND OTP VIA FAST2SMS (PANDIT STILL CANNOT SEE CODE) */}
+                    {/* DIRECT WHATSAPP OTP BUTTON */}
                     <button
-                      onClick={() => handleResendOtp(b)}
+                      onClick={() => handleSendWhatsAppOtp(b)}
                       disabled={resendingId === b.id}
-                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition disabled:opacity-50"
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition disabled:opacity-50"
                     >
-                      {resendingId === b.id ? 'Sending...' : '📲 Resend OTP'}
+                      {resendingId === b.id ? 'Opening...' : '📲 WhatsApp OTP'}
                     </button>
 
                     <button
@@ -1433,13 +1408,13 @@ export default function PanditDashboardPage() {
         </div>
       )}
 
-      {/* VERIFY COMPLETION OTP MODAL (PANDIT ENTERS CODE GIVEN BY YAJMAN) */}
+      {/* VERIFY COMPLETION OTP MODAL */}
       {activeOtpLead && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-xs w-full p-4 shadow-xl space-y-3 text-center">
             <span className="text-2xl block">🪔</span>
             <h3 className="text-base font-bold text-gray-900">Enter Completion OTP</h3>
-            <p className="text-xs text-gray-500">Collect the 4-digit code directly from Yajman to complete ceremony</p>
+            <p className="text-xs text-gray-500">Collect the 4-digit code sent to Yajman via WhatsApp to complete ceremony</p>
             <input
               type="text"
               inputMode="numeric"
