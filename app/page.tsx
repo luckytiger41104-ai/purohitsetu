@@ -928,7 +928,7 @@ export default function Home() {
               <span className="text-2xl block mb-2">🔥</span>
               <h3 className="text-sm font-black text-slate-900 mb-1">Complete Hawan & Samagri Management</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Our Pandits arrive equipped with authenticated Mango wood, Navagraha herbs, pure cow ghee, and Gangajal.
+                Our Pandits arrive equipped with authenticated Mango wood, Navagraha herbs, pure cow ghee, and Gangajal etc.
               </p>
             </div>
           </div>
