@@ -4,13 +4,17 @@ import './globals.css';
 import FloatingPaymentButton from '@/components/FloatingPaymentButton';
 import RegisterServiceWorker from '@/components/RegisterServiceWorker';
 
-const inter = Inter({ subsets: ['latin'] });
+// display: 'swap' se font load hone par CLS aur text blocking issue khatam hota hai
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+});
 
+// maximumScale ko hata diya hai taaki Google Lighthouse Accessibility pass ho sake
 export const viewport: Viewport = {
   themeColor: '#c2410c',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export const metadata: Metadata = {
