@@ -4,13 +4,15 @@ import './globals.css';
 import FloatingPaymentButton from '@/components/FloatingPaymentButton';
 import RegisterServiceWorker from '@/components/RegisterServiceWorker';
 
-// display: 'swap' se font load hone par CLS aur text blocking issue khatam hota hai
+// Font rendering ko optimize kiya hai taaki First/Largest Contentful Paint delay na ho
 const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
+  preload: true,
+  adjustFontFallback: true,
+  variable: '--font-inter',
 });
 
-// maximumScale ko hata diya hai taaki Google Lighthouse Accessibility pass ho sake
 export const viewport: Viewport = {
   themeColor: '#c2410c',
   width: 'device-width',
@@ -71,7 +73,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
+      <head>
+        {/* Third-party checkout connection setup in advance */}
+        <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
+      </head>
       <body className={`${inter.className} bg-stone-50 text-gray-900 antialiased`}>
         <RegisterServiceWorker />
         <FloatingPaymentButton />
