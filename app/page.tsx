@@ -639,7 +639,7 @@ export default function Home() {
       <div className="sticky top-0 z-40 w-full shadow-sm">
         <div className="bg-gradient-to-r from-red-800 via-orange-700 to-amber-800 text-white text-[11px] sm:text-xs py-1.5 px-3 text-center">
           <p className="font-semibold">
-            🚩 <strong>North Indian Vedic Pandits in Bangalore:</strong> Hindi, Maithili, Bhojpuri & Kannada Acharyas across all zones
+            🚩 <strong>North Indian Vedic Pandits in Bangalore:</strong> Hindi, Maithili, Bhojpuri &amp; Kannada Acharyas across all zones
           </p>
         </div>
 
@@ -659,7 +659,7 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="text-[9px] font-semibold text-slate-600 uppercase tracking-widest truncate">
-                  North Indian & Vedic Purohits
+                  North Indian &amp; Vedic Purohits
                 </p>
               </div>
             </div>
@@ -724,7 +724,7 @@ export default function Home() {
         </header>
       </div>
 
-      {/* HERO SECTION */}
+      {/* HERO SECTION - Optimized with direct text color to eliminate 1.5s LCP render delay */}
       <section id="home-section" className="bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-[#FFFDF7] pt-8 pb-10 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-4 shadow-xs">
@@ -732,9 +732,9 @@ export default function Home() {
           </div>
 
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight mb-3 tracking-tight">
-            Book Verified North Indian & Hindi Pandits in Bangalore <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-700 via-red-600 to-amber-700">
-              For Griha Pravesh, Vivah, Satyanarayan & Hawan Rituals
+            Book Verified North Indian &amp; Hindi Pandits in Bangalore <br />
+            <span className="text-orange-700">
+              For Griha Pravesh, Vivah, Satyanarayan &amp; Hawan Rituals
             </span>
           </h1>
 
@@ -840,7 +840,7 @@ export default function Home() {
           <div>
             <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">Sanatan Sanskar Directory</span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
-              Vedic Pujas, Sanskars & Hawan Ceremonies
+              Vedic Pujas, Sanskars &amp; Hawan Ceremonies
             </h2>
           </div>
           <div className="mt-2 sm:mt-0">
@@ -856,7 +856,6 @@ export default function Home() {
               key={puja.id}
               className="group bg-white rounded-2xl border border-amber-200 overflow-hidden shadow-xs hover:shadow-md hover:border-orange-400 transition flex flex-col justify-between"
             >
-              {/* Fixed Layout Shift with relative aspect-ratio wrapper */}
               <div className="relative aspect-[16/10] w-full bg-amber-100 overflow-hidden">
                 <Image
                   src={puja.img}
@@ -906,7 +905,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
             <span className="text-orange-700 font-extrabold uppercase text-[10px] tracking-widest">
-              Sanatan Heritage & Trust
+              Sanatan Heritage &amp; Trust
             </span>
             <h2 className="text-xl sm:text-3xl font-black text-slate-900 mt-1">
               Why Devotees Choose PurohitSetu in Bangalore
@@ -919,7 +918,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div className="bg-white p-5 rounded-2xl border border-amber-200">
               <span className="text-2xl block mb-2" aria-hidden="true">🌿</span>
-              <h3 className="text-sm font-black text-slate-900 mb-1">Authentic Sanskrit Chanting & Shastric Vidhi</h3>
+              <h3 className="text-sm font-black text-slate-900 mb-1">Authentic Sanskrit Chanting &amp; Shastric Vidhi</h3>
               <p className="text-xs text-slate-700 leading-relaxed">
                 Dedicated strictly to genuine Vedic rituals and Hawans. Zero speculative astrology or commercial horoscope gimmicks.
               </p>
@@ -927,7 +926,7 @@ export default function Home() {
 
             <div className="bg-white p-5 rounded-2xl border border-amber-200">
               <span className="text-2xl block mb-2" aria-hidden="true">🕉</span>
-              <h3 className="text-sm font-black text-slate-900 mb-1">North Indian, Hindi, Bihari & Maithili Pandits</h3>
+              <h3 className="text-sm font-black text-slate-900 mb-1">North Indian, Hindi, Bihari &amp; Maithili Pandits</h3>
               <p className="text-xs text-slate-700 leading-relaxed">
                 Verified Acharyas from Varanasi, Mithila, Haridwar, and Prayagraj proficient in your family's authentic customs.
               </p>
@@ -943,7 +942,7 @@ export default function Home() {
 
             <div className="bg-white p-5 rounded-2xl border border-amber-200">
               <span className="text-2xl block mb-2" aria-hidden="true">🔥</span>
-              <h3 className="text-sm font-black text-slate-900 mb-1">Complete Hawan & Samagri Management</h3>
+              <h3 className="text-sm font-black text-slate-900 mb-1">Complete Hawan &amp; Samagri Management</h3>
               <p className="text-xs text-slate-700 leading-relaxed">
                 Our Pandits arrive equipped with authenticated Mango wood, Navagraha herbs, pure cow ghee, and Gangajal etc.
               </p>
@@ -976,7 +975,7 @@ export default function Home() {
               <span className="text-orange-600 text-xl font-bold" aria-hidden="true">🏅</span>
               <div>
                 <h3 className="text-xs font-bold text-slate-900 leading-tight">Verified Pandits</h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">Experienced & verified</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Experienced &amp; verified</p>
               </div>
             </div>
 
@@ -1115,7 +1114,7 @@ export default function Home() {
                   className="w-4 h-4 accent-orange-700 rounded cursor-pointer"
                 />
                 <label htmlFor="samagri-toggle" className="text-xs text-slate-800 cursor-pointer select-none">
-                  <strong>Include Complete Hawan & Samagri Kit</strong> (Acharya carries verified woods, herbs, Gangajal).
+                  <strong>Include Complete Hawan &amp; Samagri Kit</strong> (Acharya carries verified woods, herbs, Gangajal).
                 </label>
               </div>
 
@@ -1182,7 +1181,7 @@ export default function Home() {
             <span>•</span>
             <a href="/privacy-policy" className="hover:text-white transition underline underline-offset-4">Privacy Policy</a>
             <span>•</span>
-            <a href="#about-section" className="hover:text-white transition">Terms & Conditions</a>
+            <a href="#about-section" className="hover:text-white transition">Terms &amp; Conditions</a>
             <span>•</span>
             <a href="#about-section" className="hover:text-white transition">About Us</a>
             <span>•</span>
@@ -1218,7 +1217,7 @@ export default function Home() {
                 <span className="text-lg" aria-hidden="true">🪙</span>
                 <div>
                   <h3 className="text-sm font-extrabold text-slate-900 leading-tight">Puja Booking Token</h3>
-                  <p className="text-[10px] text-slate-500">Advance Service Fee & Muhurat Confirmation</p>
+                  <p className="text-[10px] text-slate-500">Advance Service Fee &amp; Muhurat Confirmation</p>
                 </div>
               </div>
               <button
@@ -1361,7 +1360,7 @@ export default function Home() {
               </button>
 
               <p className="text-[9px] text-center text-slate-500 font-medium">
-                🔒 Secured by Razorpay. Supports PhonePe, GPay, Paytm, Cards & UPI.
+                🔒 Secured by Razorpay. Supports PhonePe, GPay, Paytm, Cards &amp; UPI.
               </p>
             </form>
           </div>
