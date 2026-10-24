@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { triggerNewBookingNotification } from "@/lib/notifyPandits";
 
@@ -418,11 +419,6 @@ export default function Home() {
     }
   };
 
-  const handleLocalityFilter = (loc: string) => {
-    setFormData((prev) => ({ ...prev, area: `${loc}, Bengaluru` }));
-    setSearchQuery(loc);
-  };
-
   const handleDirectWhatsAppBooking = () => {
     const msg = `Namaste PurohitSetu Team, I want to book a Vedic Pandit for ${formData.pujaName || "Puja Ceremony"} in Bengaluru. Please assist me with the muhurat and booking.`;
     window.open(`https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(msg)}`, "_blank");
@@ -724,7 +720,7 @@ export default function Home() {
         </header>
       </div>
 
-      {/* HERO SECTION - Optimized with direct text color to eliminate 1.5s LCP render delay */}
+      {/* HERO SECTION */}
       <section id="home-section" className="bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-[#FFFDF7] pt-8 pb-10 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-4 shadow-xs">
@@ -810,26 +806,28 @@ export default function Home() {
         </div>
       </section>
 
-      {/* LOCALITIES BAR */}
+      {/* LOCALITIES BAR WITH PROPER INTERNAL LINKS */}
       <section id="localities-section" className="bg-amber-100/70 py-4 px-4 border-y border-amber-300">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-1 mb-2 text-center sm:text-left">
             <span className="text-[11px] font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1">
               <span>📍</span> Dedicated Pandit Coverage Across Bengaluru Zones:
             </span>
-            <span className="text-[10px] text-slate-600 font-medium">Tap to select locality</span>
+            <span className="text-[10px] text-slate-600 font-medium">Click to view local pandits</span>
           </div>
-          <div className="flex flex-wrap gap-1 justify-center sm:justify-start">
-            {BENGALURU_LOCALITIES.map((loc) => (
-              <button
-                type="button"
-                key={loc}
-                onClick={() => handleLocalityFilter(loc)}
-                className="text-[10px] font-semibold bg-white hover:bg-orange-700 hover:text-white text-slate-800 px-2.5 py-0.5 rounded border border-amber-300 transition"
-              >
-                Pandit in {loc}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
+            {BENGALURU_LOCALITIES.map((loc) => {
+              const slug = loc.toLowerCase().replace(/\s+/g, "-");
+              return (
+                <Link
+                  key={loc}
+                  href={`/pandit/${slug}`}
+                  className="text-[10px] font-semibold bg-white hover:bg-orange-700 hover:text-white text-slate-800 px-2.5 py-1 rounded border border-amber-300 transition inline-block"
+                >
+                  Pandit in {loc}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1173,15 +1171,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CLEAN FOOTER */}
+      {/* CLEAN FOOTER WITH HYPERLINKED DIRECTORY */}
       <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-7 px-4 border-t-2 border-amber-400">
-        <div className="max-w-6xl mx-auto space-y-4 text-center">
+        <div className="max-w-6xl mx-auto space-y-5 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold text-orange-50">
-            <a href="#home-section" className="hover:text-white transition">Home</a>
+            <Link href="/" className="hover:text-white transition">Home</Link>
             <span>•</span>
-            <a href="/privacy-policy" className="hover:text-white transition underline underline-offset-4">Privacy Policy</a>
-            <span>•</span>
-            <a href="#about-section" className="hover:text-white transition">Terms &amp; Conditions</a>
+            <Link href="/privacy-policy" className="hover:text-white transition underline underline-offset-4">Privacy Policy</Link>
             <span>•</span>
             <a href="#about-section" className="hover:text-white transition">About Us</a>
             <span>•</span>
@@ -1190,13 +1186,23 @@ export default function Home() {
             </a>
           </div>
 
-          <div className="text-[10px] text-orange-100 max-w-4xl mx-auto leading-relaxed border-t border-orange-600/70 pt-3">
-            <p className="font-bold text-white mb-1">Popular Vedic Searches in Bangalore:</p>
-            <p className="flex flex-wrap justify-center gap-1">
-              {HIGH_INTENT_KEYWORDS.map((kw, i) => (
-                <span key={i}>{kw} {i < HIGH_INTENT_KEYWORDS.length - 1 ? "•" : ""}</span>
-              ))}
-            </p>
+          {/* INTERNAL LOCALITY FOOTER MATRIX */}
+          <div className="text-[11px] text-orange-100 max-w-5xl mx-auto leading-relaxed border-t border-orange-600/70 pt-4">
+            <p className="font-bold text-white mb-2 text-xs">Vedic Pandits Across Bengaluru Localities:</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {BENGALURU_LOCALITIES.map((loc) => {
+                const slug = loc.toLowerCase().replace(/\s+/g, "-");
+                return (
+                  <Link
+                    key={loc}
+                    href={`/pandit/${slug}`}
+                    className="hover:text-amber-200 transition underline underline-offset-2"
+                  >
+                    Pandit in {loc}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           <div className="border-t border-orange-600/70 pt-3 flex flex-col sm:flex-row items-center justify-between text-[11px] text-orange-100 gap-2">
@@ -1360,7 +1366,7 @@ export default function Home() {
               </button>
 
               <p className="text-[9px] text-center text-slate-500 font-medium">
-                🔒 Secured by Razorpay. Supports PhonePe, GPay, Paytm, Cards &amp; UPI.
+                🔒 Secured by Razorpay. Supports PhonePe, GPay, Paytm, Cards & amp; UPI.
               </p>
             </form>
           </div>
