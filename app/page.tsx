@@ -572,7 +572,6 @@ const CATEGORIES = [
   "Antim Sanskar & Shradh",
 ];
 
-// 40+ Clickable Local Keywords mapped directly to their actual URLs
 const CLICKABLE_SEO_KEYWORDS = [
   { title: "North Indian Pandit in Whitefield", url: "/pandit/whitefield" },
   { title: "Hindi Pandit in HSR Layout", url: "/pandit/hsr-layout" },
@@ -990,7 +989,7 @@ function HomeContent() {
         </header>
       </div>
 
-      {/* 3. HERO SECTION */}
+      {/* 3. HERO SECTION (Optimized for instant paint) */}
       <section id="home-section" className="bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-[#FFFDF7] pt-8 pb-10 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-4 shadow-xs">

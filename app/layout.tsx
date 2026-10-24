@@ -1,90 +1,59 @@
-import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-import FloatingPaymentButton from '@/components/FloatingPaymentButton';
-import RegisterServiceWorker from '@/components/RegisterServiceWorker';
-
-// Font rendering ko optimize kiya hai taaki First/Largest Contentful Paint delay na ho
-const inter = Inter({ 
-  subsets: ['latin'],
-  display: 'swap',
-  preload: true,
-  adjustFontFallback: true,
-  variable: '--font-inter',
-});
-
-export const viewport: Viewport = {
-  themeColor: '#c2410c',
-  width: 'device-width',
-  initialScale: 1,
-};
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'PurohitSetu | Book Verified Vedic Pandits & Purohits in Bengaluru',
+  metadataBase: new URL("https://www.purohitsetu.in"),
+  title: {
+    default: "Book Verified Vedic Pandits in Bengaluru | PurohitSetu",
+    template: "%s | PurohitSetu",
+  },
   description:
-    'Book authentic Vedic Pandits in Bengaluru for Griha Pravesh, Vivah, Navratri, Havan, and Sanskars. Strict Vedic rituals, transparent pricing, verified Acharyas.',
-  keywords: [
-    'Pandit in Bangalore',
-    'Vedic Purohit Bangalore',
-    'Griha Pravesh Puja Bangalore',
-    'North Indian Pandit in Bangalore',
-    'Bihari Pandit Bangalore',
-    'Maithil Pandit Bangalore',
-    'Havan and Puja Services',
-  ],
-  manifest: '/manifest.json',
-  icons: {
-    icon: '/pandit-logo.png',
-    shortcut: '/pandit-logo.png',
-    apple: '/pandit-logo.png',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'PurohitSetu',
-  },
+    "Book authentic North Indian Vedic Pandits in Bengaluru for Griha Pravesh, Vivah, Hawan and all Sanskars. Gurukul trained, 100% Shastric Vidhi.",
   alternates: {
-    canonical: 'https://www.purohitsetu.in',
-  },
-  openGraph: {
-    title: 'PurohitSetu | Book Verified Vedic Pandits in Bengaluru',
-    description: 'Book authentic Vedic Pandits in Bengaluru with verified credentials and transparent pricing.',
-    url: 'https://www.purohitsetu.in',
-    siteName: 'PurohitSetu',
-    locale: 'en_IN',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'PurohitSetu | Book Verified Vedic Pandits in Bengaluru',
-    description: 'Book authentic Vedic Pandits in Bengaluru with verified credentials.',
+    canonical: "https://www.purohitsetu.in",
   },
   robots: {
     index: true,
     follow: true,
   },
-  verification: {
-    google: 'HJIrfGTVGeLRdSlSyzt-oxqY3h_Rp0HkVJHCNpMbpkw',
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "https://www.purohitsetu.in",
+    siteName: "PurohitSetu",
+    title: "Book Verified Vedic Pandits in Bengaluru | PurohitSetu",
+    description:
+      "Book authentic North Indian Vedic Pandits in Bengaluru for Griha Pravesh, Vivah, and Hawan. Strict Shastric Vidhi and transparent pricing.",
+    images: [
+      {
+        url: "/pandit-logo.png",
+        width: 1200,
+        height: 630,
+        alt: "PurohitSetu Bengaluru",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Book Verified Vedic Pandits in Bengaluru | PurohitSetu",
+    description:
+      "Book authentic North Indian Vedic Pandits in Bengaluru for Griha Pravesh, Vivah, and Hawan. Strict Shastric Vidhi.",
+    images: ["/pandit-logo.png"],
   },
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className="scroll-smooth">
       <head>
-        {/* Third-party checkout connection setup in advance */}
+        <link rel="preconnect" href="https://checkout.razorpay.com" />
         <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
       </head>
-      <body className={`${inter.className} bg-stone-50 text-gray-900 antialiased`}>
-        <RegisterServiceWorker />
-        <FloatingPaymentButton />
-        <main id="main-content">
-          {children}
-        </main>
-      </body>
+      <body className="antialiased bg-[#FFFDF7] text-slate-900">{children}</body>
     </html>
   );
 }
