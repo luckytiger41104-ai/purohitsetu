@@ -572,48 +572,48 @@ const CATEGORIES = [
   "Antim Sanskar & Shradh",
 ];
 
-// 40+ Structured Local High-Intent SEO Keywords for Bangalore
-const SEO_FOOTER_KEYWORDS = [
-  "North Indian Pandit in Bangalore",
-  "Hindi Pandit in Bangalore",
-  "Bihari Pandit in Bangalore",
-  "Maithili Pandit in Bangalore",
-  "Griha Pravesh Puja Pandit in Whitefield",
-  "Satyanarayan Puja in HSR Layout",
-  "Vedic Vivah Pandit in Koramangala",
-  "Vastu Shanti Puja in Indiranagar",
-  "Rudrabhishek Puja in Electronic City",
-  "Bhoomi Puja Pandit in Sarjapur Road",
-  "Mundan Sanskar Pandit in Marathahalli",
-  "Janeu Sanskar Upanayana in Bellandur",
-  "Kaal Sarp Dosh Hawan in JP Nagar",
-  "Manglik Dosh Shanti in Jayanagar",
-  "Santan Gopal Hawan in Hebbal",
-  "Navchandi Mahayagya in Yelahanka",
-  "Sundarkand Path Pandit in BTM Layout",
-  "Ramayana Akhand Path in Bannerghatta Road",
-  "Ekadashi Udyapan Pandit in Malleshwaram",
-  "Brihaspati Vrat Udyapan in Rajajinagar",
-  "Pitra Dosh Shanti Tarpan in KR Puram",
-  "Antim Sanskar Last Rites Pandit in Bangalore",
-  "Terahvin Shanti Hawan Bangalore",
-  "Namkaran Sanskar Pandit Bangalore",
-  "Annaprashan First Feeding Pandit Bengaluru",
-  "Godh Bharai Baby Shower Pandit Bengaluru",
-  "Vahan Puja Pandit Bangalore",
-  "Murti Pranapratishtha Temple Consecration Bangalore",
-  "Maa Bagalamukhi Hawan Bangalore",
-  "Maha Sudarshan Homa Bangalore",
-  "Vishnu Sahasranama Hawan Bangalore",
-  "Dhanteras Kuber Puja Bangalore",
-  "Diwali Lakshmi Ganesh Pujan Bangalore",
-  "Durga Saptashati Path Bangalore",
-  "Pradosh Vrat Udyapan Bangalore",
-  "Mangalwar Vrat Udyapan Bangalore",
-  "Karnavedha Ear Piercing Pandit Bangalore",
-  "Gandmool Nakshatra Shanti Hawan Bangalore",
-  "Gurukul Vedic Acharya in Bangalore",
-  "Authentic Hawan Samagri Kit Bangalore",
+// 40+ Clickable Local Keywords mapped directly to their actual URLs
+const CLICKABLE_SEO_KEYWORDS = [
+  { title: "North Indian Pandit in Whitefield", url: "/pandit/whitefield" },
+  { title: "Hindi Pandit in HSR Layout", url: "/pandit/hsr-layout" },
+  { title: "Bihari Pandit in Koramangala", url: "/pandit/koramangala" },
+  { title: "Maithili Pandit in Marathahalli", url: "/pandit/marathahalli" },
+  { title: "Griha Pravesh Puja in Whitefield", url: "/pandit/whitefield/griha-pravesh-puja" },
+  { title: "Satyanarayan Puja in HSR Layout", url: "/pandit/hsr-layout/satyanarayan-pooja" },
+  { title: "Vedic Vivah Pandit in Koramangala", url: "/pandit/koramangala/marriage-pooja" },
+  { title: "Vastu Shanti Puja in Indiranagar", url: "/pandit/indiranagar/vastu-shanti-pooja" },
+  { title: "Rudrabhishek Puja in Electronic City", url: "/pandit/electronic-city/rudrabhishek-pooja" },
+  { title: "Bhoomi Puja Pandit in Sarjapur Road", url: "/pandit/sarjapur-road/bhoomi-pooja" },
+  { title: "Mundan Sanskar in Marathahalli", url: "/pandit/marathahalli/mundan-sanskar" },
+  { title: "Janeu Sanskar in Bellandur", url: "/pandit/bellandur/upnayan-sanskar" },
+  { title: "Kaal Sarp Dosh Hawan in JP Nagar", url: "/pandit/jp-nagar/kaal-sarp-dosh-pooja" },
+  { title: "Manglik Dosh Shanti in Jayanagar", url: "/pandit/jayanagar/manglik-dosh-shanti-pooja" },
+  { title: "Santan Gopal Hawan in Hebbal", url: "/pandit/hebbal/santan-gopal-jap-and-pooja" },
+  { title: "Navchandi Mahayagya in Yelahanka", url: "/pandit/yelahanka/navchandi-hawan" },
+  { title: "Sundarkand Path in BTM Layout", url: "/pandit/btm-layout/sundarkand-path" },
+  { title: "Ramayana Akhand Path in Bannerghatta Road", url: "/pandit/bannerghatta-road/ramayana-path" },
+  { title: "Ekadashi Udyapan in Malleshwaram", url: "/pandit/malleshwaram/ekadashi-udyapan" },
+  { title: "Brihaspati Vrat Udyapan in Rajajinagar", url: "/pandit/rajajinagar/vrihaspati-udyapan" },
+  { title: "Pitra Dosh Shanti Tarpan in KR Puram", url: "/pandit/kr-puram/pitra-dosh-shanti" },
+  { title: "Antim Sanskar Last Rites in Whitefield", url: "/pandit/whitefield/antim-sanskar" },
+  { title: "Terahvin Shanti Hawan in HSR Layout", url: "/pandit/hsr-layout/terahvin-shanti-shradh" },
+  { title: "Namkaran Sanskar in Whitefield", url: "/pandit/whitefield/namkaran-sanskar" },
+  { title: "Annaprashan Ceremony in Bellandur", url: "/pandit/bellandur/annaprasan-sanskar-pooja" },
+  { title: "Godh Bharai Baby Shower in Sarjapur Road", url: "/pandit/sarjapur-road/godh-bharai-pooja" },
+  { title: "Vahan Puja in Electronic City", url: "/pandit/electronic-city/vahan-pooja" },
+  { title: "Murti Pranapratishtha in Indiranagar", url: "/pandit/indiranagar/murti-pranpratistha" },
+  { title: "Maa Bagalamukhi Hawan in Hebbal", url: "/pandit/hebbal/bagulamukhi-anushthan" },
+  { title: "Maha Sudarshan Homa in Koramangala", url: "/pandit/koramangala/sudarshan-anushthan" },
+  { title: "Vishnu Sahasranama Hawan in JP Nagar", url: "/pandit/jp-nagar/vishnu-sahasranam-path" },
+  { title: "Dhanteras Kuber Puja in Jayanagar", url: "/pandit/jayanagar/dhanteras-pooja" },
+  { title: "Diwali Lakshmi Ganesh Pujan in Whitefield", url: "/pandit/whitefield/diwali-pooja" },
+  { title: "Durga Saptashati Path in Marathahalli", url: "/pandit/marathahalli/durgasaptsati-path" },
+  { title: "Pradosh Vrat Udyapan in Malleshwaram", url: "/pandit/malleshwaram/pradosh-varat-udyapan" },
+  { title: "Mangalwar Vrat Udyapan in KR Puram", url: "/pandit/kr-puram/mangalvari-udyapan" },
+  { title: "Karnavedha Ear Piercing in Yelahanka", url: "/pandit/yelahanka/karnabhed-sanskar" },
+  { title: "Gandmool Nakshatra Shanti in Sarjapur Road", url: "/pandit/sarjapur-road/gandmool-nakshatra-shanti-pooja" },
+  { title: "Vedic Pandit in Kanakapura Road", url: "/pandit/kanakapura-road" },
+  { title: "Authentic Hawan Samagri Kit in Bengaluru", url: "/#booking-section" },
 ];
 
 const loadRazorpayScript = (): Promise<boolean> => {
@@ -673,7 +673,6 @@ function HomeContent() {
         ...(areaParam ? { area: areaParam } : {}),
       }));
 
-      // Smooth scroll direct to form container
       setTimeout(() => {
         const formEl = document.getElementById("booking-section");
         if (formEl) {
@@ -1247,7 +1246,7 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* 8. FAST BOOKING FORM CONTAINER (With Exact Scroll Target) */}
+      {/* 8. FAST BOOKING FORM CONTAINER */}
       <section id="booking-section" className="py-12 px-4 scroll-mt-24">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-7">
@@ -1486,7 +1485,7 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* 11. FOOTER (RICH WITH 40+ SEO KEYWORDS & CORRECT EMAIL) */}
+      {/* 11. FOOTER (40+ CLICKABLE KEYWORDS WITH DIRECT NAVIGATION) */}
       <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-10 px-4 border-t-2 border-amber-400">
         <div className="max-w-6xl mx-auto space-y-6 text-center">
           
@@ -1509,19 +1508,20 @@ function HomeContent() {
             </a>
           </div>
 
-          {/* 40+ Structured Local High-Intent SEO Keywords */}
+          {/* 40+ Clickable High-Intent Keywords */}
           <div className="border-t border-orange-700/60 pt-4 text-left">
             <span className="block text-[11px] font-extrabold uppercase tracking-widest text-amber-300 mb-2.5 text-center">
               Popular Vedic Pujas &amp; Pandit Services in Bengaluru:
             </span>
             <div className="flex flex-wrap gap-1.5 justify-center">
-              {SEO_FOOTER_KEYWORDS.map((kw) => (
-                <span
-                  key={kw}
-                  className="text-[10px] bg-black/25 text-orange-100/90 border border-orange-700/40 px-2 py-0.5 rounded"
+              {CLICKABLE_SEO_KEYWORDS.map((item) => (
+                <Link
+                  key={item.title}
+                  href={item.url}
+                  className="text-[10px] bg-black/25 hover:bg-orange-700 hover:text-white text-orange-100/90 border border-orange-700/40 px-2 py-0.5 rounded transition cursor-pointer"
                 >
-                  {kw}
-                </span>
+                  {item.title}
+                </Link>
               ))}
             </div>
           </div>

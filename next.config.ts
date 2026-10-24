@@ -18,6 +18,27 @@ const nextConfig: NextConfig = {
         destination: '/pandit-logo.png',
         permanent: true,
       },
+      // Locality 404 Fix Redirects
+      {
+        source: '/pandit/kormangala/:service*',
+        destination: '/pandit/koramangala/:service*',
+        permanent: true,
+      },
+      {
+        source: '/pandit/electroniccity/:service*',
+        destination: '/pandit/electronic-city/:service*',
+        permanent: true,
+      },
+      {
+        source: '/pandit/hsr/:service*',
+        destination: '/pandit/hsr-layout/:service*',
+        permanent: true,
+      },
+      {
+        source: '/pandit/btm/:service*',
+        destination: '/pandit/btm-layout/:service*',
+        permanent: true,
+      },
     ];
   },
   turbopack: {
