@@ -1,12 +1,10 @@
 import React, { Suspense } from "react";
 import PujaInteractiveClient from "@/components/PujaInteractiveClient";
 
-export const dynamic = "force-static";
-
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-slate-900 font-sans selection:bg-orange-700 selection:text-white">
-      {/* Top Bar */}
+      {/* 1. TOP ANNOUNCEMENT BAR (Direct Server HTML) */}
       <div className="sticky top-0 z-40 w-full shadow-sm">
         <div className="bg-gradient-to-r from-red-800 via-orange-700 to-amber-800 text-white text-[11px] sm:text-xs py-1.5 px-3 text-center">
           <p className="font-semibold">
@@ -15,7 +13,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Static H1 for Google & SEO Tools */}
+      {/* 2. HERO SECTION WITH CRAWLER-VISIBLE STATIC H1 */}
       <section id="home-section" className="bg-[#FFF8EE] pt-8 pb-6 px-4 text-center border-b border-amber-200">
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-4 shadow-xs">
@@ -35,7 +33,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Interactive Client Section */}
+      {/* 3. INTERACTIVE CLIENT COMPONENT */}
       <Suspense fallback={<div className="py-20 text-center text-xs text-slate-500 font-medium">Loading Vedic Services...</div>}>
         <PujaInteractiveClient />
       </Suspense>
