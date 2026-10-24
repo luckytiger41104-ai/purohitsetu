@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+export const instant = false;
+
 const ALL_LOCALITIES: Record<string, { name: string; nearby: string[] }> = {
   whitefield: {
     name: "Whitefield",
@@ -78,55 +80,71 @@ const ALL_LOCALITIES: Record<string, { name: string; nearby: string[] }> = {
   },
 };
 
-const POPULAR_RITUALS = [
-  { slug: "griha-pravesh-puja", title: "Griha Pravesh & Vastu Shanti" },
-  { slug: "satyanarayan-puja", title: "Satyanarayan Bhagwan Katha" },
-  { slug: "vedic-marriage-pandit", title: "Vedic Vivah Sanskar (Marriage)" },
-  { slug: "navchandi-hawan", title: "Navchandi Mahayagya Hawan" },
-  { slug: "rudrabhishek-puja", title: "Rudrabhishek Puja" },
-  { slug: "mundan-sanskar", title: "Mundan Sanskar Ceremony" },
-  { slug: "kaal-sarp-dosh-nivaran", title: "Kaal Sarp Dosh Nivaran" },
-  { slug: "pitra-dosh-puja", title: "Pitra Dosh & Tarpan Shanti" },
-];
+const SERVICE_NAMES: Record<string, string> = {
+  "griha-pravesh-puja": "Griha Pravesh Puja",
+  "satyanarayan-puja": "Satyanarayan Puja",
+  "vedic-marriage-pandit": "Vedic Marriage Pandit",
+  "navchandi-hawan": "Navchandi Hawan",
+  "rudrabhishek-puja": "Rudrabhishek Puja",
+  "vastu-shanti-puja": "Vastu Shanti Puja",
+  "mundan-sanskar": "Mundan Sanskar",
+  "antim-sanskar": "Antim Sanskar Rites",
+  "terahvin-shanti-hawan": "Terahvin Shanti Hawan",
+  "kaal-sarp-dosh-nivaran": "Kaal Sarp Dosh Nivaran",
+  "mangal-dosh-shanti": "Mangal Dosh Shanti",
+  "pitra-dosh-puja": "Pitra Dosh Puja",
+  "godh-bharai-seemantam": "Godh Bharai Sanskar",
+  "upanayana-janeu": "Upanayana Janeu Sanskar",
+};
 
 const SUPPORT_PHONE = "9449871293";
 
-export async function generateStaticParams() {
-  return Object.keys(ALL_LOCALITIES).map((slug) => ({
-    location: slug,
-  }));
+function formatServiceName(slug: string): string {
+  if (SERVICE_NAMES[slug]) return SERVICE_NAMES[slug];
+  return slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ location: string }>;
+  params: Promise<{ location: string; service: string }>;
 }): Promise<Metadata> {
   const resolvedParams = await params;
-  const locData = ALL_LOCALITIES[resolvedParams.location?.toLowerCase()];
+  const locKey = resolvedParams.location?.toLowerCase() || "";
+  const servKey = resolvedParams.service?.toLowerCase() || "";
+
+  const locData = ALL_LOCALITIES[locKey];
+  const serviceTitle = formatServiceName(servKey);
+
   if (!locData) return {};
 
   return {
-    title: `North Indian Vedic Pandit in ${locData.name}, Bangalore | PurohitSetu`,
-    description: `Book verified North Indian, Hindi, Bihari & Maithili Vedic Pandits in ${locData.name}, Bengaluru. Authentic Griha Pravesh, Vivah, Hawan and all Sanskar rituals.`,
+    title: `${serviceTitle} in ${locData.name}, Bangalore | Verified Vedic Pandits`,
+    description: `Book verified North Indian Vedic Pandits for ${serviceTitle} in ${locData.name}, Bengaluru. Authentic Gurukul chanting, complete hawan samagri, and zero upfront fee.`,
     alternates: {
-      canonical: `https://www.purohitsetu.in/pandit/${resolvedParams.location}`,
+      canonical: `https://www.purohitsetu.in/pandit/${locKey}/${servKey}`,
     },
   };
 }
 
-export default async function LocalityPage({
+export default async function HyperlocalServicePage({
   params,
 }: {
-  params: Promise<{ location: string }>;
+  params: Promise<{ location: string; service: string }>;
 }) {
   const resolvedParams = await params;
-  const slug = resolvedParams.location?.toLowerCase();
-  const locData = ALL_LOCALITIES[slug];
+  const locKey = resolvedParams.location?.toLowerCase() || "";
+  const servKey = resolvedParams.service?.toLowerCase() || "";
 
+  const locData = ALL_LOCALITIES[locKey];
   if (!locData) {
     notFound();
   }
+
+  const serviceTitle = formatServiceName(servKey);
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -141,8 +159,14 @@ export default async function LocalityPage({
       {
         "@type": "ListItem",
         position: 2,
-        name: `Pandit in ${locData.name}`,
-        item: `https://www.purohitsetu.in/pandit/${slug}`,
+        name: `Pandits in ${locData.name}`,
+        item: `https://www.purohitsetu.in/pandit/${locKey}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: `${serviceTitle} in ${locData.name}`,
+        item: `https://www.purohitsetu.in/pandit/${locKey}/${servKey}`,
       },
     ],
   };
@@ -154,7 +178,7 @@ export default async function LocalityPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
-      {/* STICKY HEADER */}
+      {/* HEADER */}
       <header className="bg-white/95 backdrop-blur-md border-b border-amber-200 sticky top-0 z-40 px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-1.5">
@@ -165,7 +189,9 @@ export default async function LocalityPage({
           </Link>
           <div className="flex items-center gap-2">
             <a
-              href={`https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(`Namaste, I want to book a Vedic Pandit in ${locData.name}, Bangalore.`)}`}
+              href={`https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(
+                `Namaste, I want to book ${serviceTitle} in ${locData.name}, Bangalore.`
+              )}`}
               target="_blank"
               rel="noreferrer"
               className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition"
@@ -184,31 +210,33 @@ export default async function LocalityPage({
 
       {/* BREADCRUMB */}
       <nav className="max-w-6xl mx-auto px-4 py-3 text-xs text-slate-500" aria-label="Breadcrumb">
-        <ol className="flex items-center gap-1.5">
+        <ol className="flex items-center gap-1.5 flex-wrap">
           <li>
             <Link href="/" className="hover:text-orange-700">Home</Link>
           </li>
           <li>/</li>
           <li>
-            <span className="text-slate-400">Bengaluru</span>
+            <Link href={`/pandit/${locKey}`} className="hover:text-orange-700">
+              {locData.name}
+            </Link>
           </li>
           <li>/</li>
           <li className="font-semibold text-slate-900">
-            {locData.name}
+            {serviceTitle}
           </li>
         </ol>
       </nav>
 
-      {/* HERO SECTION */}
+      {/* HERO */}
       <section className="max-w-5xl mx-auto px-4 py-8 text-center">
         <span className="inline-block bg-orange-100 text-orange-950 border border-orange-300 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
-          📍 Verified Acharyas in {locData.name}
+          🚩 Verified Vedic Service in {locData.name}
         </span>
         <h1 className="text-2xl sm:text-4xl font-black text-slate-900 leading-tight mb-3">
-          North Indian &amp; Vedic Pandit in <span className="text-orange-700">{locData.name}</span>, Bangalore
+          Book Verified <span className="text-orange-700">{serviceTitle}</span> in {locData.name}, Bangalore
         </h1>
         <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed mb-6">
-          Book authentic Hindi, Maithili, and Bhojpuri speaking Vedic Purohits in {locData.name}. Experienced in Griha Pravesh, Satyanarayan Puja, Hawan, Vivah Sanskar, and personalized muhurat calculation.
+          Experienced North Indian, Hindi, Maithili &amp; Bhojpuri speaking Acharyas for authentic {serviceTitle} rituals in {locData.name}. 100% Shastric Vidhi, verified Hawan Samagri kit, and zero upfront fee.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -216,54 +244,39 @@ export default async function LocalityPage({
             href="/#booking-section"
             className="px-5 py-2.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white font-bold text-xs shadow transition"
           >
-            📅 Schedule Puja in {locData.name}
+            📅 Schedule {serviceTitle}
           </Link>
           <a
             href={`tel:+91${SUPPORT_PHONE}`}
             className="px-5 py-2.5 rounded-xl bg-white border border-orange-300 text-orange-950 font-bold text-xs shadow hover:bg-orange-50 transition"
           >
-            📞 Call Acharya: {SUPPORT_PHONE}
+            📞 Helpline: +91 {SUPPORT_PHONE}
           </a>
         </div>
       </section>
 
-      {/* POPULAR RITUALS WITH DIRECT INTERNAL HYPERLINKS */}
-      <section className="max-w-5xl mx-auto px-4 py-8">
-        <div className="border-b border-amber-200 pb-2 mb-4">
-          <h2 className="text-lg font-black text-slate-900">
-            Sacred Ceremonies Conducted in {locData.name}
+      {/* HIGHLIGHTS */}
+      <section className="max-w-5xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-sm space-y-3">
+          <h2 className="text-base font-black text-slate-900">
+            Key Highlights of {serviceTitle}
           </h2>
-          <p className="text-xs text-slate-600">All rituals performed with 100% Shastric vidhi and genuine hawan samagri.</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-          {POPULAR_RITUALS.map((ritual) => (
-            <div key={ritual.slug} className="bg-white border border-amber-200 rounded-xl p-3 shadow-xs flex flex-col justify-between">
-              <div>
-                <span className="text-orange-600 font-bold text-sm block mb-1">🪔</span>
-                <h3 className="text-xs font-bold text-slate-900 mb-1">{ritual.title}</h3>
-                <p className="text-[10px] text-slate-600 leading-relaxed">
-                  Full vidhi, sankalp, and hawan in {locData.name}.
-                </p>
-              </div>
-              <Link
-                href={`/pandit/${slug}/${ritual.slug}`}
-                className="mt-3 inline-block text-[11px] text-orange-700 font-bold hover:underline"
-              >
-                View {ritual.title} Page →
-              </Link>
-            </div>
-          ))}
+          <ul className="text-xs text-slate-700 space-y-2 list-disc list-inside leading-relaxed">
+            <li>Conducted strictly according to Vedic scriptures by Gurukul-trained Acharyas.</li>
+            <li>Customized muhurat calculation based on your family&apos;s Nakshatra and Rashi.</li>
+            <li>Complete Hawan wood (Mango), Gangajal, Navagraha samidha, and pure desi cow ghee provided upon request.</li>
+            <li>Available in Hindi, Sanskrit, Maithili, Bhojpuri, Kannada, and English explanation.</li>
+          </ul>
         </div>
       </section>
 
-      {/* CROSS-LINKING SILO: NEARBY LOCALITIES */}
+      {/* CROSS-LINKING SILO: SAME SERVICE IN NEARBY LOCALITIES */}
       <section className="max-w-5xl mx-auto px-4 py-8 bg-amber-50/60 rounded-2xl border border-amber-200 my-6">
         <h3 className="text-xs font-extrabold text-orange-950 uppercase tracking-wider mb-2">
-          Also Serving Localities Near {locData.name}
+          {serviceTitle} in Nearby Bengaluru Localities:
         </h3>
         <p className="text-[11px] text-slate-600 mb-3">
-          Our verified North Indian Pandits travel to apartments and individual houses in adjacent Bengaluru zones:
+          Our Acharyas travel across neighboring residential areas:
         </p>
         <div className="flex flex-wrap gap-2">
           {locData.nearby.map((nearSlug) => {
@@ -271,33 +284,33 @@ export default async function LocalityPage({
             return (
               <Link
                 key={nearSlug}
-                href={`/pandit/${nearSlug}`}
+                href={`/pandit/${nearSlug}/${servKey}`}
                 className="text-xs bg-white border border-amber-300 text-slate-800 hover:bg-orange-700 hover:text-white px-3 py-1.5 rounded-lg transition font-medium"
               >
-                Pandit in {nearName}
+                {serviceTitle} in {nearName}
               </Link>
             );
           })}
         </div>
       </section>
 
-      {/* ALL BENGALURU LOCATIONS DIRECTORY */}
+      {/* CROSS-LINKING SILO: OTHER RITUALS IN SAME LOCALITY */}
       <section className="max-w-5xl mx-auto px-4 py-6">
-        <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">
-          Complete Bengaluru Pandit Directory:
-        </h4>
-        <div className="flex flex-wrap gap-1.5">
-          {Object.entries(ALL_LOCALITIES).map(([key, item]) => (
+        <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">
+          Other Auspicious Pujas Conducted in {locData.name}:
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(SERVICE_NAMES).map(([sKey, sTitle]) => (
             <Link
-              key={key}
-              href={`/pandit/${key}`}
-              className={`text-[10px] px-2.5 py-1 rounded border transition ${
-                key === slug
+              key={sKey}
+              href={`/pandit/${locKey}/${sKey}`}
+              className={`text-[11px] px-2.5 py-1 rounded-lg border transition ${
+                sKey === servKey
                   ? "bg-orange-700 text-white border-orange-700 font-bold"
                   : "bg-white text-slate-700 border-amber-200 hover:bg-amber-100"
               }`}
             >
-              {item.name}
+              {sTitle} in {locData.name}
             </Link>
           ))}
         </div>
@@ -306,14 +319,14 @@ export default async function LocalityPage({
       {/* FOOTER */}
       <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-6 px-4 text-center text-xs mt-12">
         <p className="font-medium text-orange-100">
-          © 2026 PurohitSetu Bengaluru • Authentic North Indian &amp; Vedic Purohit Services in {locData.name}
+          © 2026 PurohitSetu Bengaluru • {serviceTitle} in {locData.name}
         </p>
         <div className="mt-2 flex justify-center gap-3 text-[11px] text-orange-200">
           <Link href="/" className="hover:underline">Home</Link>
           <span>•</span>
-          <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
+          <Link href={`/pandit/${locKey}`} className="hover:underline">All Pujas in {locData.name}</Link>
           <span>•</span>
-          <a href={`tel:+91${SUPPORT_PHONE}`} className="hover:underline">Support: +91 {SUPPORT_PHONE}</a>
+          <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
         </div>
       </footer>
     </div>
