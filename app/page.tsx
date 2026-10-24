@@ -1366,7 +1366,7 @@ export default function Home() {
               </button>
 
               <p className="text-[9px] text-center text-slate-500 font-medium">
-                🔒 Secured by Razorpay. Supports PhonePe, GPay, Paytm, Cards & amp; UPI.
+                🔒 Secured by Razorpay. Supports PhonePe, GPay, Paytm, Cards &amp; UPI.
               </p>
             </form>
           </div>

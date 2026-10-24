@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { usePathname } from "next/navigation";
 
 declare global {
@@ -23,8 +23,9 @@ const loadRazorpaySDK = (): Promise<boolean> => {
   });
 };
 
-export default function FloatingPaymentButton() {
+function FloatingPaymentContent() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   
   // Form State in English
@@ -34,6 +35,15 @@ export default function FloatingPaymentButton() {
   const [pujaDate, setPujaDate] = useState("");
   const [totalDakshina, setTotalDakshina] = useState("2100");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Static prerender ke waqt server crash prevent karta hai
+  if (!mounted) {
+    return null;
+  }
 
   // Auto-calculated 30% Platform Fee
   const calculatedCommission = Math.round((parseFloat(totalDakshina) || 0) * 0.3);
@@ -185,7 +195,7 @@ export default function FloatingPaymentButton() {
                 </div>
               </div>
 
-              {/* Single Ritual Field (No Duplicate Boxes) */}
+              {/* Single Ritual Field */}
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
                   Completed Puja Ritual *
@@ -195,15 +205,15 @@ export default function FloatingPaymentButton() {
                   onChange={(e) => setPujaName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-500 font-medium"
                 >
-                  <option value="Griha Pravesh Puja">Griha Pravesh & Vastu Shanti Puja</option>
+                  <option value="Griha Pravesh Puja">Griha Pravesh &amp; Vastu Shanti Puja</option>
                   <option value="Vedic Vivah Sanskar">Vedic Vivah Sanskar (Marriage)</option>
-                  <option value="Satyanarayan Bhagwan Katha">Shri Satyanarayan Bhagwan Katha & Puja</option>
-                  <option value="Navchandi Mahayagya">Navchandi Mahayagya & Hawan</option>
-                  <option value="Rudrabhishek Hawan">Rudrabhishek Puja & Hawan</option>
+                  <option value="Satyanarayan Bhagwan Katha">Shri Satyanarayan Bhagwan Katha &amp; Puja</option>
+                  <option value="Navchandi Mahayagya">Navchandi Mahayagya &amp; Hawan</option>
+                  <option value="Rudrabhishek Hawan">Rudrabhishek Puja &amp; Hawan</option>
                   <option value="Mundan Sanskar">Mundan Sanskar (Chudakarana)</option>
                   <option value="Upanayana Janeu Sanskar">Upanayana / Janeu Sanskar</option>
                   <option value="Kaal Sarp Dosh Nivaran">Kaal Sarp Dosh Nivaran Hawan</option>
-                  <option value="Mangal Dosh Shanti">Mangal Dosh Shanti & Hawan</option>
+                  <option value="Mangal Dosh Shanti">Mangal Dosh Shanti &amp; Hawan</option>
                   <option value="Antyesti & Terahvin Shanti">Antyesti / Terahvin Shanti Hawan</option>
                   <option value="General Vedic Puja">General Vedic Puja / Other Ritual</option>
                 </select>
@@ -273,5 +283,13 @@ export default function FloatingPaymentButton() {
         </div>
       )}
     </>
+  );
+}
+
+export default function FloatingPaymentButton() {
+  return (
+    <Suspense fallback={null}>
+      <FloatingPaymentContent />
+    </Suspense>
   );
 }
