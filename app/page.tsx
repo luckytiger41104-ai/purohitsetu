@@ -17,6 +17,7 @@ interface PujaItem {
   name: string;
   category: string;
   desc: string;
+  mahatva: string;
   duration: string;
   rating: string;
   conductedCount: string;
@@ -49,39 +50,6 @@ const BENGALURU_LOCALITIES = [
   "KR Puram",
 ];
 
-const HIGH_INTENT_KEYWORDS = [
-  "North Indian Pandit in Bangalore",
-  "Hindi Pandit in Bengaluru",
-  "Bihari Pandit in Bangalore",
-  "Maithili Purohit Bengaluru",
-  "Bhojpuri Pandit Ji Bangalore",
-  "Pandit for Griha Pravesh in Bangalore",
-  "Satyanarayan Puja Pandit near me",
-  "Vedic Marriage Pandit Bangalore",
-  "Navchandi Hawan Acharya Bengaluru",
-  "Rudrabhishek Puja Pandit",
-  "Vastu Shanti Puja Bangalore",
-  "Mundan Sanskar Pandit in Bengaluru",
-  "Antim Sanskar Last Rites Pandit Bangalore",
-  "Terahvin Shanti Hawan Purohit",
-  "Kaal Sarp Dosh Nivaran Bangalore",
-  "Mangal Dosh Shanti Acharya",
-  "Pitra Dosh Puja Pandit Bangalore",
-  "Godh Bharai Seemantam Pandit",
-  "Upanayana Janeu Sanskar Bangalore",
-  "Kannada Vedic Purohit",
-  "Telugu Purohit in Bengaluru",
-  "Best Vedic Pandit near me",
-  "Vedic Hawan Samagri Kit Bangalore",
-  "Book North Indian Pandit Online",
-  "Genuine Shastric Acharyas Bengaluru",
-  "PurohitSetu Pandit Portal",
-  "Apartment Griha Pravesh Bangalore",
-  "Authentic Gurukul Ordained Pandits",
-  "Deepawali Lakshmi Puja Pandit",
-  "Navratri Ghatasthapana Acharya",
-];
-
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
     if (typeof window !== "undefined" && window.Razorpay) {
@@ -104,7 +72,8 @@ export default function Home() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    pujaName: "Vedic Vivah Sanskar (Marriage)",
+    pujaName: "Griha Pravesh & Vastu Shanti Puja",
+    customPujaInput: "",
     language: "Hindi",
     area: "Bengaluru",
     date: "",
@@ -131,39 +100,19 @@ export default function Home() {
     "Life Sanskars",
     "Festivals",
     "Dosh Nivaran",
+    "Vrat & Path",
+    "Anushthan & Sadhana",
     "Antim Sanskar & Shradh",
   ];
 
+  // Complete List from screenshot in strict Alphabetical (A-Z) Order
   const pujaList: PujaItem[] = [
-    {
-      id: "vivah-sanskar",
-      name: "Vedic Vivah Sanskar (Marriage)",
-      category: "Life Sanskars",
-      desc: "Sacred matrimony rituals: Kanyadaan, Saptapadi (Seven Vows), Mangalsutra Dharan, and Vivah Hawan conducted strictly by experienced Vedic Acharyas.",
-      duration: "Full Ritual",
-      rating: "5.0",
-      conductedCount: "890+",
-      tag: "Sacred Matrimony",
-      img: "/poojas/marriage ppoja.jpeg",
-      seoKeyword: "Vedic Vivah Marriage Pandit in Bangalore North Indian Style",
-    },
-    {
-      id: "sagai-ceremony",
-      name: "Sagai & Ring Engagement Ceremony",
-      category: "Life Sanskars",
-      desc: "Traditional pre-wedding auspicious ritual including Tilak, Lagna Patrika recitation, and family blessings with authentic Vedic chanting.",
-      duration: "2 Hours",
-      rating: "4.8",
-      conductedCount: "710+",
-      tag: "Pre-Wedding",
-      img: "/poojas/engement pooja.jpeg",
-      seoKeyword: "Sagai Engagement Pandit in Bangalore Hindi Purohit",
-    },
     {
       id: "annaprashan",
       name: "Annaprashan Sanskar (First Rice Feeding)",
       category: "Life Sanskars",
-      desc: "First solid food offering to the child with divine mantras, Panchamrit tasting, and longevity prayers for physical vitality.",
+      desc: "Sacred rite of introducing first cooked solid grain nourishment to the infant with Vedic chanting and honey-curd tasting.",
+      mahatva: "Invokes Goddess Annapurna and Lord Vishnu for digestive vigor, holistic physical vitality, and noble cognitive development.",
       duration: "2 Hours",
       rating: "4.9",
       conductedCount: "1,120+",
@@ -172,214 +121,11 @@ export default function Home() {
       seoKeyword: "Annaprashan Pandit Bangalore First Feeding Ceremony",
     },
     {
-      id: "mundan-sanskar",
-      name: "Mundan Sanskar (Chudakarana)",
-      category: "Life Sanskars",
-      desc: "Sacred first hair removal ritual purifying the child of past life samskaras and promoting health, longevity, and intellectual acuity.",
-      duration: "2 Hours",
-      rating: "4.8",
-      conductedCount: "980+",
-      tag: "Purification Rite",
-      img: "/poojas/mundan sanskar.jpeg",
-      seoKeyword: "Mundan Sanskar Pandit in Bangalore North Indian Vidhi",
-    },
-    {
-      id: "upnayan-sanskar",
-      name: "Upanayana / Janeu Sanskar",
-      category: "Life Sanskars",
-      desc: "Sacred thread investiture ceremony initiating youth into Gayatri Mantra upasana, Brahmacharya discipline, and Vedic studies.",
-      duration: "4 - 5 Hours",
-      rating: "4.9",
-      conductedCount: "430+",
-      tag: "Spiritual Rebirth",
-      img: "/poojas/upnayan sanskar.jpeg",
-      seoKeyword: "Janeu Sanskar Upanayana Purohit Bangalore",
-    },
-    {
-      id: "karnavedha",
-      name: "Karnavedha Sanskar (Ear Piercing)",
-      category: "Life Sanskars",
-      desc: "Vedic ceremony for ear-piercing aimed at holistic wellbeing, auditory vitality, nervous system balance, and scriptural compliance.",
-      duration: "1.5 Hours",
-      rating: "4.7",
-      conductedCount: "350+",
-      tag: "Health & Sanskar",
-      img: "/poojas/karnbhed sanskar.jpeg",
-      seoKeyword: "Karnavedha Sanskar Pandit Ji Bangalore",
-    },
-    {
-      id: "godh-bharai",
-      name: "Godh Bharai / Seemantam Sanskar",
-      category: "Life Sanskars",
-      desc: "Joyous Vedic blessing for expectant mothers ensuring spiritual protection, peace of mind, and auspiciousness for mother and baby.",
-      duration: "2 - 3 Hours",
-      rating: "4.9",
-      conductedCount: "820+",
-      tag: "Maternal Blessing",
-      img: "/poojas/godbharai pooja.jpeg",
-      seoKeyword: "Godh Bharai Baby Shower Pandit Bengaluru",
-    },
-    {
-      id: "birthday-aayushya",
-      name: "Janamdin & Aayushya Hawan",
-      category: "Life Sanskars",
-      desc: "Family birthday blessing invoking Markandeya Rishi and Chiranjeevi deities for robust health, protection, and longevity.",
-      duration: "2 Hours",
-      rating: "4.9",
-      conductedCount: "1,450+",
-      tag: "Longevity & Health",
-      img: "/poojas/birthday.jpeg",
-      seoKeyword: "Ayushya Hawan Birthday Puja Pandit Bangalore",
-    },
-    {
-      id: "navratri-puja",
-      name: "Navratri Ghatasthapana & Pujan",
-      category: "Festivals",
-      desc: "Sacred Kalash installation on Pratipada followed by daily Devi aradhana, Akhand Jyot setup, Durga Saptashati path, and Kanya Pujan.",
-      duration: "3 Hours",
-      rating: "5.0",
-      conductedCount: "1,890+",
-      tag: "Navratri Special",
-      img: "/poojas/navratri pooja.jpeg",
-      seoKeyword: "Navratri Ghatasthapana Pandit Bangalore Durga Puja",
-    },
-    {
-      id: "durga-saptashati",
-      name: "Durga Saptashati Path & Pujan",
-      category: "Festivals",
-      desc: "Authentic recitation of the complete Devi Mahatmya along with Kavach, Argala, and Kilak stotras for divine protection and victory.",
-      duration: "4 - 5 Hours",
-      rating: "4.9",
-      conductedCount: "670+",
-      tag: "Shakti Upasana",
-      img: "/poojas/durgasaptsati.jpeg",
-      seoKeyword: "Durga Saptashati Path Pandit Bangalore",
-    },
-    {
-      id: "navchandi-yagya",
-      name: "Navchandi Mahayagya & Hawan",
-      category: "Festivals",
-      desc: "Grand sacrificial yagya purifying the home atmosphere, dispelling intense adversities, and bestowing divine grace and abundance.",
-      duration: "5 Hours",
-      rating: "5.0",
-      conductedCount: "310+",
-      tag: "Grand Anushthan",
-      img: "/poojas/navchandi hawan.jpeg",
-      seoKeyword: "Navchandi Mahayagya Hawan Acharya Bengaluru",
-    },
-    {
-      id: "diwali-puja",
-      name: "Deepawali Lakshmi-Ganesh Pujan",
-      category: "Festivals",
-      desc: "Complete Shodashopachara Lakshmi-Ganesha pujan with Bahi-Khata invocation, Kuber puja, deepak samarpana, and authentic Vedic Aarti.",
-      duration: "2 - 3 Hours",
-      rating: "5.0",
-      conductedCount: "2,980+",
-      tag: "Festival of Lights",
-      img: "/poojas/diwali pooja.jpeg",
-      seoKeyword: "Diwali Lakshmi Ganesh Pujan Pandit Bangalore",
-    },
-    {
-      id: "satyanarayan-puja",
-      name: "Shri Satyanarayan Bhagwan Katha & Puja",
-      category: "Life Sanskars",
-      desc: "Sacred storytelling, Hawan, and prayers dedicated to Lord Vishnu for family harmony, business success, and overcoming obstacles.",
-      duration: "2 - 2.5 Hours",
-      rating: "4.9",
-      conductedCount: "2,450+",
-      tag: "Peace & Prosperity",
-      img: "/poojas/satyanarayan pooja.jpeg",
-      seoKeyword: "Satyanarayan Katha Puja Pandit Bangalore North Indian",
-    },
-    {
-      id: "griha-pravesh-puja",
-      name: "Griha Pravesh & Vastu Shanti Puja",
-      category: "Life Sanskars",
-      desc: "Sacred housewarming ceremony with Vastu Shanti, Navagraha Homa, and Ganapati Puja to purify your new apartment or villa.",
-      duration: "3 - 3.5 Hours",
-      rating: "4.9",
-      conductedCount: "3,120+",
-      tag: "Most Auspicious",
-      img: "/poojas/griha pravesh.jpeg",
-      seoKeyword: "Griha Pravesh Pandit in Bangalore Housewarming Puja",
-    },
-    {
-      id: "vastu-shanti-puja",
-      name: "Vastu Shanti & Dosha Nivaran Puja",
-      category: "Dosh Nivaran",
-      desc: "Sacred Vedic ritual and Hawan to harmonize directional energies, nullify architectural Vastu doshas, and invite peace.",
-      duration: "2.5 - 3 Hours",
-      rating: "4.9",
-      conductedCount: "1,890+",
-      tag: "Dosha Nivaran",
-      img: "/poojas/vastu shanti.jpeg",
-      seoKeyword: "Vastu Shanti Puja Pandit in Bangalore Dosha Nivaran",
-    },
-    {
-      id: "vahan-puja",
-      name: "Vahan Puja & Vehicle Blessing",
-      category: "Life Sanskars",
-      desc: "Sacred consecration for new vehicles with Lord Ganesha invocation, Navagraha blessings, and Ayushya mantras for safe travel.",
-      duration: "45 Mins - 1 Hour",
-      rating: "4.9",
-      conductedCount: "1,620+",
-      tag: "Protection & Safety",
-      img: "/poojas/vahan pooja.jpeg",
-      seoKeyword: "Vahan Puja Vehicle Blessing Pandit Bengaluru",
-    },
-    {
-      id: "dhanteras-puja",
-      name: "Dhanteras & Lord Dhanvantari Puja",
-      category: "Festivals",
-      desc: "Invocation of Lord Dhanvantari and Kuber Dev for health, physical healing, and financial harmony in your household.",
-      duration: "2 Hours",
-      rating: "4.8",
-      conductedCount: "1,140+",
-      tag: "Health & Wealth",
-      img: "/poojas/dhanteras pooja.jpeg",
-      seoKeyword: "Dhanteras Dhanvantari Puja Pandit Bangalore",
-    },
-    {
-      id: "kaal-sarp",
-      name: "Kaal Sarp Dosh Nivaran Hawan",
-      category: "Dosh Nivaran",
-      desc: "Scriptural Rahu-Ketu pacification ritual using silver Nag-Nagin yantra, specialized herbs, and Sarpa Suktam ahutis.",
-      duration: "3 - 4 Hours",
-      rating: "4.9",
-      conductedCount: "1,210+",
-      tag: "Dosha Shanti",
-      img: "/poojas/kaalsarp dosh pooja.jpeg",
-      seoKeyword: "Kaal Sarp Dosh Nivaran Puja Bangalore Pandit",
-    },
-    {
-      id: "mangal-dosh",
-      name: "Mangal Dosh Shanti & Hawan",
-      category: "Dosh Nivaran",
-      desc: "Scriptural Mars pacification ceremony honoring Lord Angaraka to mitigate obstacles in marriage, relationships, and career.",
-      duration: "2.5 Hours",
-      rating: "4.8",
-      conductedCount: "1,450+",
-      tag: "Manglik Relief",
-      img: "/poojas/mangaldosh.jpeg",
-      seoKeyword: "Mangal Dosh Shanti Hawan Pandit Bangalore",
-    },
-    {
-      id: "pitra-dosh",
-      name: "Pitra Dosh Shanti & Tarpan Puja",
-      category: "Dosh Nivaran",
-      desc: "Propitiation of ancestral spirits through Til-Tarpan and scriptural prayers to invite peace and generational blessings.",
-      duration: "3 Hours",
-      rating: "4.9",
-      conductedCount: "1,320+",
-      tag: "Ancestral Harmony",
-      img: "/poojas/pitrishanti.jpeg",
-      seoKeyword: "Pitra Dosh Shanti Tarpan Pandit Bangalore",
-    },
-    {
       id: "antim-sanskar",
-      name: "Antyesti / Last Rites Vedic Rituals",
+      name: "Antim Sanskar (Antyesti Last Rites)",
       category: "Antim Sanskar & Shradh",
-      desc: "Solemn scriptural cremation and Vedic transition guidance strictly in accordance with Garuda Purana rites.",
+      desc: "Solemn scriptural cremation and Vedic transition rites strictly conducted in accordance with ancient Garuda Purana ordinances.",
+      mahatva: "Assists the departed soul in traversing toward higher realms peacefully while ensuring spiritual decontamination and solace for grieving kins.",
       duration: "As Prescribed",
       rating: "5.0",
       conductedCount: "580+",
@@ -388,16 +134,485 @@ export default function Home() {
       seoKeyword: "Antim Sanskar Last Rites Pandit Bangalore Cremation Rites",
     },
     {
+      id: "bagalamukhi-anushthan",
+      name: "Bagalamukhi Anushthan & Hawan",
+      category: "Anushthan & Sadhana",
+      desc: "Vedic invocation of Goddess Peetambara utilizing yellow turmeric oblations, protective mantras, and fierce evil-quelling rites.",
+      mahatva: "Paralyzes enemy hostility, ensures triumph in complex litigations, and erects an impenetrable shield against malicious planetary strikes.",
+      duration: "4 - 5 Hours",
+      rating: "5.0",
+      conductedCount: "310+",
+      tag: "Enemy Victory",
+      img: "/poojas/Bagulamukhi Anushthan.jpg",
+      seoKeyword: "Bagalamukhi Anushthan Hawan Acharya Bengaluru",
+    },
+    {
+      id: "bhoomi-pooja",
+      name: "Bhoomi Pooja & Foundation Consecration",
+      category: "Life Sanskars",
+      desc: "Sacred earth veneration invoking Mother Earth, Varun Dev, and Vastu Purusha prior to site excavation or construction commencement.",
+      mahatva: "Seeks maternal forgiveness for geological excavation, subdues subterranean negative forces, and guarantees safe, accident-free construction.",
+      duration: "2 - 2.5 Hours",
+      rating: "4.9",
+      conductedCount: "540+",
+      tag: "Construction Milestone",
+      img: "/poojas/Bhoomi Pooja.jpg",
+      seoKeyword: "Bhoomi Pooja Pandit in Bangalore Foundation Ceremony",
+    },
+    {
+      id: "birthday-aayushya",
+      name: "Birthday Ayushya Hawan & Blessing",
+      category: "Life Sanskars",
+      desc: "Traditional birthday consecration invoking Markandeya Rishi and Chiranjeevi deities for robust vitality and disease defense.",
+      mahatva: "Neutralizes annual planetary transitions (Varshaphala doshas), infusing cellular strength, cognitive brightness, and longevity.",
+      duration: "2 Hours",
+      rating: "4.9",
+      conductedCount: "1,450+",
+      tag: "Longevity & Health",
+      img: "/poojas/birthday.jpeg",
+      seoKeyword: "Ayushya Hawan Birthday Puja Pandit Bangalore",
+    },
+    {
+      id: "dhanteras-puja",
+      name: "Dhanteras & Lord Dhanvantari Puja",
+      category: "Festivals",
+      desc: "Invocation of Lord Dhanvantari and Lord Kubera for physical rejuvenation, protection against chronic illness, and commercial wealth.",
+      mahatva: "Blesses the family with therapeutic healing grace, shields against untimely mortality, and anchors stable material resources.",
+      duration: "2 Hours",
+      rating: "4.8",
+      conductedCount: "1,140+",
+      tag: "Health & Wealth",
+      img: "/poojas/dhanteras pooja.jpeg",
+      seoKeyword: "Dhanteras Dhanvantari Puja Pandit Bangalore",
+    },
+    {
+      id: "diwali-puja",
+      name: "Diwali Maha Lakshmi-Ganesh Pujan",
+      category: "Festivals",
+      desc: "Complete Shodashopachara Lakshmi-Ganesha adoration featuring account-book sanctification, Kuber yantra worship, and Vedic aarti.",
+      mahatva: "Welcomes permanent prosperity into domestic and commercial spaces while dispelling debt, stagnation, and darkness.",
+      duration: "2 - 3 Hours",
+      rating: "5.0",
+      conductedCount: "2,980+",
+      tag: "Festival of Lights",
+      img: "/poojas/diwali pooja.jpeg",
+      seoKeyword: "Diwali Lakshmi Ganesh Pujan Pandit Bangalore",
+    },
+    {
+      id: "durga-saptashati",
+      name: "Durga Saptashati Path & Pujan",
+      category: "Festivals",
+      desc: "Flawless recitation of the 700 sacred shlokas from Markandeya Purana along with Kavach, Argala, and Kilak stotras for divine protection.",
+      mahatva: "Destroys acute adversity, neutralizes invisible evil eyes, and draws the unreserved protective grace of Supreme Mother Mahamaya.",
+      duration: "4 - 5 Hours",
+      rating: "4.9",
+      conductedCount: "670+",
+      tag: "Shakti Upasana",
+      img: "/poojas/durgasaptsati.jpeg",
+      seoKeyword: "Durga Saptashati Path Pandit Bangalore",
+    },
+    {
+      id: "ekadashi-udyapan",
+      name: "Ekadashi Vrat Udyapan Ceremony",
+      category: "Vrat & Path",
+      desc: "Formal culmination of the 24/26 fortnightly Ekadashi vows per Haribhaktivilasa with Brahmana feeding and golden Tulsi archana.",
+      mahatva: "Eliminates past spiritual demerits, multiplies the transcendental rewards of fasting, and secures profound inner liberation.",
+      duration: "3 Hours",
+      rating: "5.0",
+      conductedCount: "410+",
+      tag: "Vishnu Param Vrat",
+      img: "/poojas/Ekadashi udyapan.jpg",
+      seoKeyword: "Ekadashi Vrat Udyapan Purohit Bangalore",
+    },
+    {
+      id: "engagement-sagai",
+      name: "Engagement (Sagai) & Ring Ceremony",
+      category: "Life Sanskars",
+      desc: "Pre-nuptial Vedic celebration marking formal matrimonial commitment with Tilak, Lagna Patrika reading, and family blessings.",
+      mahatva: "Harmonizes astral temperaments of both families and lays an auspicious foundation for an obstacle-free future marriage.",
+      duration: "2 Hours",
+      rating: "4.8",
+      conductedCount: "710+",
+      tag: "Pre-Wedding",
+      img: "/poojas/engement pooja.jpeg",
+      seoKeyword: "Sagai Engagement Pandit in Bangalore Hindi Purohit",
+    },
+    {
+      id: "gandmool-shanti",
+      name: "Gandmool Nakshatra Shanti Pooja",
+      category: "Dosh Nivaran",
+      desc: "Remedial Shastric ceremony for births under Ashwini, Ashlesha, Magha, Jyeshtha, Moola, or Revati using 27 sacred waters and herbs.",
+      mahatva: "Pacifies inauspicious planetary forces, safeguarding child and parents from psychological distress and physical vulnerability.",
+      duration: "3 - 3.5 Hours",
+      rating: "4.9",
+      conductedCount: "730+",
+      tag: "Nakshatra Shanti",
+      img: "/poojas/Gandmool Nakshatra shanti Pooja.jpg",
+      seoKeyword: "Gandmool Shanti Puja Pandit in Bangalore 27 Nakshatra",
+    },
+    {
+      id: "godh-bharai",
+      name: "Godh Bharai / Seemantam Blessing",
+      category: "Life Sanskars",
+      desc: "Reverential Vedic baby shower bestowing health, spiritual tranquility, and protective aura upon expectant mother and fetus.",
+      mahatva: "Surrounds the womb with auspicious vibrations, shielding the child from negativity and ensuring safe, comfortable childbirth.",
+      duration: "2 - 3 Hours",
+      rating: "4.9",
+      conductedCount: "820+",
+      tag: "Maternal Blessing",
+      img: "/poojas/godbharai pooja.jpeg",
+      seoKeyword: "Godh Bharai Baby Shower Pandit Bengaluru",
+    },
+    {
+      id: "griha-pravesh-puja",
+      name: "Griha Pravesh & Vastu Shanti Puja",
+      category: "Life Sanskars",
+      desc: "Consecration of a newly built residence or flat with Vastu devata invocation, Navagraha homa, milk boiling, and Ganapati puja.",
+      mahatva: "Dispels residual construction flaws, pacifies cardinal directions, and installs lasting tranquility, health, and wealth in the home.",
+      duration: "3 - 3.5 Hours",
+      rating: "4.9",
+      conductedCount: "3,120+",
+      tag: "Most Auspicious",
+      img: "/poojas/griha pravesh.jpeg",
+      seoKeyword: "Griha Pravesh Pandit in Bangalore Housewarming Puja",
+    },
+    {
+      id: "kaal-sarp",
+      name: "Kaal Sarp Dosh Nivaran Hawan",
+      category: "Dosh Nivaran",
+      desc: "Scriptural Rahu-Ketu pacification ritual using consecrated silver Nag-Nagin yantra, Sarpa Suktam ahutis, and planetary oblations.",
+      mahatva: "Dissolves persistent impediments in career, marital life, and health caused by planetary entrapment between the lunar nodes.",
+      duration: "3 - 4 Hours",
+      rating: "4.9",
+      conductedCount: "1,210+",
+      tag: "Dosha Shanti",
+      img: "/poojas/kaalsarp dosh pooja.jpeg",
+      seoKeyword: "Kaal Sarp Dosh Nivaran Puja Bangalore Pandit",
+    },
+    {
+      id: "karnavedha",
+      name: "Karnavedha Sanskar (Ear Piercing)",
+      category: "Life Sanskars",
+      desc: "Traditional Vedic ear-lobe piercing ceremony performed with mantra chanting for systemic harmony and auditory wellness.",
+      mahatva: "Harmonizes acupuncture meridians, sharpens memory and hearing, and fulfills scriptural bodily purification sacraments.",
+      duration: "1.5 Hours",
+      rating: "4.7",
+      conductedCount: "350+",
+      tag: "Health & Sanskar",
+      img: "/poojas/karnbhed sanskar.jpeg",
+      seoKeyword: "Karnavedha Sanskar Pandit Ji Bangalore",
+    },
+    {
+      id: "mangal-dosh",
+      name: "Mangal Dosh Shanti & Hawan",
+      category: "Dosh Nivaran",
+      desc: "Mars pacification honoring Lord Angaraka with red coral archana and shastriya ahutis to overcome marital discord.",
+      mahatva: "Subdues aggressive Martian heat, dispels matrimonial obstacles, and fosters enduring understanding between spouses.",
+      duration: "2.5 Hours",
+      rating: "4.8",
+      conductedCount: "1,450+",
+      tag: "Manglik Relief",
+      img: "/poojas/mangaldosh.jpeg",
+      seoKeyword: "Mangal Dosh Shanti Hawan Pandit Bangalore",
+    },
+    {
+      id: "mangalvari-udyapan",
+      name: "Mangalvari Vrat Udyapan Ceremony",
+      category: "Vrat & Path",
+      desc: "Conclusion ceremony for Tuesday vows honoring Lord Hanuman with vermillion, modak offerings, and consecrated ahutis.",
+      mahatva: "Eliminates blood ailments, pacifies property conflicts, and instills profound fearless courage and victory over obstacles.",
+      duration: "2 Hours",
+      rating: "4.8",
+      conductedCount: "390+",
+      tag: "Sankat Mochan",
+      img: "/poojas/Mangalvari udyapan.jpg",
+      seoKeyword: "Mangalwar Vrat Udyapan Pandit Bangalore",
+    },
+    {
+      id: "manglik-dosh-shanti",
+      name: "Manglik Dosh Shanti Pooja",
+      category: "Dosh Nivaran",
+      desc: "Extensive planetary remedy balancing Mars placement in 1st, 4th, 7th, 8th, or 12th house with Navagraha peace rituals.",
+      mahatva: "Prevents marital delays, transforms disruptive planetary tendencies into harmony, and preserves life partnership longevity.",
+      duration: "2.5 Hours",
+      rating: "4.9",
+      conductedCount: "860+",
+      tag: "Manglik Rectification",
+      img: "/poojas/Manglik dosh shanti pooja.jpg",
+      seoKeyword: "Manglik Dosh Puja in Bangalore North Indian Pandit",
+    },
+    {
+      id: "vivah-sanskar",
+      name: "Marriage (Vedic Vivah Sanskar)",
+      category: "Life Sanskars",
+      desc: "Solemn traditional wedding incorporating Kanyadaan, Saptapadi (Seven Vows), Mangalsutra Dharan, and sacred Vivah Hawan.",
+      mahatva: "Scriptural convergence of two souls for Dharma, Artha, Kama, and Moksha, establishing lifelong matrimonial unity.",
+      duration: "Full Ritual",
+      rating: "5.0",
+      conductedCount: "890+",
+      tag: "Sacred Matrimony",
+      img: "/poojas/marriage ppoja.jpeg",
+      seoKeyword: "Vedic Vivah Marriage Pandit in Bangalore North Indian Style",
+    },
+    {
+      id: "mundan-sanskar",
+      name: "Mundan Sanskar (Chudakarana Ceremony)",
+      category: "Life Sanskars",
+      desc: "Sacred tonsure rite removing prenatal hair to purge karmic remnants and stimulate robust neural and hair follicles.",
+      mahatva: "Purifies past life impressions, cools the brain center, and bestows longevity, sharp intellectual acumen, and health.",
+      duration: "2 Hours",
+      rating: "4.8",
+      conductedCount: "980+",
+      tag: "Purification Rite",
+      img: "/poojas/mundan sanskar.jpeg",
+      seoKeyword: "Mundan Sanskar Pandit in Bangalore North Indian Vidhi",
+    },
+    {
+      id: "murti-pranpratistha",
+      name: "Murti Pranapratishtha & Temple Consecration",
+      category: "Life Sanskars",
+      desc: "Sacred infusion of cosmic divine life-force (Prana) into deity idols per Vedic Agama texts utilizing Shodashopachara puja.",
+      mahatva: "Transforms metal or stone forms into living divine embodiments, making household or temple altars fountains of spiritual energy.",
+      duration: "3 - 4 Hours",
+      rating: "5.0",
+      conductedCount: "260+",
+      tag: "Consecration Rite",
+      img: "/poojas/Murti pranpratistha.jpg",
+      seoKeyword: "Murti Pranpratistha Pandit Bangalore Temple Consecration",
+    },
+    {
+      id: "namkaran-sanskar",
+      name: "Namkaran Sanskar (Naming Ceremony)",
+      category: "Life Sanskars",
+      desc: "Vedic ceremony conferring a meaningful, astrology-aligned name based on the infant's birth Nakshatra quarter and ascendant.",
+      mahatva: "Awakens auspicious identity resonance, strengthens vital destiny paths, and invokes divine protection from family deities.",
+      duration: "1.5 - 2 Hours",
+      rating: "4.9",
+      conductedCount: "780+",
+      tag: "Child Milestone",
+      img: "/poojas/Namkaran sanskar.jpg",
+      seoKeyword: "Namkaran Sanskar Pandit in Bangalore Naming Ceremony",
+    },
+    {
+      id: "namsanskar-alternate",
+      name: "Namkaran Sanskar Special Vidhi",
+      category: "Life Sanskars",
+      desc: "Elaborate naming sacrament with planetary propitiation, Ayushya Suktam recitation, and ancestral Gotra invocation.",
+      mahatva: "Infuses the child with planetary harmony and social respect, creating an auspicious vibrational shield for life.",
+      duration: "2 Hours",
+      rating: "4.9",
+      conductedCount: "430+",
+      tag: "Special Vedic Rite",
+      img: "/poojas/namsanskar.jpg",
+      seoKeyword: "Vedic Namkaran Sanskar Ceremony Bangalore",
+    },
+    {
+      id: "navchandi-yagya",
+      name: "Navchandi Mahayagya & Hawan",
+      category: "Anushthan & Sadhana",
+      desc: "Sacrificial fire yagya invoking Goddess Durga with complete Saptashati paths, 1008 ahutis, and extensive environmental purification.",
+      mahatva: "Wipes out acute family tribulations, nullifies dark negative energies, and showers all-encompassing peace and triumph.",
+      duration: "5 Hours",
+      rating: "5.0",
+      conductedCount: "310+",
+      tag: "Grand Anushthan",
+      img: "/poojas/navchandi hawan.jpeg",
+      seoKeyword: "Navchandi Mahayagya Hawan Acharya Bengaluru",
+    },
+    {
+      id: "navratri-puja",
+      name: "Navratri Ghatasthapana & Devi Pujan",
+      category: "Festivals",
+      desc: "Holy Kalash establishment on Pratipada followed by continuous Akhand Jyot setup, daily Durga aradhana, and Kanya pujan.",
+      mahatva: "Attracts the cosmic maternal presence of the Nine Durgas, cleansing residential aura and quelling ancestral grievances.",
+      duration: "3 Hours",
+      rating: "5.0",
+      conductedCount: "1,890+",
+      tag: "Navratri Special",
+      img: "/poojas/navratri pooja.jpeg",
+      seoKeyword: "Navratri Ghatasthapana Pandit Bangalore Durga Puja",
+    },
+    {
+      id: "pitra-dosh",
+      name: "Pitra Dosh Shanti & Tarpan Puja",
+      category: "Dosh Nivaran",
+      desc: "Solemn propitiation of ancestors via Til-Tarpan, Pinda Daan prayers, and Garuda Purana rituals for ancestral contentment.",
+      mahatva: "Relieves departed ancestors of unrest, unlocks hindered generational growth, and eliminates recurring familial hardships.",
+      duration: "3 Hours",
+      rating: "4.9",
+      conductedCount: "1,320+",
+      tag: "Ancestral Harmony",
+      img: "/poojas/pitrishanti.jpeg",
+      seoKeyword: "Pitra Dosh Shanti Tarpan Pandit Bangalore",
+    },
+    {
+      id: "pradosh-udyapan",
+      name: "Pradosh Vrat Udyapan & Shiva Pujan",
+      category: "Vrat & Path",
+      desc: "Sacred completion rituals for the Trayodashi Pradosh vow honoring Lord Shiva and Mother Parvati during twilight Sandhya.",
+      mahatva: "Fosters prompt relief from debt, protects against sudden mishaps, and guarantees lasting mental peace and longevity.",
+      duration: "2.5 Hours",
+      rating: "4.9",
+      conductedCount: "480+",
+      tag: "Shiva Blessing",
+      img: "/poojas/Pradosh varat udyapan.jpg",
+      seoKeyword: "Pradosh Vrat Udyapan Pandit in Bangalore",
+    },
+    {
+      id: "ramayana-path",
+      name: "Ramayana (Ramcharitmanas) Akhand Path",
+      category: "Vrat & Path",
+      desc: "Continuous devotion-infused recitation of Goswami Tulsidas's epic describing Lord Rama's virtuous life and noble victories.",
+      mahatva: "Elevates household energy, cleanses moral ambience, and fosters righteousness, mutual affection, and auspicious fortune.",
+      duration: "Custom / Full Day",
+      rating: "5.0",
+      conductedCount: "340+",
+      tag: "Vedic Recitation",
+      img: "/poojas/Ramayana path.jpg",
+      seoKeyword: "Ramcharitmanas Akhand Path Acharya Bengaluru",
+    },
+    {
+      id: "rudrabhishek-puja",
+      name: "Rudrabhishek Pooja & Shiva Hawan",
+      category: "Dosh Nivaran",
+      desc: "Ceremonial bathing of Shiva Lingam using 11 consecrated dravyas accompanied by Sri Rudram and Chamakam chanting.",
+      mahatva: "Annihilates chronic health afflictions, alleviates planetary grief, and grants supreme inner silence and material well-being.",
+      duration: "2.5 - 3 Hours",
+      rating: "5.0",
+      conductedCount: "2,210+",
+      tag: "Mahadev Kripa",
+      img: "/poojas/Rudraabhishek pooja.jpg",
+      seoKeyword: "Rudrabhishek Puja Pandit in Bangalore Vedic Shambho",
+    },
+    {
+      id: "santan-gopal",
+      name: "Santan Gopal Japa, Hawan & Pooja",
+      category: "Anushthan & Sadhana",
+      desc: "Vedic invocation of Bal Gopal featuring targeted mantra repetition and hawan for prospective parents longing for children.",
+      mahatva: "Eliminates biological, psychological, and astrological impediments to childbirth, blessing families with noble, healthy offspring.",
+      duration: "3 - 4 Hours",
+      rating: "5.0",
+      conductedCount: "680+",
+      tag: "Progeny Blessing",
+      img: "/poojas/santan gopal jap and pooja.jpg",
+      seoKeyword: "Santan Gopal Jap and Hawan Pandit Bangalore",
+    },
+    {
+      id: "satyanarayan-puja",
+      name: "Satyanarayan Bhagwan Katha & Puja",
+      category: "Vrat & Path",
+      desc: "Sacred storytelling, panchamrit offering, and hawan dedicated to Lord Vishnu for family joy and righteous triumphs.",
+      mahatva: "Promotes truth, eradicates chronic hurdles, resolves marital strains, and fills the residence with spiritual abundance.",
+      duration: "2 - 2.5 Hours",
+      rating: "4.9",
+      conductedCount: "2,450+",
+      tag: "Peace & Prosperity",
+      img: "/poojas/satyanarayan pooja.jpeg",
+      seoKeyword: "Satyanarayan Katha Puja Pandit Bangalore North Indian",
+    },
+    {
+      id: "sudarshan-anushthan",
+      name: "Sudarshan Homa & Maha Anushthan",
+      category: "Anushthan & Sadhana",
+      desc: "Invocation of Lord Vishnu's infallible discus (Sudarshan Chakra) to dismantle psychic hostility, curses, and unseen blockages.",
+      mahatva: "Forms a resilient divine armor around family and business, neutralizing toxic jealousy and shielding overall vitality.",
+      duration: "3 Hours",
+      rating: "5.0",
+      conductedCount: "420+",
+      tag: "Divine Protection",
+      img: "/poojas/Sudarshan Anushthan.jpg",
+      seoKeyword: "Sudarshan Homa Anushthan Purohit Bangalore",
+    },
+    {
+      id: "sundarkand-path",
+      name: "Sundarkand Recitation & Hawan",
+      category: "Vrat & Path",
+      desc: "Spirited devotional chanting of Sundarkand with Hanuman Chalisa and Sankat Mochan stotra to awaken faith and grit.",
+      mahatva: "Wards off chronic anxieties, protects against malevolent spirits, and turns seemingly impossible difficulties into victories.",
+      duration: "2.5 - 3 Hours",
+      rating: "5.0",
+      conductedCount: "1,670+",
+      tag: "Hanuman Grace",
+      img: "/poojas/Sundarkand path.jpg",
+      seoKeyword: "Sundarkand Path Pandit in Bangalore Hanuman Chalisa Hawan",
+    },
+    {
       id: "terahvin-shanti",
-      name: "Terahvin & Shanti Hawan Ceremony",
+      name: "Terahvin (13th Day) Shanti Shradh Ceremony",
       category: "Antim Sanskar & Shradh",
-      desc: "Thirteenth-day culmination ritual concluding mourning rites with Shanti Hawan, Brahmana Bhojan, and family purification.",
+      desc: "Culmination ceremony concluding mourning periods with Shanti Hawan, Brahmana Bhojan, and family re-purification.",
+      mahatva: "Concludes ashaucha impurity, guides the soul to peaceful transcendence, and reinstates spiritual sanctity in the residence.",
       duration: "3 Hours",
       rating: "4.9",
       conductedCount: "820+",
-      tag: "Parivarik Shanti",
+      tag: "Universal Peace",
       img: "/poojas/terhvi sradhy.jpeg",
       seoKeyword: "Terahvin Shanti Hawan Shradh Pandit Bangalore",
+    },
+    {
+      id: "upnayan-sanskar",
+      name: "Upanayana (Janeu) Sanskar Ceremony",
+      category: "Life Sanskars",
+      desc: "Sacred thread investiture initiating young youth into Brahmacharya discipline, Vedic study, and daily Gayatri meditation.",
+      mahatva: "Represents spiritual rebirth (Dvija), awakening inner spiritual discernment, concentration, and deep scriptural comprehension.",
+      duration: "4 - 5 Hours",
+      rating: "4.9",
+      conductedCount: "430+",
+      tag: "Spiritual Rebirth",
+      img: "/poojas/upnayan sanskar.jpeg",
+      seoKeyword: "Janeu Sanskar Upanayana Purohit Bangalore",
+    },
+    {
+      id: "vahan-puja",
+      name: "Vahan Puja (Vehicle Blessing Ceremony)",
+      category: "Life Sanskars",
+      desc: "Sacred consecration for new vehicles with Lord Ganesha invocation, Navagraha blessings, and Ayushya mantras.",
+      mahatva: "Eliminates negative astral influences, prevents road accidents, and blesses travelers with safe, prosperous journeys.",
+      duration: "45 Mins - 1 Hour",
+      rating: "4.9",
+      conductedCount: "1,620+",
+      tag: "Protection & Safety",
+      img: "/poojas/vahan pooja.jpeg",
+      seoKeyword: "Vahan Puja Vehicle Blessing Pandit Bengaluru",
+    },
+    {
+      id: "vastu-shanti-puja",
+      name: "Vastu Shanti & Dosha Nivaran Puja",
+      category: "Dosh Nivaran",
+      desc: "Vedic ceremony and hawan reconciling spatial directions, directional deities, and subduing structural imbalances.",
+      mahatva: "Restores elemental balance without destructive civil demolition, cultivating positive vibration, peace, and commercial progress.",
+      duration: "2.5 - 3 Hours",
+      rating: "4.9",
+      conductedCount: "1,890+",
+      tag: "Dosha Nivaran",
+      img: "/poojas/vastu shanti.jpeg",
+      seoKeyword: "Vastu Shanti Puja Pandit in Bangalore Dosha Nivaran",
+    },
+    {
+      id: "vishnu-sahasranam",
+      name: "Vishnu Sahasranama Path & Hawan",
+      category: "Vrat & Path",
+      desc: "Recitation of the thousand divine names of Supreme Lord Vishnu with sacred Tulsi leaves and consecrated oblations.",
+      mahatva: "Pacifies all adverse planetary afflictions, dissolves karmic debts, relieves mental stress, and brings spiritual serenity.",
+      duration: "2 Hours",
+      rating: "4.9",
+      conductedCount: "520+",
+      tag: "Vishnu Upasana",
+      img: "/poojas/Viahnu Sahsranam path.jpg",
+      seoKeyword: "Vishnu Sahasranam Path Pandit Bangalore",
+    },
+    {
+      id: "brihaspati-udyapan",
+      name: "Vrihaspati (Jupiter) Vrat Udyapan",
+      category: "Vrat & Path",
+      desc: "Conclusion of Thursday Guru fasting vow utilizing yellow blossoms, Gram pulse offerings, and Navagraha oblations.",
+      mahatva: "Overcomes matrimonial delays, improves academic and intellectual growth, and attracts the benevolent grace of Devaguru Brihaspati.",
+      duration: "2 - 2.5 Hours",
+      rating: "4.9",
+      conductedCount: "640+",
+      tag: "Guru Blessing",
+      img: "/poojas/Vrihaspati udyapan.jpg",
+      seoKeyword: "Brihaspati Vrat Udyapan Pandit Bangalore",
     },
   ];
 
@@ -405,6 +620,7 @@ export default function Home() {
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.mahatva.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.seoKeyword.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategory === "All" || p.category === selectedCategory;
@@ -420,7 +636,11 @@ export default function Home() {
   };
 
   const handleDirectWhatsAppBooking = () => {
-    const msg = `Namaste PurohitSetu Team, I want to book a Vedic Pandit for ${formData.pujaName || "Puja Ceremony"} in Bengaluru. Please assist me with the muhurat and booking.`;
+    const finalName =
+      formData.pujaName === "Other Custom Vedic Ritual"
+        ? formData.customPujaInput || "Custom Ritual"
+        : formData.pujaName;
+    const msg = `Namaste PurohitSetu Team, I want to book a Vedic Pandit for ${finalName} in Bengaluru. Please assist me with the muhurat and booking.`;
     window.open(`https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
@@ -429,12 +649,17 @@ export default function Home() {
     setLoading(true);
     setStatusMsg(null);
 
+    const chosenPuja =
+      formData.pujaName === "Other Custom Vedic Ritual"
+        ? formData.customPujaInput.trim() || "Custom Vedic Ritual"
+        : formData.pujaName;
+
     try {
       const { error } = await supabase.from("bookings").insert([
         {
           name: formData.name,
           phone: formData.phone,
-          puja_name: formData.pujaName,
+          puja_name: chosenPuja,
           language: formData.language,
           area: formData.area || "Bengaluru",
           location: formData.area || "Bengaluru",
@@ -446,10 +671,7 @@ export default function Home() {
 
       if (error) throw error;
 
-      triggerNewBookingNotification(
-        formData.pujaName || "Vedic Ceremony",
-        formData.area || "Bengaluru"
-      );
+      triggerNewBookingNotification(chosenPuja, formData.area || "Bengaluru");
 
       setStatusMsg({
         type: "success",
@@ -459,7 +681,8 @@ export default function Home() {
       setFormData({
         name: "",
         phone: "",
-        pujaName: "Vedic Vivah Sanskar (Marriage)",
+        pujaName: "Griha Pravesh & Vastu Shanti Puja",
+        customPujaInput: "",
         language: "Hindi",
         area: "Bengaluru",
         date: "",
@@ -603,34 +826,8 @@ export default function Home() {
     }
   };
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    name: "PurohitSetu - North Indian Vedic Pandits in Bangalore",
-    image: "https://www.purohitsetu.in/pandit-logo.png",
-    telephone: `+91-${SUPPORT_PHONE}`,
-    email: "support.purohitsetu@gmail.com",
-    url: "https://www.purohitsetu.in",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Bengaluru",
-      addressRegion: "Karnataka",
-      postalCode: "560102",
-      addressCountry: "IN",
-    },
-    description: "Book verified North Indian, Hindi, Bihari, and Maithili Vedic Pandits in Bangalore for Griha Pravesh, Vivah, Satyanarayan Puja, Hawan, and Sanskars.",
-    priceRange: "₹₹",
-    areaServed: BENGALURU_LOCALITIES,
-    keywords: HIGH_INTENT_KEYWORDS.join(", "),
-  };
-
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-slate-900 font-sans selection:bg-orange-700 selection:text-white">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
-
       {/* HEADER */}
       <div className="sticky top-0 z-40 w-full shadow-sm">
         <div className="bg-gradient-to-r from-red-800 via-orange-700 to-amber-800 text-white text-[11px] sm:text-xs py-1.5 px-3 text-center">
@@ -772,7 +969,7 @@ export default function Home() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search pujas: 'Griha Pravesh', 'Vivah', 'Satyanarayan', 'Whitefield'..."
+              placeholder="Search pujas: 'Sundarkand', 'Rudrabhishek', 'Vastu Shanti', 'Brihaspati'..."
               className="w-full pl-10 pr-16 py-3 bg-white border border-orange-200 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-600 font-medium text-slate-900"
             />
             {searchQuery && (
@@ -806,7 +1003,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* LOCALITIES BAR WITH PROPER INTERNAL LINKS */}
+      {/* LOCALITIES BAR */}
       <section id="localities-section" className="bg-amber-100/70 py-4 px-4 border-y border-amber-300">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-1 mb-2 text-center sm:text-left">
@@ -832,7 +1029,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PUJA SERVICES DIRECTORY */}
+      {/* PUJA SERVICES DIRECTORY (ALPHABETICAL ORDER A TO Z) */}
       <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 border-b border-amber-200 pb-3">
           <div>
@@ -880,9 +1077,19 @@ export default function Home() {
                   <h3 className="font-black text-sm text-slate-900 mb-1 group-hover:text-orange-700 transition">
                     {puja.name}
                   </h3>
-                  <p className="text-[11px] text-slate-700 leading-relaxed mb-3 line-clamp-3">
+                  <p className="text-[11px] text-slate-700 leading-relaxed mb-2 line-clamp-2">
                     {puja.desc}
                   </p>
+                  
+                  {/* Scriptural Significance in Professional English */}
+                  <div className="bg-amber-50/80 border border-amber-200 rounded-lg p-2 mb-3">
+                    <span className="text-[9px] font-extrabold text-amber-900 uppercase tracking-wider block mb-0.5">
+                      📖 Scriptural Significance:
+                    </span>
+                    <p className="text-[10px] text-slate-800 leading-relaxed line-clamp-3 italic">
+                      &quot;{puja.mahatva}&quot;
+                    </p>
+                  </div>
                 </div>
 
                 <button
@@ -898,94 +1105,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ABOUT US SECTION */}
-      <section id="about-section" className="bg-gradient-to-br from-amber-100/40 via-orange-50/30 to-amber-100/50 py-12 px-4 border-y border-amber-200 my-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <span className="text-orange-700 font-extrabold uppercase text-[10px] tracking-widest">
-              Sanatan Heritage &amp; Trust
-            </span>
-            <h2 className="text-xl sm:text-3xl font-black text-slate-900 mt-1">
-              Why Devotees Choose PurohitSetu in Bangalore
-            </h2>
-            <p className="text-slate-700 text-xs sm:text-sm max-w-xl mx-auto mt-1">
-              Authentic Gurukul-ordained North Indian and South Indian Vedic Pandits across Bengaluru.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="bg-white p-5 rounded-2xl border border-amber-200">
-              <span className="text-2xl block mb-2" aria-hidden="true">🌿</span>
-              <h3 className="text-sm font-black text-slate-900 mb-1">Authentic Sanskrit Chanting &amp; Shastric Vidhi</h3>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                Dedicated strictly to genuine Vedic rituals and Hawans. Zero speculative astrology or commercial horoscope gimmicks.
-              </p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-amber-200">
-              <span className="text-2xl block mb-2" aria-hidden="true">🕉</span>
-              <h3 className="text-sm font-black text-slate-900 mb-1">North Indian, Hindi, Bihari &amp; Maithili Pandits</h3>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                Verified Acharyas from Varanasi, Mithila, Haridwar, and Prayagraj proficient in your family's authentic customs.
-              </p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-amber-200">
-              <span className="text-2xl block mb-2" aria-hidden="true">🗣</span>
-              <h3 className="text-sm font-black text-slate-900 mb-1">Multilingual Ceremony Conduct</h3>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                Rituals conducted with clear explanation in Hindi, English, Kannada, Telugu, Bhojpuri, or Maithili.
-              </p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-amber-200">
-              <span className="text-2xl block mb-2" aria-hidden="true">🔥</span>
-              <h3 className="text-sm font-black text-slate-900 mb-1">Complete Hawan &amp; Samagri Management</h3>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                Our Pandits arrive equipped with authenticated Mango wood, Navagraha herbs, pure cow ghee, and Gangajal etc.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* COMPACT BOOKING FORM SECTION WITH TRUST BAR */}
+      {/* BOOKING SECTION (WITH OTHER / CUSTOM PUJA OPTION) */}
       <section id="booking-section" className="py-10 px-4">
         <div className="max-w-3xl mx-auto space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-            <div className="flex items-start gap-2.5">
-              <span className="text-orange-600 text-xl font-bold" aria-hidden="true">🛡️</span>
-              <div>
-                <h3 className="text-xs font-bold text-slate-900 leading-tight">100% Secure Booking</h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">Your data is safe with us</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="text-orange-600 text-xl font-bold" aria-hidden="true">₹</span>
-              <div>
-                <h3 className="text-xs font-bold text-slate-900 leading-tight">Zero Upfront Cost</h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">Pay after puja completion</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="text-orange-600 text-xl font-bold" aria-hidden="true">🏅</span>
-              <div>
-                <h3 className="text-xs font-bold text-slate-900 leading-tight">Verified Pandits</h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">Experienced &amp; verified</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="text-orange-600 text-xl font-bold" aria-hidden="true">🎧</span>
-              <div>
-                <h3 className="text-xs font-bold text-slate-900 leading-tight">24/7 Support</h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">We are here to help you</p>
-              </div>
-            </div>
-          </div>
-
           <div className="bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-7">
             <div className="text-center mb-5">
               <span className="bg-orange-100 text-orange-950 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
@@ -1067,10 +1189,28 @@ export default function Home() {
                         {p.name}
                       </option>
                     ))}
-                    <option value="Other Custom Vedic Ritual">Other Custom Vedic Ritual</option>
+                    <option value="Other Custom Vedic Ritual">Other / Custom Vedic Ritual</option>
                   </select>
                 </div>
               </div>
+
+              {/* Custom Puja input field if selected */}
+              {formData.pujaName === "Other Custom Vedic Ritual" && (
+                <div>
+                  <label htmlFor="custom-puja-input" className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                    Specify Custom Ritual Name *
+                  </label>
+                  <input
+                    id="custom-puja-input"
+                    type="text"
+                    required
+                    placeholder="e.g. Chandi Hawan, Specialized Grah Shanti..."
+                    value={formData.customPujaInput}
+                    onChange={(e) => setFormData({ ...formData, customPujaInput: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-600 text-xs bg-white text-slate-900"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -1112,7 +1252,7 @@ export default function Home() {
                   className="w-4 h-4 accent-orange-700 rounded cursor-pointer"
                 />
                 <label htmlFor="samagri-toggle" className="text-xs text-slate-800 cursor-pointer select-none">
-                  <strong>Include Complete Hawan &amp; Samagri Kit</strong> (Acharya carries verified woods, herbs, Gangajal).
+                  <strong>Include Complete Hawan &amp; Samagri Kit</strong> (Acharya brings verified woods, herbs, and holy water).
                 </label>
               </div>
 
@@ -1139,39 +1279,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CONTACT & DIRECT PHONE SUPPORT */}
-      <section id="contact-section" className="bg-white py-8 px-4 border-t border-amber-200 text-center">
-        <div className="max-w-4xl mx-auto space-y-3">
-          <div>
-            <span className="text-orange-700 font-extrabold uppercase text-[10px] tracking-widest">
-              24/7 Support Desk
-            </span>
-            <h2 className="text-lg font-black text-slate-900 mt-0.5">
-              Contact Official Platform Support
-            </h2>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <a
-              href={`tel:+91${SUPPORT_PHONE}`}
-              className="inline-flex items-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-4 py-2 rounded-xl text-xs font-bold text-orange-950 transition"
-              aria-label={`Call or WhatsApp support at ${SUPPORT_PHONE}`}
-            >
-              <span>📞</span> Call / WhatsApp: +91 {SUPPORT_PHONE}
-            </a>
-
-            <a
-              href="mailto:support.purohitsetu@gmail.com"
-              className="inline-flex items-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-4 py-2 rounded-xl text-xs font-bold text-orange-950 transition"
-              aria-label="Email support at support.purohitsetu@gmail.com"
-            >
-              <span>✉️</span> support.purohitsetu@gmail.com
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* CLEAN FOOTER WITH HYPERLINKED DIRECTORY */}
+      {/* FOOTER */}
       <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-7 px-4 border-t-2 border-amber-400">
         <div className="max-w-6xl mx-auto space-y-5 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold text-orange-50">
@@ -1179,30 +1287,9 @@ export default function Home() {
             <span>•</span>
             <Link href="/privacy-policy" className="hover:text-white transition underline underline-offset-4">Privacy Policy</Link>
             <span>•</span>
-            <a href="#about-section" className="hover:text-white transition">About Us</a>
-            <span>•</span>
             <a href={`https://wa.me/91${SUPPORT_PHONE}`} target="_blank" rel="noreferrer" className="hover:text-white font-bold transition">
               WhatsApp Support ({SUPPORT_PHONE})
             </a>
-          </div>
-
-          {/* INTERNAL LOCALITY FOOTER MATRIX */}
-          <div className="text-[11px] text-orange-100 max-w-5xl mx-auto leading-relaxed border-t border-orange-600/70 pt-4">
-            <p className="font-bold text-white mb-2 text-xs">Vedic Pandits Across Bengaluru Localities:</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {BENGALURU_LOCALITIES.map((loc) => {
-                const slug = loc.toLowerCase().replace(/\s+/g, "-");
-                return (
-                  <Link
-                    key={loc}
-                    href={`/pandit/${slug}`}
-                    className="hover:text-amber-200 transition underline underline-offset-2"
-                  >
-                    Pandit in {loc}
-                  </Link>
-                );
-              })}
-            </div>
           </div>
 
           <div className="border-t border-orange-600/70 pt-3 flex flex-col sm:flex-row items-center justify-between text-[11px] text-orange-100 gap-2">
@@ -1214,7 +1301,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* PUJA BOOKING TOKEN RAZORPAY MODAL */}
+      {/* TOKEN MODAL */}
       {isTokenModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3" role="dialog" aria-modal="true">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-orange-200 max-h-[90vh] overflow-y-auto">
@@ -1279,21 +1366,6 @@ export default function Home() {
               </div>
 
               <div>
-                <div className="flex justify-between mb-0.5">
-                  <label htmlFor="token-pandit-name" className="font-bold text-slate-700">Preferred Acharya</label>
-                  <span className="text-[9px] text-slate-500">Optional</span>
-                </div>
-                <input
-                  id="token-pandit-name"
-                  type="text"
-                  placeholder="e.g. Acharya Prince Pandey"
-                  value={tokenData.panditName}
-                  onChange={(e) => setTokenData({ ...tokenData, panditName: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-stone-50 text-slate-900"
-                />
-              </div>
-
-              <div>
                 <label htmlFor="token-puja-select" className="block font-bold text-slate-700 mb-0.5">Puja Ritual / Service</label>
                 <select
                   id="token-puja-select"
@@ -1301,24 +1373,18 @@ export default function Home() {
                   onChange={(e) => setTokenData({ ...tokenData, pujaName: e.target.value })}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900"
                 >
-                  <option value="General Puja Booking Token">General Puja Booking Token</option>
-                  <option value="Griha Pravesh Puja">Griha Pravesh Puja</option>
-                  <option value="Satyanarayan Katha">Satyanarayan Katha</option>
-                  <option value="Vivah Sanskar (Marriage)">Vivah Sanskar (Marriage)</option>
-                  <option value="Navchandi Mahayagya">Navchandi Mahayagya</option>
-                  <option value="Rudrabhishek Puja">Rudrabhishek Puja</option>
-                  <option value="Mundan Sanskar">Mundan Sanskar</option>
+                  {pujaList.map((p) => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
                   <option value="Other Custom Ritual">Other Custom Ritual</option>
                 </select>
               </div>
 
               {tokenData.pujaName === "Other Custom Ritual" && (
                 <div>
-                  <label htmlFor="token-custom-puja" className="sr-only">Specify Custom Ritual</label>
                   <input
-                    id="token-custom-puja"
                     type="text"
-                    placeholder="Specify ritual..."
+                    placeholder="Specify custom ritual..."
                     value={tokenData.customPuja}
                     onChange={(e) => setTokenData({ ...tokenData, customPuja: e.target.value })}
                     className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-900"
@@ -1345,9 +1411,7 @@ export default function Home() {
                   ))}
                 </div>
 
-                <label htmlFor="token-amount-input" className="sr-only">Token Amount</label>
                 <input
-                  id="token-amount-input"
                   type="number"
                   min="1"
                   required
@@ -1364,10 +1428,6 @@ export default function Home() {
               >
                 {tokenProcessing ? "Opening Gateway..." : `Confirm Booking Token ₹${tokenData.amount || 0}`}
               </button>
-
-              <p className="text-[9px] text-center text-slate-500 font-medium">
-                🔒 Secured by Razorpay. Supports PhonePe, GPay, Paytm, Cards &amp; UPI.
-              </p>
             </form>
           </div>
         </div>

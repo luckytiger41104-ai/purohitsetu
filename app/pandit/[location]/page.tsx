@@ -80,15 +80,46 @@ const ALL_LOCALITIES: Record<string, { name: string; nearby: string[] }> = {
   },
 };
 
-const POPULAR_RITUALS = [
+const ALL_PUJAS_LIST = [
+  { slug: "annaprasan-sanskar-pooja", title: "Annaprashan Sanskar (First Feeding)" },
+  { slug: "antim-sanskar", title: "Antim Sanskar (Last Rites)" },
+  { slug: "bagulamukhi-anushthan", title: "Bagalamukhi Anushthan" },
+  { slug: "bhoomi-pooja", title: "Bhoomi Pooja & Foundation" },
+  { slug: "birthday-ayushya-hawan", title: "Birthday Ayushya Hawan" },
+  { slug: "dhanteras-pooja", title: "Dhanteras & Kuber Puja" },
+  { slug: "diwali-pooja", title: "Diwali Maha Lakshmi Puja" },
+  { slug: "durgasaptsati-path", title: "Durga Saptashati Path" },
+  { slug: "ekadashi-udyapan", title: "Ekadashi Vrat Udyapan" },
+  { slug: "engagement-pooja", title: "Engagement (Sagai) Ceremony" },
+  { slug: "gandmool-nakshatra-shanti-pooja", title: "Gandmool Nakshatra Shanti Pooja" },
+  { slug: "godh-bharai-pooja", title: "Godh Bharai (Baby Shower)" },
   { slug: "griha-pravesh-puja", title: "Griha Pravesh & Vastu Shanti" },
-  { slug: "satyanarayan-puja", title: "Satyanarayan Bhagwan Katha" },
-  { slug: "vedic-marriage-pandit", title: "Vedic Vivah Sanskar (Marriage)" },
-  { slug: "navchandi-hawan", title: "Navchandi Mahayagya Hawan" },
-  { slug: "rudrabhishek-puja", title: "Rudrabhishek Puja" },
+  { slug: "kaal-sarp-dosh-pooja", title: "Kaal Sarp Dosh Nivaran" },
+  { slug: "karnabhed-sanskar", title: "Karnavedha Sanskar" },
+  { slug: "mangal-dosh-shanti", title: "Mangal Dosh Shanti Hawan" },
+  { slug: "mangalvari-udyapan", title: "Mangalvari Vrat Udyapan" },
+  { slug: "manglik-dosh-shanti-pooja", title: "Manglik Dosh Shanti Pooja" },
+  { slug: "marriage-pooja", title: "Marriage (Vedic Vivah Sanskar)" },
   { slug: "mundan-sanskar", title: "Mundan Sanskar Ceremony" },
-  { slug: "kaal-sarp-dosh-nivaran", title: "Kaal Sarp Dosh Nivaran" },
-  { slug: "pitra-dosh-puja", title: "Pitra Dosh & Tarpan Shanti" },
+  { slug: "murti-pranpratistha", title: "Murti Pranpratistha" },
+  { slug: "namkaran-sanskar", title: "Namkaran Sanskar (Naming)" },
+  { slug: "namsanskar-special", title: "Namkaran Sanskar Special Vidhi" },
+  { slug: "navchandi-hawan", title: "Navchandi Mahayagya Hawan" },
+  { slug: "navratri-pooja", title: "Navratri Ghatasthapana Puja" },
+  { slug: "pitra-dosh-shanti", title: "Pitra Dosh & Tarpan Shanti" },
+  { slug: "pradosh-varat-udyapan", title: "Pradosh Vrat Udyapan" },
+  { slug: "ramayana-path", title: "Ramayana (Ramcharitmanas) Path" },
+  { slug: "rudrabhishek-pooja", title: "Rudrabhishek Pooja & Hawan" },
+  { slug: "santan-gopal-jap-and-pooja", title: "Santan Gopal Japa & Hawan" },
+  { slug: "satyanarayan-pooja", title: "Satyanarayan Bhagwan Katha" },
+  { slug: "sudarshan-anushthan", title: "Sudarshan Homa & Anushthan" },
+  { slug: "sundarkand-path", title: "Sundarkand Recitation & Hawan" },
+  { slug: "terahvin-shanti-shradh", title: "Terahvin Shanti Hawan" },
+  { slug: "upnayan-sanskar", title: "Upanayana (Janeu) Sanskar" },
+  { slug: "vahan-pooja", title: "Vahan Puja (Vehicle Blessing)" },
+  { slug: "vastu-shanti-pooja", title: "Vastu Shanti & Dosha Nivaran" },
+  { slug: "vishnu-sahasranam-path", title: "Vishnu Sahasranama Path" },
+  { slug: "vrihaspati-udyapan", title: "Brihaspati Vrat Udyapan" },
 ];
 
 const SUPPORT_PHONE = "9449871293";
@@ -110,7 +141,7 @@ export async function generateMetadata({
 
   return {
     title: `North Indian Vedic Pandit in ${locData.name}, Bangalore | PurohitSetu`,
-    description: `Book verified North Indian, Hindi, Bihari & Maithili Vedic Pandits in ${locData.name}, Bengaluru. Authentic Griha Pravesh, Vivah, Hawan and all Sanskar rituals.`,
+    description: `Book verified North Indian, Hindi, Bihari & Maithili Vedic Pandits in ${locData.name}, Bengaluru. Authentic Griha Pravesh, Vivah, Hawan and all 39 Vedic ceremonies.`,
     alternates: {
       canonical: `https://www.purohitsetu.in/pandit/${resolvedParams.location}`,
     },
@@ -212,7 +243,7 @@ export default async function LocalityPage({
           North Indian &amp; Vedic Pandit in <span className="text-orange-700">{locData.name}</span>, Bangalore
         </h1>
         <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed mb-6">
-          Book authentic Hindi, Maithili, and Bhojpuri speaking Vedic Purohits in {locData.name}. Experienced in Griha Pravesh, Satyanarayan Puja, Hawan, Vivah Sanskar, and personalized muhurat calculation.
+          Book authentic Hindi, Maithili, and Bhojpuri speaking Vedic Purohits in {locData.name}. Experienced in Griha Pravesh, Satyanarayan Puja, Hawan, Vivah Sanskar, and all 39 Vedic rituals.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -231,43 +262,48 @@ export default async function LocalityPage({
         </div>
       </section>
 
-      {/* CEREMONIES LIST */}
+      {/* COMPLETE CEREMONIES DIRECTORY */}
       <section className="max-w-5xl mx-auto px-4 py-8">
-        <div className="border-b border-amber-200 pb-2 mb-4">
-          <h2 className="text-lg font-black text-slate-900">
-            Sacred Ceremonies Conducted in {locData.name}
-          </h2>
-          <p className="text-xs text-slate-600">All rituals performed with 100% Shastric vidhi and genuine hawan samagri.</p>
+        <div className="border-b border-amber-200 pb-2 mb-4 flex justify-between items-end">
+          <div>
+            <h2 className="text-lg font-black text-slate-900">
+              Sacred Ceremonies Conducted in {locData.name}
+            </h2>
+            <p className="text-xs text-slate-600">All rituals performed with 100% Shastric vidhi and genuine hawan samagri.</p>
+          </div>
+          <span className="text-xs font-bold text-orange-800 bg-orange-100 px-2.5 py-1 rounded-full">
+            {ALL_PUJAS_LIST.length} Rituals Available
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-          {POPULAR_RITUALS.map((ritual) => (
-            <div key={ritual.slug} className="bg-white border border-amber-200 rounded-xl p-3 shadow-xs flex flex-col justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {ALL_PUJAS_LIST.map((ritual) => (
+            <div key={ritual.slug} className="bg-white border border-amber-200 rounded-xl p-3 shadow-xs flex flex-col justify-between hover:border-orange-400 transition">
               <div>
                 <span className="text-orange-600 font-bold text-sm block mb-1">🪔</span>
                 <h3 className="text-xs font-bold text-slate-900 mb-1">{ritual.title}</h3>
                 <p className="text-[10px] text-slate-600 leading-relaxed">
-                  Full vidhi, sankalp, and hawan in {locData.name}.
+                  Authentic sankalp, mantras, and hawan in {locData.name}.
                 </p>
               </div>
               <Link
                 href={`/pandit/${slug}/${ritual.slug}`}
                 className="mt-3 inline-block text-[11px] text-orange-700 font-bold hover:underline"
               >
-                View {ritual.title} Page →
+                View {ritual.title} →
               </Link>
             </div>
           ))}
         </div>
       </section>
 
-      {/* NEARBY LOCALITIES */}
+      {/* CROSS-LINKING SILO: NEARBY LOCALITIES */}
       <section className="max-w-5xl mx-auto px-4 py-8 bg-amber-50/60 rounded-2xl border border-amber-200 my-6">
         <h3 className="text-xs font-extrabold text-orange-950 uppercase tracking-wider mb-2">
           Also Serving Localities Near {locData.name}
         </h3>
         <p className="text-[11px] text-slate-600 mb-3">
-          Our verified North Indian Pandits travel to apartments and individual houses in adjacent Bengaluru zones:
+          Our verified North Indian Pandits travel to apartments and individual houses in adjacent zones:
         </p>
         <div className="flex flex-wrap gap-2">
           {locData.nearby.map((nearSlug) => {
@@ -285,7 +321,7 @@ export default async function LocalityPage({
         </div>
       </section>
 
-      {/* ALL BENGALURU LOCALITIES DIRECTORY */}
+      {/* ALL BENGALURU LOCALITIES */}
       <section className="max-w-5xl mx-auto px-4 py-6">
         <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">
           Complete Bengaluru Pandit Directory:

@@ -81,20 +81,46 @@ const ALL_LOCALITIES: Record<string, { name: string; nearby: string[] }> = {
 };
 
 const SERVICE_NAMES: Record<string, string> = {
-  "griha-pravesh-puja": "Griha Pravesh Puja",
-  "satyanarayan-puja": "Satyanarayan Puja",
-  "vedic-marriage-pandit": "Vedic Marriage Pandit",
-  "navchandi-hawan": "Navchandi Hawan",
-  "rudrabhishek-puja": "Rudrabhishek Puja",
-  "vastu-shanti-puja": "Vastu Shanti Puja",
-  "mundan-sanskar": "Mundan Sanskar",
+  "annaprasan-sanskar-pooja": "Annaprashan Sanskar",
   "antim-sanskar": "Antim Sanskar Rites",
-  "terahvin-shanti-hawan": "Terahvin Shanti Hawan",
-  "kaal-sarp-dosh-nivaran": "Kaal Sarp Dosh Nivaran",
+  "bagulamukhi-anushthan": "Bagalamukhi Anushthan",
+  "bhoomi-pooja": "Bhoomi Pooja",
+  "birthday-ayushya-hawan": "Birthday Ayushya Hawan",
+  "dhanteras-pooja": "Dhanteras Puja",
+  "diwali-pooja": "Diwali Maha Lakshmi Puja",
+  "durgasaptsati-path": "Durga Saptashati Path",
+  "ekadashi-udyapan": "Ekadashi Vrat Udyapan",
+  "engagement-pooja": "Engagement (Sagai) Ceremony",
+  "gandmool-nakshatra-shanti-pooja": "Gandmool Nakshatra Shanti Pooja",
+  "godh-bharai-pooja": "Godh Bharai Ceremony",
+  "griha-pravesh-puja": "Griha Pravesh Puja",
+  "grihpravesh-puja": "Griha Pravesh Puja",
+  "kaal-sarp-dosh-pooja": "Kaal Sarp Dosh Nivaran",
+  "karnabhed-sanskar": "Karnavedha Sanskar",
   "mangal-dosh-shanti": "Mangal Dosh Shanti",
-  "pitra-dosh-puja": "Pitra Dosh Puja",
-  "godh-bharai-seemantam": "Godh Bharai Sanskar",
-  "upanayana-janeu": "Upanayana Janeu Sanskar",
+  "mangalvari-udyapan": "Mangalvari Vrat Udyapan",
+  "manglik-dosh-shanti-pooja": "Manglik Dosh Shanti Pooja",
+  "marriage-pooja": "Vedic Marriage Ceremony",
+  "mundan-sanskar": "Mundan Sanskar Ceremony",
+  "murti-pranpratistha": "Murti Pranpratistha",
+  "namkaran-sanskar": "Namkaran Sanskar",
+  "namsanskar-special": "Namkaran Sanskar Special Vidhi",
+  "navchandi-hawan": "Navchandi Mahayagya Hawan",
+  "navratri-pooja": "Navratri Ghatasthapana Puja",
+  "pitra-dosh-shanti": "Pitra Dosh Shanti Tarpan",
+  "pradosh-varat-udyapan": "Pradosh Vrat Udyapan",
+  "ramayana-path": "Ramayana Akhand Path",
+  "rudrabhishek-pooja": "Rudrabhishek Pooja",
+  "santan-gopal-jap-and-pooja": "Santan Gopal Japa & Hawan",
+  "satyanarayan-pooja": "Satyanarayan Bhagwan Katha",
+  "sudarshan-anushthan": "Sudarshan Homa & Anushthan",
+  "sundarkand-path": "Sundarkand Recitation & Hawan",
+  "terahvin-shanti-shradh": "Terahvin Shanti Hawan",
+  "upnayan-sanskar": "Upanayana Janeu Sanskar",
+  "vahan-pooja": "Vahan Puja Ceremony",
+  "vastu-shanti-pooja": "Vastu Shanti & Dosha Nivaran",
+  "vishnu-sahasranam-path": "Vishnu Sahasranama Path",
+  "vrihaspati-udyapan": "Brihaspati Vrat Udyapan",
 };
 
 const SUPPORT_PHONE = "9449871293";
@@ -122,7 +148,7 @@ export async function generateMetadata({
   if (!locData) return {};
 
   return {
-    title: `${serviceTitle} in ${locData.name}, Bangalore | Verified Vedic Pandits`,
+    title: `Book Verified ${serviceTitle} in ${locData.name}, Bangalore | PurohitSetu`,
     description: `Book verified North Indian Vedic Pandits for ${serviceTitle} in ${locData.name}, Bengaluru. Authentic Gurukul chanting, complete hawan samagri, and zero upfront fee.`,
     alternates: {
       canonical: `https://www.purohitsetu.in/pandit/${locKey}/${servKey}`,
@@ -294,7 +320,7 @@ export default async function HyperlocalServicePage({
         </div>
       </section>
 
-      {/* CROSS-LINKING SILO: OTHER RITUALS IN SAME LOCALITY */}
+      {/* CROSS-LINKING SILO: ALL 39 PUJAS IN SAME LOCALITY */}
       <section className="max-w-5xl mx-auto px-4 py-6">
         <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">
           Other Auspicious Pujas Conducted in {locData.name}:
