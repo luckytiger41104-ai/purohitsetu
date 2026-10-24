@@ -5,84 +5,184 @@ import type { Metadata } from "next";
 
 export const instant = false;
 
-const ALL_LOCALITIES: Record<string, { name: string; nearby: string[] }> = {
+interface LocalityDetails {
+  name: string;
+  nearby: string[];
+  panditCount: string;
+  reachTime: string;
+  popularApartments: string[];
+  communityVibe: string;
+  localSamagriNote: string;
+}
+
+const ALL_LOCALITIES: Record<string, LocalityDetails> = {
   whitefield: {
     name: "Whitefield",
     nearby: ["marathahalli", "bellandur", "kr-puram", "sarjapur-road"],
+    panditCount: "14+ Certified Acharyas",
+    reachTime: "Within 30–45 Mins",
+    popularApartments: ["Prestige Shantiniketan", "Brigade Cosmopolis", "Godrej United", "Assetz Marq"],
+    communityVibe: "Major IT corridor housing a large North Indian tech diaspora preferring authentic Bihari, UP & Maithili Vedic rituals.",
+    localSamagriNote: "Pure mango wood (Aam ki lakdi) and Ganga jal pre-arranged directly for high-rise apartment safety guidelines.",
   },
   "hsr-layout": {
     name: "HSR Layout",
     nearby: ["koramangala", "bellandur", "btm-layout", "sarjapur-road"],
+    panditCount: "11+ Certified Acharyas",
+    reachTime: "Within 25–35 Mins",
+    popularApartments: ["Sobha Classic", "Purva Vantage", "Salarpuria Serenity", "NCC Urban"],
+    communityVibe: "Vibrant residential hub with strong North Indian cultural associations hosting regular Satyanarayan Katha & Hawans.",
+    localSamagriNote: "Eco-friendly hawan kund setups customized for apartment balconies with low-smoke Vedic samidha.",
   },
   koramangala: {
     name: "Koramangala",
     nearby: ["hsr-layout", "indiranagar", "btm-layout", "jayanagar"],
+    panditCount: "10+ Certified Acharyas",
+    reachTime: "Within 20–30 Mins",
+    popularApartments: ["Raheja Residency", "Adarsh Rhythm", "Prestige St. Johns", "Mantri Classic"],
+    communityVibe: "Central cosmopolitan locality with established families seeking traditional Gurukul-trained Purohits for Griha Pravesh & Sanskars.",
+    localSamagriNote: "Complete Shodashopachara dravyas sourced fresh on puja morning including lotus and durva.",
   },
   indiranagar: {
     name: "Indiranagar",
     nearby: ["koramangala", "marathahalli", "hebbal", "malleshwaram"],
+    panditCount: "8+ Certified Acharyas",
+    reachTime: "Within 25–40 Mins",
+    popularApartments: ["Defiance Horizon", "Prestige Acropolis", "Chaitanya Samarpan", "Gopalan Grandeur"],
+    communityVibe: "Prominent heritage and modern zone with executives looking for punctual, English and Hindi fluent Acharyas.",
+    localSamagriNote: "Customized muhurat consultations provided according to Yajman's specific Janma Nakshatra.",
   },
   "electronic-city": {
     name: "Electronic City",
     nearby: ["hsr-layout", "bannerghatta-road", "btm-layout", "sarjapur-road"],
+    panditCount: "12+ Certified Acharyas",
+    reachTime: "Within 35–45 Mins",
+    popularApartments: ["Ajmera Infinity", "Godrej E-City", "Salarpuria Sattva Greenage", "Prestige Sunrise Park"],
+    communityVibe: "Dense tech professional base requiring weekend Griha Pravesh and early morning Brahma Muhurat pujan.",
+    localSamagriNote: "Smoke-safe Vedic samagri kit prepared specifically conforming to automated fire alarm restrictions.",
   },
   marathahalli: {
     name: "Marathahalli",
     nearby: ["whitefield", "bellandur", "indiranagar", "kr-puram"],
+    panditCount: "15+ Certified Acharyas",
+    reachTime: "Within 20–30 Mins",
+    popularApartments: ["Purva Riviera", "Rohan Viti", "Sowparnika Flamenco", "Divyasree Republic of Whitefield"],
+    communityVibe: "High concentration of families from Bihar, Jharkhand, and UP seeking traditional Maithili and Bhojpuri purohits.",
+    localSamagriNote: "Full hawans conducted with pure cow ghee and authentic Navagraha samidha woods.",
   },
   "sarjapur-road": {
     name: "Sarjapur Road",
     nearby: ["bellandur", "hsr-layout", "whitefield", "electronic-city"],
+    panditCount: "13+ Certified Acharyas",
+    reachTime: "Within 30–40 Mins",
+    popularApartments: ["Prestige Lakeside Habitat", "Assetz 63 East", "Godrej 24", "SJR Parkway Homes"],
+    communityVibe: "Fast-expanding residential belt with newly handed over gated villas and high-rises requiring Vastu Shanti and Griha Pravesh.",
+    localSamagriNote: "Copper Hawan Kund and ceremonial brass utensils carried by our Purohits.",
   },
   bellandur: {
     name: "Bellandur",
     nearby: ["marathahalli", "sarjapur-road", "hsr-layout", "whitefield"],
+    panditCount: "9+ Certified Acharyas",
+    reachTime: "Within 25–35 Mins",
+    popularApartments: ["Sobha Jasmine", "Adarsh Palm Retreat", "DN Oxford", "Mantri Espana"],
+    communityVibe: "Lake-side IT families requesting authentic Hindi and Sanskrit chanting with crystal-clear explanation of mantras.",
+    localSamagriNote: "Hassle-free complete samagri service: flowers, sweets, fruits, and pure bilva leaves included on request.",
   },
   "jp-nagar": {
     name: "JP Nagar",
     nearby: ["jayanagar", "btm-layout", "bannerghatta-road", "kanakapura-road"],
+    panditCount: "9+ Certified Acharyas",
+    reachTime: "Within 25–35 Mins",
+    popularApartments: ["Brigade Millennium", "Purva Coronation", "Sobha Opal", "Elita Promenade"],
+    communityVibe: "Serene south Bangalore zone with multi-lingual families seeking traditional Sanskars like Mundan and Janeu.",
+    localSamagriNote: "Traditional Vedic vidhi accompanied by precise planetary peace mantras.",
   },
   jayanagar: {
     name: "Jayanagar",
     nearby: ["jp-nagar", "btm-layout", "koramangala", "rajajinagar"],
+    panditCount: "8+ Certified Acharyas",
+    reachTime: "Within 25–35 Mins",
+    popularApartments: ["Jayanagar 4th Block Homes", "Brigade Petunia", "Prestige Botanique", "Mantri Flora"],
+    communityVibe: "Culturally rich community appreciating pure Sanskrit recitations and disciplined Gurukul traditions.",
+    localSamagriNote: "Complete authentic puja thali setup assistance provided on site.",
   },
   hebbal: {
     name: "Hebbal",
     nearby: ["yelahanka", "malleshwaram", "indiranagar", "kr-puram"],
+    panditCount: "9+ Certified Acharyas",
+    reachTime: "Within 30–40 Mins",
+    popularApartments: ["Godrej Woodsman Estate", "L&T Raintree Boulevard", "Prestige Misty Waters", "Brigade Caladium"],
+    communityVibe: "North Bengaluru hub connecting Manyata tech park professionals seeking verified Purohits for prompt weekend rituals.",
+    localSamagriNote: "Certified Shastric hawan samagri supplied directly from authentic Varanasi vendors.",
   },
   yelahanka: {
     name: "Yelahanka",
     nearby: ["hebbal", "malleshwaram", "kr-puram", "rajajinagar"],
+    panditCount: "7+ Certified Acharyas",
+    reachTime: "Within 35–45 Mins",
+    popularApartments: ["Prestige Garden Bay", "Purva Venezia", "NCC Urban Aster", "Godrej Avenues"],
+    communityVibe: "Spacious suburban gated societies with families hosting full-scale Navchandi and Rudrabhishek Hawans.",
+    localSamagriNote: "Full support for large community and villa premises hawan setups.",
   },
   "btm-layout": {
     name: "BTM Layout",
     nearby: ["hsr-layout", "koramangala", "jp-nagar", "jayanagar"],
+    panditCount: "10+ Certified Acharyas",
+    reachTime: "Within 20–30 Mins",
+    popularApartments: ["Umiya Oasis", "BTM Stage 2 Residences", "Salarpuria Sattva Melody", "Mantri Terrace"],
+    communityVibe: "Active hub with young couples organizing first Griha Pravesh, Vahan Puja, and Satyanarayan Kathas.",
+    localSamagriNote: "Quick availability for urgent muhurat dates and emergency pujan requests.",
   },
   "bannerghatta-road": {
     name: "Bannerghatta Road",
     nearby: ["jp-nagar", "btm-layout", "electronic-city", "kanakapura-road"],
+    panditCount: "8+ Certified Acharyas",
+    reachTime: "Within 30–40 Mins",
+    popularApartments: ["Mantri Pinnacle", "Valmark Apas", "Hulimavu Lake View Homes", "Purva Panorama"],
+    communityVibe: "Prominent residential belt preferring complete Shastric vidhi for Dosh Nivaran and Ancestral Shradh ceremonies.",
+    localSamagriNote: "Pavitra ganga jal and authentic kush grass mats provided for seated family sankalp.",
   },
   malleshwaram: {
     name: "Malleshwaram",
     nearby: ["rajajinagar", "hebbal", "indiranagar", "jayanagar"],
+    panditCount: "7+ Certified Acharyas",
+    reachTime: "Within 25–35 Mins",
+    popularApartments: ["Salarpuria Sattva Luxuria", "Brigade Gateway", "Mantri Greens", "Renaissance Temple Bells"],
+    communityVibe: "Vedic heritage center where devotees seek deep spiritual accuracy and pure ritualistic discipline.",
+    localSamagriNote: "Traditional Vedic muhurat calculation provided complimentary with every booking.",
   },
   rajajinagar: {
     name: "Rajajinagar",
     nearby: ["malleshwaram", "jayanagar", "hebbal", "jp-nagar"],
+    panditCount: "8+ Certified Acharyas",
+    reachTime: "Within 25–35 Mins",
+    popularApartments: ["Phoenix One Bangalore West", "Sobha Indraprastha", "Brigade Gateway Annex", "Purva Sunflower"],
+    communityVibe: "Esteemed commercial and residential hub hosting festive Hawans, Vivah Sanskar, and Annaprashan ceremonies.",
+    localSamagriNote: "Complete copper Homa vessels and high-purity Ghee ensured for sacred fire rites.",
   },
   "kanakapura-road": {
     name: "Kanakapura Road",
     nearby: ["jp-nagar", "bannerghatta-road", "jayanagar", "btm-layout"],
+    panditCount: "8+ Certified Acharyas",
+    reachTime: "Within 35–45 Mins",
+    popularApartments: ["Brigade Meadows", "Mantri Tranquil", "Godrej Eternity", "Purva Highland"],
+    communityVibe: "Quiet township developments with spiritual residents prioritizing authentic Vedic chanting and Meditation rituals.",
+    localSamagriNote: "Balcony-friendly portable hawan kunds with minimum smoke generation available.",
   },
   "kr-puram": {
     name: "KR Puram",
     nearby: ["whitefield", "marathahalli", "hebbal", "bellandur"],
+    panditCount: "11+ Certified Acharyas",
+    reachTime: "Within 25–35 Mins",
+    popularApartments: ["Salarpuria Sattva Celesta", "Monarch Aqua", "Brigade Buena Vista", "Pashmina Waterfront"],
+    communityVibe: "Crucial eastern residential nexus where North Indian migrants seek Hindi, Bihari, and Maithili Purohits.",
+    localSamagriNote: "Round-the-clock availability for auspicious Griha Pravesh muhurats including early dawn.",
   },
 };
 
 const ALL_PUJAS_LIST = [
-  { slug: "annaprasan-sanskar-pooja", title: "Annaprashan Sanskar (First Rice Feeding)" },
-  { slug: "antim-sanskar", title: "Antim Sanskar (Antyesti Last Rites)" },
+  { slug: "annaprasan-sanskar-pooja", title: "Annaprashan Sanskar (First Feeding)" },
+  { slug: "antim-sanskar", title: "Antim Sanskar (Last Rites)" },
   { slug: "bagulamukhi-anushthan", title: "Bagalamukhi Anushthan & Hawan" },
   { slug: "bhoomi-pooja", title: "Bhoomi Pooja & Foundation Consecration" },
   { slug: "birthday-ayushya-hawan", title: "Birthday Ayushya Hawan & Blessing" },
@@ -106,7 +206,7 @@ const ALL_PUJAS_LIST = [
   { slug: "namsanskar-special", title: "Namkaran Sanskar Special Vidhi" },
   { slug: "navchandi-hawan", title: "Navchandi Mahayagya & Hawan" },
   { slug: "navratri-pooja", title: "Navratri Ghatasthapana & Devi Pujan" },
-  { slug: "pitra-dosh-shanti", title: "Pitra Dosh Shanti & Tarpan Puja" },
+  { slug: "pitra-dosh-shanti", title: "Pitra Dosh & Tarpan Shanti" },
   { slug: "pradosh-varat-udyapan", title: "Pradosh Vrat Udyapan & Shiva Pujan" },
   { slug: "ramayana-path", title: "Ramayana (Ramcharitmanas) Akhand Path" },
   { slug: "rudrabhishek-pooja", title: "Rudrabhishek Pooja & Shiva Hawan" },
@@ -140,8 +240,8 @@ export async function generateMetadata({
   if (!locData) return {};
 
   return {
-    title: `North Indian Vedic Pandit in ${locData.name}, Bangalore | PurohitSetu`,
-    description: `Book verified North Indian, Hindi, Bihari & Maithili Vedic Pandits in ${locData.name}, Bengaluru. Authentic Griha Pravesh, Vivah, Hawan and all 39 Vedic ceremonies.`,
+    title: `North Indian Vedic Pandit in ${locData.name}, Bangalore (${locData.panditCount}) | PurohitSetu`,
+    description: `Book verified North Indian, Hindi, Bihari & Maithili Vedic Pandits in ${locData.name}, Bengaluru. ${locData.panditCount} available with ${locData.reachTime} reach time across ${locData.popularApartments.slice(0, 2).join(", ")}.`,
     alternates: {
       canonical: `https://www.purohitsetu.in/pandit/${resolvedParams.location}`,
     },
@@ -161,7 +261,6 @@ export default async function LocalityPage({
     notFound();
   }
 
-  // Locality auto-fill URL parameter
   const bookingUrlForArea = `/?area=${encodeURIComponent(locData.name)}#booking-section`;
 
   const breadcrumbSchema = {
@@ -237,16 +336,22 @@ export default async function LocalityPage({
         </ol>
       </nav>
 
-      {/* HERO */}
+      {/* HERO SECTION WITH DYNAMIC HYPERLOCAL BADGES */}
       <section className="max-w-5xl mx-auto px-4 py-8 text-center">
-        <span className="inline-block bg-orange-100 text-orange-950 border border-orange-300 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
-          📍 Verified Acharyas in {locData.name}
-        </span>
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+          <span className="inline-block bg-orange-100 text-orange-950 border border-orange-300 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+            📍 {locData.panditCount} in {locData.name}
+          </span>
+          <span className="inline-block bg-emerald-100 text-emerald-950 border border-emerald-300 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+            ⚡ Avg Reach: {locData.reachTime}
+          </span>
+        </div>
+
         <h1 className="text-2xl sm:text-4xl font-black text-slate-900 leading-tight mb-3">
           North Indian &amp; Vedic Pandit in <span className="text-orange-700">{locData.name}</span>, Bangalore
         </h1>
         <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed mb-6">
-          Book authentic Hindi, Maithili, and Bhojpuri speaking Vedic Purohits in {locData.name}. Experienced in Griha Pravesh, Satyanarayan Puja, Hawan, Vivah Sanskar, and all 39 Vedic rituals.
+          {locData.communityVibe} Experienced Acharyas proficient in Hindi, Maithili, and Bhojpuri for all 39 Vedic rituals.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -265,8 +370,35 @@ export default async function LocalityPage({
         </div>
       </section>
 
+      {/* UNIQUE LOCALITY INTEL (GOOGLE-FRIENDLY HYPERLOCAL SECTION) */}
+      <section className="max-w-5xl mx-auto px-4 mb-6">
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 shadow-xs">
+          <h2 className="text-xs font-black uppercase tracking-wider text-orange-950 mb-3 flex items-center gap-1.5">
+            <span>🏛️</span> Local Service Footprint in {locData.name}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-700">
+            <div>
+              <strong className="block text-slate-900 mb-1">Frequently Served Societies &amp; High-Rises:</strong>
+              <div className="flex flex-wrap gap-1.5">
+                {locData.popularApartments.map((apt) => (
+                  <span key={apt} className="bg-white border border-amber-300 px-2 py-0.5 rounded text-[11px] font-medium text-slate-800">
+                    🏢 {apt}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <strong className="block text-slate-900 mb-1">Local Samagri &amp; Safety Protocol:</strong>
+              <p className="text-[11px] leading-relaxed text-slate-600">
+                {locData.localSamagriNote}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* COMPLETE CEREMONIES DIRECTORY */}
-      <section className="max-w-5xl mx-auto px-4 py-8">
+      <section className="max-w-5xl mx-auto px-4 py-6">
         <div className="border-b border-amber-200 pb-2 mb-4 flex justify-between items-end">
           <div>
             <h2 className="text-lg font-black text-slate-900">
