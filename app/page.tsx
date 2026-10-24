@@ -29,7 +29,7 @@ interface PujaItem {
 
 const BOOKING_TOKEN_PRESETS = [101, 251, 501, 1100, 2100, 5100];
 const SUPPORT_PHONE = "9449871293";
-const SUPPORT_EMAIL = "support@purohitsetu.in";
+const SUPPORT_EMAIL = "support.purohitsetu@gmail.com";
 
 const BENGALURU_LOCALITIES = [
   "Whitefield",
@@ -572,6 +572,50 @@ const CATEGORIES = [
   "Antim Sanskar & Shradh",
 ];
 
+// 40+ Structured Local High-Intent SEO Keywords for Bangalore
+const SEO_FOOTER_KEYWORDS = [
+  "North Indian Pandit in Bangalore",
+  "Hindi Pandit in Bangalore",
+  "Bihari Pandit in Bangalore",
+  "Maithili Pandit in Bangalore",
+  "Griha Pravesh Puja Pandit in Whitefield",
+  "Satyanarayan Puja in HSR Layout",
+  "Vedic Vivah Pandit in Koramangala",
+  "Vastu Shanti Puja in Indiranagar",
+  "Rudrabhishek Puja in Electronic City",
+  "Bhoomi Puja Pandit in Sarjapur Road",
+  "Mundan Sanskar Pandit in Marathahalli",
+  "Janeu Sanskar Upanayana in Bellandur",
+  "Kaal Sarp Dosh Hawan in JP Nagar",
+  "Manglik Dosh Shanti in Jayanagar",
+  "Santan Gopal Hawan in Hebbal",
+  "Navchandi Mahayagya in Yelahanka",
+  "Sundarkand Path Pandit in BTM Layout",
+  "Ramayana Akhand Path in Bannerghatta Road",
+  "Ekadashi Udyapan Pandit in Malleshwaram",
+  "Brihaspati Vrat Udyapan in Rajajinagar",
+  "Pitra Dosh Shanti Tarpan in KR Puram",
+  "Antim Sanskar Last Rites Pandit in Bangalore",
+  "Terahvin Shanti Hawan Bangalore",
+  "Namkaran Sanskar Pandit Bangalore",
+  "Annaprashan First Feeding Pandit Bengaluru",
+  "Godh Bharai Baby Shower Pandit Bengaluru",
+  "Vahan Puja Pandit Bangalore",
+  "Murti Pranapratishtha Temple Consecration Bangalore",
+  "Maa Bagalamukhi Hawan Bangalore",
+  "Maha Sudarshan Homa Bangalore",
+  "Vishnu Sahasranama Hawan Bangalore",
+  "Dhanteras Kuber Puja Bangalore",
+  "Diwali Lakshmi Ganesh Pujan Bangalore",
+  "Durga Saptashati Path Bangalore",
+  "Pradosh Vrat Udyapan Bangalore",
+  "Mangalwar Vrat Udyapan Bangalore",
+  "Karnavedha Ear Piercing Pandit Bangalore",
+  "Gandmool Nakshatra Shanti Hawan Bangalore",
+  "Gurukul Vedic Acharya in Bangalore",
+  "Authentic Hawan Samagri Kit Bangalore",
+];
+
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
     if (typeof window !== "undefined" && window.Razorpay) {
@@ -628,6 +672,14 @@ function HomeContent() {
         ...(pujaParam ? { pujaName: pujaParam } : {}),
         ...(areaParam ? { area: areaParam } : {}),
       }));
+
+      // Smooth scroll direct to form container
+      setTimeout(() => {
+        const formEl = document.getElementById("booking-section");
+        if (formEl) {
+          formEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
     }
   }, [searchParams]);
 
@@ -650,7 +702,7 @@ function HomeContent() {
     setFormData((prev) => ({ ...prev, pujaName: pujaTitle }));
     const element = document.getElementById("booking-section");
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, []);
 
@@ -1131,7 +1183,6 @@ function HomeContent() {
                     {puja.desc}
                   </p>
                   
-                  {/* Scriptural Significance Box in Professional English */}
                   <div className="bg-amber-50/80 border border-amber-200 rounded-lg p-2 mb-3">
                     <span className="text-[9px] font-extrabold text-amber-900 uppercase tracking-wider block mb-0.5">
                       📖 Scriptural Significance:
@@ -1155,7 +1206,7 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* 7. WHY CHOOSE PUROHITSETU (TRUST & AUTHORITY) */}
+      {/* 7. WHY CHOOSE PUROHITSETU */}
       <section id="why-choose-us" className="bg-gradient-to-br from-amber-50 to-orange-50 border-y border-amber-200 py-12 px-4 sm:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-8">
@@ -1196,8 +1247,8 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* 8. FAST BOOKING FORM */}
-      <section id="booking-section" className="py-12 px-4">
+      {/* 8. FAST BOOKING FORM CONTAINER (With Exact Scroll Target) */}
+      <section id="booking-section" className="py-12 px-4 scroll-mt-24">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-7">
             <div className="text-center mb-5">
@@ -1435,9 +1486,11 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* 11. FOOTER (WITH DEVELOPER CREDIT) */}
-      <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-8 px-4 border-t-2 border-amber-400">
-        <div className="max-w-6xl mx-auto space-y-5 text-center">
+      {/* 11. FOOTER (RICH WITH 40+ SEO KEYWORDS & CORRECT EMAIL) */}
+      <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-10 px-4 border-t-2 border-amber-400">
+        <div className="max-w-6xl mx-auto space-y-6 text-center">
+          
+          {/* Main Footer Links */}
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-orange-50">
             <Link href="/" className="hover:text-white transition">Home</Link>
             <span>•</span>
@@ -1451,11 +1504,29 @@ function HomeContent() {
             <span>•</span>
             <Link href="/privacy-policy" className="hover:text-white transition underline underline-offset-4">Privacy Policy</Link>
             <span>•</span>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-white transition font-medium">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-white transition font-medium underline underline-offset-4">
               {SUPPORT_EMAIL}
             </a>
           </div>
 
+          {/* 40+ Structured Local High-Intent SEO Keywords */}
+          <div className="border-t border-orange-700/60 pt-4 text-left">
+            <span className="block text-[11px] font-extrabold uppercase tracking-widest text-amber-300 mb-2.5 text-center">
+              Popular Vedic Pujas &amp; Pandit Services in Bengaluru:
+            </span>
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {SEO_FOOTER_KEYWORDS.map((kw) => (
+                <span
+                  key={kw}
+                  className="text-[10px] bg-black/25 text-orange-100/90 border border-orange-700/40 px-2 py-0.5 rounded"
+                >
+                  {kw}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Copyright & Helpline */}
           <div className="border-t border-orange-600/70 pt-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-orange-100 gap-2">
             <p>© 2026 PurohitSetu Bengaluru • Authentic North Indian &amp; Vedic Purohit Platform</p>
             <div className="bg-black/40 px-3.5 py-1 rounded-full text-white font-semibold border border-white/20">
@@ -1463,7 +1534,7 @@ function HomeContent() {
             </div>
           </div>
 
-          {/* DEVELOPER CREDIT */}
+          {/* Developer Credit */}
           <div className="pt-2 border-t border-orange-700/50 text-[10px] text-orange-200/90 font-medium tracking-wide">
             Created and Designed by <span className="font-bold text-amber-300">Prince Pandey</span> • Mob:{" "}
             <a href="tel:+917667984349" className="hover:text-white underline underline-offset-2 font-bold">
