@@ -81,46 +81,46 @@ const ALL_LOCALITIES: Record<string, { name: string; nearby: string[] }> = {
 };
 
 const SERVICE_NAMES: Record<string, string> = {
-  "annaprasan-sanskar-pooja": "Annaprashan Sanskar",
-  "antim-sanskar": "Antim Sanskar Rites",
-  "bagulamukhi-anushthan": "Bagalamukhi Anushthan",
-  "bhoomi-pooja": "Bhoomi Pooja",
-  "birthday-ayushya-hawan": "Birthday Ayushya Hawan",
-  "dhanteras-pooja": "Dhanteras Puja",
-  "diwali-pooja": "Diwali Maha Lakshmi Puja",
-  "durgasaptsati-path": "Durga Saptashati Path",
-  "ekadashi-udyapan": "Ekadashi Vrat Udyapan",
-  "engagement-pooja": "Engagement (Sagai) Ceremony",
+  "annaprasan-sanskar-pooja": "Annaprashan Sanskar (First Rice Feeding)",
+  "antim-sanskar": "Antim Sanskar (Antyesti Last Rites)",
+  "bagulamukhi-anushthan": "Bagalamukhi Anushthan & Hawan",
+  "bhoomi-pooja": "Bhoomi Pooja & Foundation Consecration",
+  "birthday-ayushya-hawan": "Birthday Ayushya Hawan & Blessing",
+  "dhanteras-pooja": "Dhanteras & Lord Dhanvantari Puja",
+  "diwali-pooja": "Diwali Maha Lakshmi-Ganesh Pujan",
+  "durgasaptsati-path": "Durga Saptashati Path & Pujan",
+  "ekadashi-udyapan": "Ekadashi Vrat Udyapan Ceremony",
+  "engagement-pooja": "Engagement (Sagai) & Ring Ceremony",
   "gandmool-nakshatra-shanti-pooja": "Gandmool Nakshatra Shanti Pooja",
-  "godh-bharai-pooja": "Godh Bharai Ceremony",
-  "griha-pravesh-puja": "Griha Pravesh Puja",
-  "grihpravesh-puja": "Griha Pravesh Puja",
-  "kaal-sarp-dosh-pooja": "Kaal Sarp Dosh Nivaran",
-  "karnabhed-sanskar": "Karnavedha Sanskar",
-  "mangal-dosh-shanti": "Mangal Dosh Shanti",
-  "mangalvari-udyapan": "Mangalvari Vrat Udyapan",
+  "godh-bharai-pooja": "Godh Bharai / Seemantam Blessing",
+  "griha-pravesh-puja": "Griha Pravesh & Vastu Shanti Puja",
+  "grihpravesh-puja": "Griha Pravesh & Vastu Shanti Puja",
+  "kaal-sarp-dosh-pooja": "Kaal Sarp Dosh Nivaran Hawan",
+  "karnabhed-sanskar": "Karnavedha Sanskar (Ear Piercing)",
+  "mangal-dosh-shanti": "Mangal Dosh Shanti & Hawan",
+  "mangalvari-udyapan": "Mangalvari Vrat Udyapan Ceremony",
   "manglik-dosh-shanti-pooja": "Manglik Dosh Shanti Pooja",
-  "marriage-pooja": "Vedic Marriage Ceremony",
-  "mundan-sanskar": "Mundan Sanskar Ceremony",
-  "murti-pranpratistha": "Murti Pranpratistha",
-  "namkaran-sanskar": "Namkaran Sanskar",
+  "marriage-pooja": "Marriage (Vedic Vivah Sanskar)",
+  "mundan-sanskar": "Mundan Sanskar (Chudakarana Ceremony)",
+  "murti-pranpratistha": "Murti Pranapratishtha & Temple Consecration",
+  "namkaran-sanskar": "Namkaran Sanskar (Naming Ceremony)",
   "namsanskar-special": "Namkaran Sanskar Special Vidhi",
-  "navchandi-hawan": "Navchandi Mahayagya Hawan",
-  "navratri-pooja": "Navratri Ghatasthapana Puja",
-  "pitra-dosh-shanti": "Pitra Dosh Shanti Tarpan",
-  "pradosh-varat-udyapan": "Pradosh Vrat Udyapan",
-  "ramayana-path": "Ramayana Akhand Path",
-  "rudrabhishek-pooja": "Rudrabhishek Pooja",
-  "santan-gopal-jap-and-pooja": "Santan Gopal Japa & Hawan",
-  "satyanarayan-pooja": "Satyanarayan Bhagwan Katha",
-  "sudarshan-anushthan": "Sudarshan Homa & Anushthan",
+  "navchandi-hawan": "Navchandi Mahayagya & Hawan",
+  "navratri-pooja": "Navratri Ghatasthapana & Devi Pujan",
+  "pitra-dosh-shanti": "Pitra Dosh Shanti & Tarpan Puja",
+  "pradosh-varat-udyapan": "Pradosh Vrat Udyapan & Shiva Pujan",
+  "ramayana-path": "Ramayana (Ramcharitmanas) Akhand Path",
+  "rudrabhishek-pooja": "Rudrabhishek Pooja & Shiva Hawan",
+  "santan-gopal-jap-and-pooja": "Santan Gopal Japa, Hawan & Pooja",
+  "satyanarayan-pooja": "Satyanarayan Bhagwan Katha & Puja",
+  "sudarshan-anushthan": "Sudarshan Homa & Maha Anushthan",
   "sundarkand-path": "Sundarkand Recitation & Hawan",
-  "terahvin-shanti-shradh": "Terahvin Shanti Hawan",
-  "upnayan-sanskar": "Upanayana Janeu Sanskar",
-  "vahan-pooja": "Vahan Puja Ceremony",
-  "vastu-shanti-pooja": "Vastu Shanti & Dosha Nivaran",
-  "vishnu-sahasranam-path": "Vishnu Sahasranama Path",
-  "vrihaspati-udyapan": "Brihaspati Vrat Udyapan",
+  "terahvin-shanti-shradh": "Terahvin (13th Day) Shanti Shradh Ceremony",
+  "upnayan-sanskar": "Upanayana (Janeu) Sanskar Ceremony",
+  "vahan-pooja": "Vahan Puja (Vehicle Blessing Ceremony)",
+  "vastu-shanti-pooja": "Vastu Shanti & Dosha Nivaran Puja",
+  "vishnu-sahasranam-path": "Vishnu Sahasranama Path & Hawan",
+  "vrihaspati-udyapan": "Vrihaspati (Jupiter) Vrat Udyapan",
 };
 
 const SUPPORT_PHONE = "9449871293";
@@ -171,6 +171,9 @@ export default async function HyperlocalServicePage({
   }
 
   const serviceTitle = formatServiceName(servKey);
+
+  // Auto-fill query URL taaki booking section me exact puja aur area autofill ho
+  const bookingUrlWithParams = `/?puja=${encodeURIComponent(serviceTitle)}&area=${encodeURIComponent(locData.name)}#booking-section`;
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -225,7 +228,7 @@ export default async function HyperlocalServicePage({
               💬 WhatsApp
             </a>
             <Link
-              href="/#booking-section"
+              href={bookingUrlWithParams}
               className="bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition"
             >
               Book Pandit
@@ -267,7 +270,7 @@ export default async function HyperlocalServicePage({
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/#booking-section"
+            href={bookingUrlWithParams}
             className="px-5 py-2.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white font-bold text-xs shadow transition"
           >
             📅 Schedule {serviceTitle}

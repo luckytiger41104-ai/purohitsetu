@@ -81,45 +81,45 @@ const ALL_LOCALITIES: Record<string, { name: string; nearby: string[] }> = {
 };
 
 const ALL_PUJAS_LIST = [
-  { slug: "annaprasan-sanskar-pooja", title: "Annaprashan Sanskar (First Feeding)" },
-  { slug: "antim-sanskar", title: "Antim Sanskar (Last Rites)" },
-  { slug: "bagulamukhi-anushthan", title: "Bagalamukhi Anushthan" },
-  { slug: "bhoomi-pooja", title: "Bhoomi Pooja & Foundation" },
-  { slug: "birthday-ayushya-hawan", title: "Birthday Ayushya Hawan" },
-  { slug: "dhanteras-pooja", title: "Dhanteras & Kuber Puja" },
-  { slug: "diwali-pooja", title: "Diwali Maha Lakshmi Puja" },
-  { slug: "durgasaptsati-path", title: "Durga Saptashati Path" },
-  { slug: "ekadashi-udyapan", title: "Ekadashi Vrat Udyapan" },
-  { slug: "engagement-pooja", title: "Engagement (Sagai) Ceremony" },
+  { slug: "annaprasan-sanskar-pooja", title: "Annaprashan Sanskar (First Rice Feeding)" },
+  { slug: "antim-sanskar", title: "Antim Sanskar (Antyesti Last Rites)" },
+  { slug: "bagulamukhi-anushthan", title: "Bagalamukhi Anushthan & Hawan" },
+  { slug: "bhoomi-pooja", title: "Bhoomi Pooja & Foundation Consecration" },
+  { slug: "birthday-ayushya-hawan", title: "Birthday Ayushya Hawan & Blessing" },
+  { slug: "dhanteras-pooja", title: "Dhanteras & Lord Dhanvantari Puja" },
+  { slug: "diwali-pooja", title: "Diwali Maha Lakshmi-Ganesh Pujan" },
+  { slug: "durgasaptsati-path", title: "Durga Saptashati Path & Pujan" },
+  { slug: "ekadashi-udyapan", title: "Ekadashi Vrat Udyapan Ceremony" },
+  { slug: "engagement-pooja", title: "Engagement (Sagai) & Ring Ceremony" },
   { slug: "gandmool-nakshatra-shanti-pooja", title: "Gandmool Nakshatra Shanti Pooja" },
-  { slug: "godh-bharai-pooja", title: "Godh Bharai (Baby Shower)" },
-  { slug: "griha-pravesh-puja", title: "Griha Pravesh & Vastu Shanti" },
-  { slug: "kaal-sarp-dosh-pooja", title: "Kaal Sarp Dosh Nivaran" },
-  { slug: "karnabhed-sanskar", title: "Karnavedha Sanskar" },
-  { slug: "mangal-dosh-shanti", title: "Mangal Dosh Shanti Hawan" },
-  { slug: "mangalvari-udyapan", title: "Mangalvari Vrat Udyapan" },
+  { slug: "godh-bharai-pooja", title: "Godh Bharai / Seemantam Blessing" },
+  { slug: "griha-pravesh-puja", title: "Griha Pravesh & Vastu Shanti Puja" },
+  { slug: "kaal-sarp-dosh-pooja", title: "Kaal Sarp Dosh Nivaran Hawan" },
+  { slug: "karnabhed-sanskar", title: "Karnavedha Sanskar (Ear Piercing)" },
+  { slug: "mangal-dosh-shanti", title: "Mangal Dosh Shanti & Hawan" },
+  { slug: "mangalvari-udyapan", title: "Mangalvari Vrat Udyapan Ceremony" },
   { slug: "manglik-dosh-shanti-pooja", title: "Manglik Dosh Shanti Pooja" },
   { slug: "marriage-pooja", title: "Marriage (Vedic Vivah Sanskar)" },
-  { slug: "mundan-sanskar", title: "Mundan Sanskar Ceremony" },
-  { slug: "murti-pranpratistha", title: "Murti Pranpratistha" },
-  { slug: "namkaran-sanskar", title: "Namkaran Sanskar (Naming)" },
+  { slug: "mundan-sanskar", title: "Mundan Sanskar (Chudakarana Ceremony)" },
+  { slug: "murti-pranpratistha", title: "Murti Pranapratishtha & Temple Consecration" },
+  { slug: "namkaran-sanskar", title: "Namkaran Sanskar (Naming Ceremony)" },
   { slug: "namsanskar-special", title: "Namkaran Sanskar Special Vidhi" },
-  { slug: "navchandi-hawan", title: "Navchandi Mahayagya Hawan" },
-  { slug: "navratri-pooja", title: "Navratri Ghatasthapana Puja" },
-  { slug: "pitra-dosh-shanti", title: "Pitra Dosh & Tarpan Shanti" },
-  { slug: "pradosh-varat-udyapan", title: "Pradosh Vrat Udyapan" },
-  { slug: "ramayana-path", title: "Ramayana (Ramcharitmanas) Path" },
-  { slug: "rudrabhishek-pooja", title: "Rudrabhishek Pooja & Hawan" },
-  { slug: "santan-gopal-jap-and-pooja", title: "Santan Gopal Japa & Hawan" },
-  { slug: "satyanarayan-pooja", title: "Satyanarayan Bhagwan Katha" },
-  { slug: "sudarshan-anushthan", title: "Sudarshan Homa & Anushthan" },
+  { slug: "navchandi-hawan", title: "Navchandi Mahayagya & Hawan" },
+  { slug: "navratri-pooja", title: "Navratri Ghatasthapana & Devi Pujan" },
+  { slug: "pitra-dosh-shanti", title: "Pitra Dosh Shanti & Tarpan Puja" },
+  { slug: "pradosh-varat-udyapan", title: "Pradosh Vrat Udyapan & Shiva Pujan" },
+  { slug: "ramayana-path", title: "Ramayana (Ramcharitmanas) Akhand Path" },
+  { slug: "rudrabhishek-pooja", title: "Rudrabhishek Pooja & Shiva Hawan" },
+  { slug: "santan-gopal-jap-and-pooja", title: "Santan Gopal Japa, Hawan & Pooja" },
+  { slug: "satyanarayan-pooja", title: "Satyanarayan Bhagwan Katha & Puja" },
+  { slug: "sudarshan-anushthan", title: "Sudarshan Homa & Maha Anushthan" },
   { slug: "sundarkand-path", title: "Sundarkand Recitation & Hawan" },
-  { slug: "terahvin-shanti-shradh", title: "Terahvin Shanti Hawan" },
-  { slug: "upnayan-sanskar", title: "Upanayana (Janeu) Sanskar" },
-  { slug: "vahan-pooja", title: "Vahan Puja (Vehicle Blessing)" },
-  { slug: "vastu-shanti-pooja", title: "Vastu Shanti & Dosha Nivaran" },
-  { slug: "vishnu-sahasranam-path", title: "Vishnu Sahasranama Path" },
-  { slug: "vrihaspati-udyapan", title: "Brihaspati Vrat Udyapan" },
+  { slug: "terahvin-shanti-shradh", title: "Terahvin (13th Day) Shanti Shradh Ceremony" },
+  { slug: "upnayan-sanskar", title: "Upanayana (Janeu) Sanskar Ceremony" },
+  { slug: "vahan-pooja", title: "Vahan Puja (Vehicle Blessing Ceremony)" },
+  { slug: "vastu-shanti-pooja", title: "Vastu Shanti & Dosha Nivaran Puja" },
+  { slug: "vishnu-sahasranam-path", title: "Vishnu Sahasranama Path & Hawan" },
+  { slug: "vrihaspati-udyapan", title: "Vrihaspati (Jupiter) Vrat Udyapan" },
 ];
 
 const SUPPORT_PHONE = "9449871293";
@@ -160,6 +160,9 @@ export default async function LocalityPage({
   if (!locData) {
     notFound();
   }
+
+  // Locality auto-fill URL parameter
+  const bookingUrlForArea = `/?area=${encodeURIComponent(locData.name)}#booking-section`;
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -208,7 +211,7 @@ export default async function LocalityPage({
               💬 WhatsApp
             </a>
             <Link
-              href="/#booking-section"
+              href={bookingUrlForArea}
               className="bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition"
             >
               Book Pandit
@@ -248,7 +251,7 @@ export default async function LocalityPage({
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/#booking-section"
+            href={bookingUrlForArea}
             className="px-5 py-2.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white font-bold text-xs shadow transition"
           >
             📅 Schedule Puja in {locData.name}

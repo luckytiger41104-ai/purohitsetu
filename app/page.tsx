@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { triggerNewBookingNotification } from "@/lib/notifyPandits";
 
@@ -64,7 +65,8 @@ const loadRazorpayScript = (): Promise<boolean> => {
   });
 };
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -95,6 +97,20 @@ export default function Home() {
   const [tokenProcessing, setTokenProcessing] = useState(false);
   const [tokenNotice, setTokenNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // URL Parameters Auto-detect (Jab user /pandit/... page se Schedule button daba kar aayega)
+  useEffect(() => {
+    const pujaParam = searchParams.get("puja");
+    const areaParam = searchParams.get("area");
+
+    if (pujaParam || areaParam) {
+      setFormData((prev) => ({
+        ...prev,
+        ...(pujaParam ? { pujaName: pujaParam } : {}),
+        ...(areaParam ? { area: areaParam } : {}),
+      }));
+    }
+  }, [searchParams]);
+
   const categories = [
     "All",
     "Life Sanskars",
@@ -105,7 +121,6 @@ export default function Home() {
     "Antim Sanskar & Shradh",
   ];
 
-  // Complete List from screenshot in strict Alphabetical (A-Z) Order
   const pujaList: PujaItem[] = [
     {
       id: "annaprashan",
@@ -143,7 +158,7 @@ export default function Home() {
       rating: "5.0",
       conductedCount: "310+",
       tag: "Enemy Victory",
-      img: "/poojas/Bagulamukhi Anushthan.jpg",
+      img: "/poojas/Bagulamukhi Anushthan.png",
       seoKeyword: "Bagalamukhi Anushthan Hawan Acharya Bengaluru",
     },
     {
@@ -156,7 +171,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "540+",
       tag: "Construction Milestone",
-      img: "/poojas/Bhoomi Pooja.jpg",
+      img: "/poojas/Bhoomi Pooja.png",
       seoKeyword: "Bhoomi Pooja Pandit in Bangalore Foundation Ceremony",
     },
     {
@@ -221,7 +236,7 @@ export default function Home() {
       rating: "5.0",
       conductedCount: "410+",
       tag: "Vishnu Param Vrat",
-      img: "/poojas/Ekadashi udyapan.jpg",
+      img: "/poojas/Ekadashi udyapan.png",
       seoKeyword: "Ekadashi Vrat Udyapan Purohit Bangalore",
     },
     {
@@ -247,7 +262,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "730+",
       tag: "Nakshatra Shanti",
-      img: "/poojas/Gandmool Nakshatra shanti Pooja.jpg",
+      img: "/poojas/Gandmool Nakshatra shanti Pooja.png",
       seoKeyword: "Gandmool Shanti Puja Pandit in Bangalore 27 Nakshatra",
     },
     {
@@ -325,7 +340,7 @@ export default function Home() {
       rating: "4.8",
       conductedCount: "390+",
       tag: "Sankat Mochan",
-      img: "/poojas/Mangalvari udyapan.jpg",
+      img: "/poojas/Mangalvari udyapan.png",
       seoKeyword: "Mangalwar Vrat Udyapan Pandit Bangalore",
     },
     {
@@ -338,7 +353,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "860+",
       tag: "Manglik Rectification",
-      img: "/poojas/Manglik dosh shanti pooja.jpg",
+      img: "/poojas/Manglik dosh shanti pooja.png",
       seoKeyword: "Manglik Dosh Puja in Bangalore North Indian Pandit",
     },
     {
@@ -377,7 +392,7 @@ export default function Home() {
       rating: "5.0",
       conductedCount: "260+",
       tag: "Consecration Rite",
-      img: "/poojas/Murti pranpratistha.jpg",
+      img: "/poojas/Murti  pranpratistha.png",
       seoKeyword: "Murti Pranpratistha Pandit Bangalore Temple Consecration",
     },
     {
@@ -390,7 +405,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "780+",
       tag: "Child Milestone",
-      img: "/poojas/Namkaran sanskar.jpg",
+      img: "/poojas/Namkaran sanskar.png",
       seoKeyword: "Namkaran Sanskar Pandit in Bangalore Naming Ceremony",
     },
     {
@@ -403,7 +418,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "430+",
       tag: "Special Vedic Rite",
-      img: "/poojas/namsanskar.jpg",
+      img: "/poojas/namsanskar.jpeg",
       seoKeyword: "Vedic Namkaran Sanskar Ceremony Bangalore",
     },
     {
@@ -455,7 +470,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "480+",
       tag: "Shiva Blessing",
-      img: "/poojas/Pradosh varat udyapan.jpg",
+      img: "/poojas/Pradosh varat udyapan.png",
       seoKeyword: "Pradosh Vrat Udyapan Pandit in Bangalore",
     },
     {
@@ -468,7 +483,7 @@ export default function Home() {
       rating: "5.0",
       conductedCount: "340+",
       tag: "Vedic Recitation",
-      img: "/poojas/Ramayana path.jpg",
+      img: "/poojas/Ramayana path.png",
       seoKeyword: "Ramcharitmanas Akhand Path Acharya Bengaluru",
     },
     {
@@ -481,7 +496,7 @@ export default function Home() {
       rating: "5.0",
       conductedCount: "2,210+",
       tag: "Mahadev Kripa",
-      img: "/poojas/Rudraabhishek pooja.jpg",
+      img: "/poojas/Rudraabhishek pooja.png",
       seoKeyword: "Rudrabhishek Puja Pandit in Bangalore Vedic Shambho",
     },
     {
@@ -494,7 +509,7 @@ export default function Home() {
       rating: "5.0",
       conductedCount: "680+",
       tag: "Progeny Blessing",
-      img: "/poojas/santan gopal jap and pooja.jpg",
+      img: "/poojas/santan gopal jap and pooja.png",
       seoKeyword: "Santan Gopal Jap and Hawan Pandit Bangalore",
     },
     {
@@ -520,7 +535,7 @@ export default function Home() {
       rating: "5.0",
       conductedCount: "420+",
       tag: "Divine Protection",
-      img: "/poojas/Sudarshan Anushthan.jpg",
+      img: "/poojas/Sudarshan Anushthan.png",
       seoKeyword: "Sudarshan Homa Anushthan Purohit Bangalore",
     },
     {
@@ -533,7 +548,7 @@ export default function Home() {
       rating: "5.0",
       conductedCount: "1,670+",
       tag: "Hanuman Grace",
-      img: "/poojas/Sundarkand path.jpg",
+      img: "/poojas/Sundarkand path.png",
       seoKeyword: "Sundarkand Path Pandit in Bangalore Hanuman Chalisa Hawan",
     },
     {
@@ -598,7 +613,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "520+",
       tag: "Vishnu Upasana",
-      img: "/poojas/Viahnu Sahsranam path.jpg",
+      img: "/poojas/Viahnu Sahsranam path.png",
       seoKeyword: "Vishnu Sahasranam Path Pandit Bangalore",
     },
     {
@@ -611,7 +626,7 @@ export default function Home() {
       rating: "4.9",
       conductedCount: "640+",
       tag: "Guru Blessing",
-      img: "/poojas/Vrihaspati udyapan.jpg",
+      img: "/poojas/Vrihaspati udyapan.png",
       seoKeyword: "Brihaspati Vrat Udyapan Pandit Bangalore",
     },
   ];
@@ -640,7 +655,7 @@ export default function Home() {
       formData.pujaName === "Other Custom Vedic Ritual"
         ? formData.customPujaInput || "Custom Ritual"
         : formData.pujaName;
-    const msg = `Namaste PurohitSetu Team, I want to book a Vedic Pandit for ${finalName} in Bengaluru. Please assist me with the muhurat and booking.`;
+    const msg = `Namaste PurohitSetu Team, I want to book a Vedic Pandit for ${finalName} in ${formData.area || "Bengaluru"}. Please assist me with the muhurat and booking.`;
     window.open(`https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
@@ -828,7 +843,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-slate-900 font-sans selection:bg-orange-700 selection:text-white">
-      {/* HEADER */}
+      {/* TOP NOTIFICATION */}
       <div className="sticky top-0 z-40 w-full shadow-sm">
         <div className="bg-gradient-to-r from-red-800 via-orange-700 to-amber-800 text-white text-[11px] sm:text-xs py-1.5 px-3 text-center">
           <p className="font-semibold">
@@ -836,6 +851,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* HEADER */}
         <header className="bg-white/95 backdrop-blur-md border-b border-amber-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-2.5 flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -1029,7 +1045,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PUJA SERVICES DIRECTORY (ALPHABETICAL ORDER A TO Z) */}
+      {/* PUJA SERVICES DIRECTORY */}
       <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 border-b border-amber-200 pb-3">
           <div>
@@ -1081,7 +1097,7 @@ export default function Home() {
                     {puja.desc}
                   </p>
                   
-                  {/* Scriptural Significance in Professional English */}
+                  {/* Scriptural Significance Box in Professional English */}
                   <div className="bg-amber-50/80 border border-amber-200 rounded-lg p-2 mb-3">
                     <span className="text-[9px] font-extrabold text-amber-900 uppercase tracking-wider block mb-0.5">
                       📖 Scriptural Significance:
@@ -1105,7 +1121,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BOOKING SECTION (WITH OTHER / CUSTOM PUJA OPTION) */}
+      {/* BOOKING SECTION */}
       <section id="booking-section" className="py-10 px-4">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-7">
@@ -1194,7 +1210,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Custom Puja input field if selected */}
               {formData.pujaName === "Other Custom Vedic Ritual" && (
                 <div>
                   <label htmlFor="custom-puja-input" className="block text-[11px] font-bold text-slate-700 mb-0.5">
@@ -1433,5 +1448,13 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }
