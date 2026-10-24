@@ -978,7 +978,7 @@ export default function PujaInteractiveClient() {
           </div>
           <div className="mt-2 sm:mt-0">
             <span className="text-[11px] font-bold text-orange-900 bg-orange-100 px-2.5 py-1 rounded-full border border-orange-300">
-              Showing {filteredPujas.length} Auspicious Services
+              Showing {filteredPujas.length} Vedic Sanskar Services
             </span>
           </div>
         </div>
@@ -1049,45 +1049,85 @@ export default function PujaInteractiveClient() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-8">
             <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">
-              Authentic Vedic Traditions
+              Sanatan Heritage &amp; Trust
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-              Why Bengaluru Families Trust PurohitSetu
+              Why Devotees Choose PurohitSetu in Bangalore
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
-              We bridge the gap between busy metropolitan lifestyles and pristine scriptural rites, preserving holy Sanatan traditions across Bengaluru apartments and residences.
+              Authentic Gurukul-ordained North Indian and South Indian Vedic Pandits across Bengaluru.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
             <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
-              <span className="text-3xl block mb-2">📜</span>
-              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Traditional Shastric Vidhi</h3>
+              <span className="text-2xl block mb-2">🌿</span>
+              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Authentic Sanskrit Chanting &amp; Shastric Vidhi</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Rituals conducted in strict accordance with the Grihya Sutras, Vedas, and authentic Sanatan Shastras. No commercial shortcuts or fabricated rituals.
+                Dedicated strictly to genuine Vedic rituals and Hawans. Zero speculative astrology or commercial horoscope gimmicks.
               </p>
             </div>
             <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
-              <span className="text-3xl block mb-2">🗣️</span>
-              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Linguistic Familiarity</h3>
+              <span className="text-2xl block mb-2">ॐ</span>
+              <h3 className="font-bold text-sm text-slate-900 mb-1.5">North Indian, Hindi, Bihari &amp; Maithili Pandits</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Connect with revered Acharyas fluent in North Indian languages—Hindi, Maithili, Bhojpuri, and Sanskrit—along with clear English explanations for younger generations.
+                Verified Acharyas from Varanasi, Mithila, Haridwar, and Prayagraj proficient in your family&apos;s authentic customs.
               </p>
             </div>
             <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
-              <span className="text-3xl block mb-2">🛡️</span>
-              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Complete Verified Samagri</h3>
+              <span className="text-2xl block mb-2">🗣️</span>
+              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Multilingual Ceremony Conduct</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                We take care of the entire preparation. From certified dry mango wood, Navagraha samidha, pure desi cow ghee, to consecrated Ganga jal—everything is arranged.
+                Rituals conducted with clear explanation in Hindi, English, Kannada, Telugu, Bhojpuri, or Maithili.
+              </p>
+            </div>
+            <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
+              <span className="text-2xl block mb-2">🔥</span>
+              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Complete Hawan &amp; Samagri Management</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Our Pandits arrive equipped with authenticated Mango wood, Navagraha herbs, pure cow ghee, and Gangajal, etc.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FAST BOOKING FORM CONTAINER */}
+      {/* FAST BOOKING FORM CONTAINER WITH 4-PILL TRUST BAR */}
       <section id="booking-section" className="py-12 px-4 scroll-mt-24">
         <div className="max-w-3xl mx-auto space-y-4">
+          
+          {/* 4-PILL TRUST BAR RESTORED */}
+          <div className="bg-white border border-amber-200 rounded-2xl p-3 sm:p-4 shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🛡️</span>
+              <div>
+                <strong className="block text-[11px] font-extrabold text-slate-900">100% Secure Booking</strong>
+                <span className="text-[10px] text-slate-500">Your data is safe with us</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl text-orange-600 font-bold">₹</span>
+              <div>
+                <strong className="block text-[11px] font-extrabold text-slate-900">Zero Upfront Cost</strong>
+                <span className="text-[10px] text-slate-500">Pay after puja completion</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🎖️</span>
+              <div>
+                <strong className="block text-[11px] font-extrabold text-slate-900">Verified Pandits</strong>
+                <span className="text-[10px] text-slate-500">Experienced &amp; vetted</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🎧</span>
+              <div>
+                <strong className="block text-[11px] font-extrabold text-slate-900">24/7 Support</strong>
+                <span className="text-[10px] text-slate-500">We are here to help you</span>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-3xl border-2 border-orange-300 shadow-xl p-5 sm:p-7">
             <div className="text-center mb-5">
               <span className="bg-orange-100 text-orange-950 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
@@ -1258,97 +1298,51 @@ export default function PujaInteractiveClient() {
         </div>
       </section>
 
-      {/* FAQ SECTION */}
-      <section id="faq-section" className="max-w-4xl mx-auto px-4 py-10">
-        <div className="text-center mb-6">
-          <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">
-            Devotee Assistance
-          </span>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
-            Frequently Asked Questions
-          </h2>
-        </div>
-
-        <div className="space-y-3 text-xs">
-          <div className="bg-white border border-amber-200 rounded-xl p-4 shadow-xs">
-            <h3 className="font-bold text-slate-900 mb-1">Q: How are PurohitSetu Acharyas verified?</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Every Acharya in our network is thoroughly vetted for their Vedic Gurukul lineage, ritual fluency in Sanskrit, and background check. They possess deep experience in North Indian traditions.
-            </p>
-          </div>
-          <div className="bg-white border border-amber-200 rounded-xl p-4 shadow-xs">
-            <h3 className="font-bold text-slate-900 mb-1">Q: Do the Pandits bring all required Hawan and Puja Samagri?</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Yes. If you choose the &quot;Include Complete Hawan &amp; Samagri Kit&quot; option, our Acharyas will arrive with genuine mango wood, pure cow ghee, Navagraha samidha, Gangajal, and all ritual essentials.
-            </p>
-          </div>
-          <div className="bg-white border border-amber-200 rounded-xl p-4 shadow-xs">
-            <h3 className="font-bold text-slate-900 mb-1">Q: Can I consult regarding the auspicious Muhurat beforehand?</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Yes, our Acharyas calculate the accurate Shubh Muhurat based on your family&apos;s Janma Nakshatra, Rashi, and regional Panchang at zero additional fee after booking.
-            </p>
-          </div>
+      {/* 24/7 SUPPORT DESK */}
+      <section className="py-6 px-4 bg-orange-50/50 text-center">
+        <span className="text-[10px] font-extrabold uppercase tracking-widest text-orange-800 block mb-1">
+          24/7 Support Desk
+        </span>
+        <h3 className="text-base font-black text-slate-900 mb-3">
+          Contact Official Platform Support
+        </h3>
+        <div className="flex flex-wrap items-center justify-center gap-3 text-xs font-bold">
+          <a
+            href={`tel:+91${SUPPORT_PHONE}`}
+            className="bg-white border border-amber-300 px-4 py-2 rounded-xl shadow-xs text-slate-800 hover:bg-orange-50 transition"
+          >
+            Call / WhatsApp: +91 {SUPPORT_PHONE}
+          </a>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="bg-white border border-amber-300 px-4 py-2 rounded-xl shadow-xs text-slate-800 hover:bg-orange-50 transition"
+          >
+            {SUPPORT_EMAIL}
+          </a>
         </div>
       </section>
 
-      {/* CONTACT & SUPPORT SECTION */}
-      <section id="contact-section" className="bg-white border-t border-amber-200 py-10 px-4">
-        <div className="max-w-5xl mx-auto text-center space-y-4">
-          <h2 className="text-xl font-black text-slate-900">Need Immediate Vedic Assistance?</h2>
-          <p className="text-xs text-slate-600 max-w-xl mx-auto">
-            Our Acharyas and dedicated customer support team are available 7 days a week to guide you with Muhurat, ritual requirements, and custom ceremonies.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold pt-2">
-            <a
-              href={`tel:+91${SUPPORT_PHONE}`}
-              className="bg-amber-50 border border-amber-300 text-orange-950 px-4 py-2.5 rounded-xl hover:bg-amber-100 transition flex items-center gap-2"
-            >
-              <span>📞</span> Call Support: +91 {SUPPORT_PHONE}
-            </a>
-            <a
-              href={`mailto:${SUPPORT_EMAIL}`}
-              className="bg-amber-50 border border-amber-300 text-orange-950 px-4 py-2.5 rounded-xl hover:bg-amber-100 transition flex items-center gap-2"
-            >
-              <span>✉️</span> Email Us: {SUPPORT_EMAIL}
-            </a>
-            <a
-              href={`https://wa.me/91${SUPPORT_PHONE}`}
-              target="_blank"
-              rel="noreferrer"
-              className="bg-emerald-50 border border-emerald-300 text-emerald-950 px-4 py-2.5 rounded-xl hover:bg-emerald-100 transition flex items-center gap-2"
-            >
-              <span>💬</span> WhatsApp Direct
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER (40+ CLICKABLE KEYWORDS WITH DIRECT NAVIGATION) */}
+      {/* FOOTER */}
       <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-10 px-4 border-t-2 border-amber-400">
         <div className="max-w-6xl mx-auto space-y-6 text-center">
           
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-orange-50">
             <Link href="/" className="hover:text-white transition">Home</Link>
             <span>•</span>
-            <a href="#services-section" className="hover:text-white transition">Puja Catalog</a>
-            <span>•</span>
-            <a href="#localities-section" className="hover:text-white transition">Bangalore Zones</a>
-            <span>•</span>
-            <a href="#why-choose-us" className="hover:text-white transition">Why Us</a>
-            <span>•</span>
-            <a href="#faq-section" className="hover:text-white transition">FAQ</a>
-            <span>•</span>
             <Link href="/privacy-policy" className="hover:text-white transition underline underline-offset-4">Privacy Policy</Link>
             <span>•</span>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-white transition font-medium underline underline-offset-4">
-              {SUPPORT_EMAIL}
+            <a href="#booking-section" className="hover:text-white transition">Terms &amp; Conditions</a>
+            <span>•</span>
+            <a href="#why-choose-us" className="hover:text-white transition">About Us</a>
+            <span>•</span>
+            <a href={`https://wa.me/91${SUPPORT_PHONE}`} target="_blank" rel="noreferrer" className="hover:text-white transition">
+              WhatsApp Support ({SUPPORT_PHONE})
             </a>
           </div>
 
           <div className="border-t border-orange-700/60 pt-4 text-left">
             <span className="block text-[11px] font-extrabold uppercase tracking-widest text-amber-300 mb-2.5 text-center">
-              Popular Vedic Pujas &amp; Pandit Services in Bengaluru:
+              Popular Vedic Searches in Bangalore:
             </span>
             <div className="flex flex-wrap gap-1.5 justify-center">
               {CLICKABLE_SEO_KEYWORDS.map((item) => (
@@ -1364,9 +1358,9 @@ export default function PujaInteractiveClient() {
           </div>
 
           <div className="border-t border-orange-600/70 pt-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-orange-100 gap-2">
-            <p>© 2026 PurohitSetu Bengaluru • Authentic North Indian &amp; Vedic Purohit Platform</p>
+            <p>© 2026 PurohitSetu Bengaluru • Dedicated Vedic Puja Services • Bengaluru</p>
             <div className="bg-black/40 px-3.5 py-1 rounded-full text-white font-semibold border border-white/20">
-              Official Helpline: +91 {SUPPORT_PHONE}
+              Helpline: +91 {SUPPORT_PHONE}
             </div>
           </div>
 
