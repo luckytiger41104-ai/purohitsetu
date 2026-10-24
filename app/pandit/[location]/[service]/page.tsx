@@ -21,7 +21,7 @@ const ALL_LOCALITIES: Record<string, LocalityDetails> = {
     panditCount: "14+ Certified Acharyas",
     reachTime: "Within 30–45 Mins",
     popularApartments: ["Prestige Shantiniketan", "Brigade Cosmopolis", "Godrej United", "Assetz Marq"],
-    localSamagriNote: "Low-smoke Vedic hawan samidha and fire-safety approved brass hawan kunds used for high-rise flats.",
+    localSamagriNote: "Low-smoke Vedic hawan samidha and fire-safety approved brass hawan kunds customized for high-rise balconies.",
   },
   "hsr-layout": {
     name: "HSR Layout",
@@ -29,7 +29,7 @@ const ALL_LOCALITIES: Record<string, LocalityDetails> = {
     panditCount: "11+ Certified Acharyas",
     reachTime: "Within 25–35 Mins",
     popularApartments: ["Sobha Classic", "Purva Vantage", "Salarpuria Serenity", "NCC Urban"],
-    localSamagriNote: "Balcony-friendly hawan setups organized with organic desi cow ghee and dry mango wood.",
+    localSamagriNote: "Balcony-friendly hawan setups organized with pure organic desi cow ghee and dry mango wood.",
   },
   koramangala: {
     name: "Koramangala",
@@ -350,7 +350,7 @@ export default async function HyperlocalServicePage({
           Book Verified <span className="text-orange-700">{serviceTitle}</span> in {locData.name}, Bangalore
         </h1>
         <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed mb-6">
-          Experienced North Indian, Hindi, Maithili &amp; Bhojpuri speaking Acharyas for authentic {serviceTitle} rituals across {locData.name}. 100% Shastric Vidhi, certified Hawan Samagri kit, and zero upfront fee.
+          Experienced North Indian, Hindi, Maithili &amp; Bhojpuri speaking Acharyas for authentic {serviceTitle} rituals across {locData.name}. 100% Shastric Vidhi, verified Hawan Samagri kit, and zero upfront fee.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -369,7 +369,7 @@ export default async function HyperlocalServicePage({
         </div>
       </section>
 
-      {/* LOCAL APARTMENTS & PROTOCOL CARD (UNIQUE VALUE ADD) */}
+      {/* LOCAL APARTMENTS & PROTOCOL CARD (UNIQUE HYPERLOCAL VALUE) */}
       <section className="max-w-5xl mx-auto px-4 mb-4">
         <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 shadow-xs">
           <h2 className="text-xs font-black uppercase tracking-wider text-orange-950 mb-2">
@@ -460,6 +460,14 @@ export default async function HyperlocalServicePage({
           <Link href={`/pandit/${locKey}`} className="hover:underline">All Pujas in {locData.name}</Link>
           <span>•</span>
           <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
+        </div>
+
+        {/* DEVELOPER CREDIT */}
+        <div className="mt-3 pt-3 border-t border-orange-700/50 text-[10px] text-orange-200/90 font-medium">
+          Created and Designed by <span className="font-bold text-amber-300">Prince Pandey</span> • Mob:{" "}
+          <a href="tel:+917667984349" className="hover:text-white underline underline-offset-2 font-bold">
+            +91 7667984349
+          </a>
         </div>
       </footer>
     </div>

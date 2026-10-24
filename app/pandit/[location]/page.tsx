@@ -181,8 +181,8 @@ const ALL_LOCALITIES: Record<string, LocalityDetails> = {
 };
 
 const ALL_PUJAS_LIST = [
-  { slug: "annaprasan-sanskar-pooja", title: "Annaprashan Sanskar (First Feeding)" },
-  { slug: "antim-sanskar", title: "Antim Sanskar (Last Rites)" },
+  { slug: "annaprasan-sanskar-pooja", title: "Annaprashan Sanskar (First Rice Feeding)" },
+  { slug: "antim-sanskar", title: "Antim Sanskar (Antyesti Last Rites)" },
   { slug: "bagulamukhi-anushthan", title: "Bagalamukhi Anushthan & Hawan" },
   { slug: "bhoomi-pooja", title: "Bhoomi Pooja & Foundation Consecration" },
   { slug: "birthday-ayushya-hawan", title: "Birthday Ayushya Hawan & Blessing" },
@@ -489,6 +489,14 @@ export default async function LocalityPage({
           <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
           <span>•</span>
           <a href={`tel:+91${SUPPORT_PHONE}`} className="hover:underline">Support: +91 {SUPPORT_PHONE}</a>
+        </div>
+        
+        {/* DEVELOPER CREDIT */}
+        <div className="mt-3 pt-3 border-t border-orange-700/50 text-[10px] text-orange-200/90 font-medium">
+          Created and Designed by <span className="font-bold text-amber-300">Prince Pandey</span> • Mob:{" "}
+          <a href="tel:+917667984349" className="hover:text-white underline underline-offset-2 font-bold">
+            +91 7667984349
+          </a>
         </div>
       </footer>
     </div>
