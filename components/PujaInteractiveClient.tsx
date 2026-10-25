@@ -896,34 +896,33 @@ export default function PujaInteractiveClient() {
 
   return (
     <>
-      {/* LOCALITIES BAR */}
-      <section id="localities-section" className="bg-amber-100/70 py-4 px-4 border-b border-amber-300">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-1 mb-2 text-center sm:text-left">
-            <span className="text-[11px] font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1">
-              <span>📍</span> Dedicated Pandit Coverage Across Bengaluru Zones:
-            </span>
-            <span className="text-[10px] text-slate-600 font-medium">Click any area for local purohits</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
-            {BENGALURU_LOCALITIES.map((loc) => {
-              const slug = loc.toLowerCase().replace(/\s+/g, "-");
-              return (
-                <Link
-                  key={loc}
-                  href={`/pandit/${slug}`}
-                  className="text-[10px] font-semibold bg-white hover:bg-orange-700 hover:text-white text-slate-800 px-2.5 py-1 rounded border border-amber-300 transition inline-block"
-                >
-                  Pandit in {loc}
-                </Link>
-              );
-            })}
-          </div>
+      {/* ACTION BAR UNDER HERO WITH PUJA TOKEN BUTTON */}
+      <section className="max-w-4xl mx-auto px-4 pt-3 pb-6 text-center">
+        <div className="flex flex-wrap items-center justify-center gap-2.5 mb-6">
+          <a
+            href="#booking-section"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 via-red-600 to-amber-600 text-white font-extrabold text-xs shadow hover:scale-105 transition"
+          >
+            📅 Schedule Puja Muhurat
+          </a>
+          <button
+            type="button"
+            onClick={() => setIsTokenModalOpen(true)}
+            className="px-5 py-2.5 rounded-xl bg-white border border-orange-300 text-orange-950 font-extrabold text-xs shadow hover:bg-orange-50 transition flex items-center gap-1.5"
+          >
+            <span>🪙</span> Puja Booking Token
+          </button>
+          <button
+            type="button"
+            onClick={handleDirectWhatsAppBooking}
+            className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs shadow transition flex items-center gap-1.5"
+            aria-label="Direct WhatsApp Booking"
+          >
+            <span>💬</span> WhatsApp Booking
+          </button>
         </div>
-      </section>
 
-      {/* SEARCH AND CATEGORIES */}
-      <section className="max-w-4xl mx-auto px-4 py-6">
+        {/* SEARCH AND CATEGORIES */}
         <div className="relative max-w-2xl mx-auto mb-4 shadow-xs">
           <label htmlFor="puja-search-input" className="sr-only">Search Pujas</label>
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-sm" aria-hidden="true">
@@ -967,20 +966,39 @@ export default function PujaInteractiveClient() {
         </div>
       </section>
 
-      {/* PUJA SERVICES DIRECTORY (39 RITUALS) */}
-      <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 border-b border-amber-200 pb-3">
-          <div>
-            <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">Sanatan Sanskar Directory</span>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
-              Vedic Pujas, Sanskars &amp; Hawan Ceremonies
-            </h2>
-          </div>
-          <div className="mt-2 sm:mt-0">
-            <span className="text-[11px] font-bold text-orange-900 bg-orange-100 px-2.5 py-1 rounded-full border border-orange-300">
-              Showing {filteredPujas.length} Vedic Sanskar Services
+      {/* LOCALITIES BAR */}
+      <section id="localities-section" className="bg-amber-100/70 py-4 px-4 border-y border-amber-300">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-1 mb-2 text-center sm:text-left">
+            <span className="text-[11px] font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1">
+              <span>📍</span> Dedicated Pandit Coverage Across Bengaluru Zones:
             </span>
+            <span className="text-[10px] text-slate-600 font-medium">Click any area for local purohits</span>
           </div>
+          <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
+            {BENGALURU_LOCALITIES.map((loc) => {
+              const slug = loc.toLowerCase().replace(/\s+/g, "-");
+              return (
+                <Link
+                  key={loc}
+                  href={`/pandit/${slug}`}
+                  className="text-[10px] font-semibold bg-white hover:bg-orange-700 hover:text-white text-slate-800 px-2.5 py-1 rounded border border-amber-300 transition inline-block"
+                >
+                  Pandit in {loc}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* PUJA SERVICES DIRECTORY (Showing badge completely removed) */}
+      <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
+        <div className="mb-6 border-b border-amber-200 pb-3">
+          <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">Sanatan Sanskar Directory</span>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
+            Vedic Pujas, Sanskars &amp; Hawan Ceremonies
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -1044,7 +1062,7 @@ export default function PujaInteractiveClient() {
         </div>
       </section>
 
-      {/* WHY CHOOSE PUROHITSETU */}
+      {/* WHY DEVOTEES CHOOSE PUROHITSETU */}
       <section id="why-choose-us" className="bg-gradient-to-br from-amber-50 to-orange-50 border-y border-amber-200 py-12 px-4 sm:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-8">
@@ -1096,7 +1114,6 @@ export default function PujaInteractiveClient() {
       <section id="booking-section" className="py-12 px-4 scroll-mt-24">
         <div className="max-w-3xl mx-auto space-y-4">
           
-          {/* 4-PILL TRUST BAR RESTORED */}
           <div className="bg-white border border-amber-200 rounded-2xl p-3 sm:p-4 shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
             <div className="flex items-center gap-2">
               <span className="text-xl">🛡️</span>
@@ -1373,7 +1390,18 @@ export default function PujaInteractiveClient() {
         </div>
       </footer>
 
-      {/* TOKEN BOOKING MODAL */}
+      {/* FLOATING PUJA TOKEN BUTTON (BOTTOM-RIGHT) */}
+      <button
+        type="button"
+        onClick={() => setIsTokenModalOpen(true)}
+        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-black text-xs sm:text-sm px-4 py-3 rounded-full shadow-2xl border-2 border-amber-300 flex items-center gap-2 hover:scale-105 active:scale-95 transition-all duration-200"
+        aria-label="Open Puja Booking Token Modal"
+      >
+        <span className="text-lg">🪙</span>
+        <span>Puja Token (₹)</span>
+      </button>
+
+      {/* RAZORPAY PUJA TOKEN BOOKING MODAL */}
       {isTokenModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3" role="dialog" aria-modal="true">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-orange-200 max-h-[90vh] overflow-y-auto">
