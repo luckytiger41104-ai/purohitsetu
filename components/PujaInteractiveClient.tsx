@@ -648,17 +648,33 @@ export default function PujaInteractiveClient() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // MODAL STATE & TABS
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
-  const [tokenData, setTokenData] = useState({
+  const [modalTab, setModalTab] = useState<"advance" | "completion">("advance");
+
+  // Tab 1: Advance Token State
+  const [advanceData, setAdvanceData] = useState({
     yajmanName: "",
     phone: "",
-    panditName: "",
-    pujaName: "General Puja Booking Token",
+    pujaDate: "",
+    pujaName: "Griha Pravesh & Vastu Shanti Puja",
     customPuja: "",
     amount: "501",
   });
-  const [tokenProcessing, setTokenProcessing] = useState(false);
-  const [tokenNotice, setTokenNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Tab 2: After Puja Completion Settlement State
+  const [completionData, setCompletionData] = useState({
+    yajmanName: "",
+    phone: "",
+    pujaName: "Griha Pravesh & Vastu Shanti Puja",
+    customPuja: "",
+    pujaDate: "",
+    panditName: "",
+    totalAmount: "2100",
+  });
+
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     const pujaParam = searchParams.get("puja");
@@ -766,62 +782,68 @@ export default function PujaInteractiveClient() {
     }
   };
 
-  const handleInitiateTokenPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTokenNotice(null);
+  // COMMON RAZORPAY HANDLER FOR BOTH TABS
+  const executeRazorpayPayment = async (payload: {
+    yajmanName: string;
+    phone: string;
+    pujaName: string;
+    pujaDate: string;
+    panditName?: string;
+    amount: string;
+    type: "Advance Booking Token" | "Post Puja Total Settlement";
+  }) => {
+    setPaymentNotice(null);
 
-    const amountNum = parseFloat(tokenData.amount);
+    const amountNum = parseFloat(payload.amount);
     if (!amountNum || amountNum < 1) {
-      setTokenNotice({ type: "error", text: "Please enter a valid amount (Minimum ₹1)." });
+      setPaymentNotice({ type: "error", text: "Please enter a valid amount (Minimum ₹1)." });
       return;
     }
 
-    if (!tokenData.yajmanName.trim() || !tokenData.phone.trim()) {
-      setTokenNotice({ type: "error", text: "Yajman Name and Contact Number are required." });
+    if (!payload.yajmanName.trim() || !payload.phone.trim()) {
+      setPaymentNotice({ type: "error", text: "Yajman Name and Phone Number are required." });
       return;
     }
 
     const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     if (!razorpayKey) {
-      setTokenNotice({
+      setPaymentNotice({
         type: "error",
         text: "Payment configuration is currently unavailable. Please contact support.",
       });
       return;
     }
 
-    setTokenProcessing(true);
+    setPaymentProcessing(true);
 
     const sdkLoaded = await loadRazorpayScript();
     if (!sdkLoaded) {
-      setTokenProcessing(false);
-      setTokenNotice({
+      setPaymentProcessing(false);
+      setPaymentNotice({
         type: "error",
         text: "Payment gateway failed to initialize. Please check your internet connection.",
       });
       return;
     }
 
-    const finalPujaName =
-      tokenData.pujaName === "Other Custom Ritual"
-        ? tokenData.customPuja || "Custom Ritual"
-        : tokenData.pujaName;
-
     const options = {
       key: razorpayKey,
       amount: Math.round(amountNum * 100),
       currency: "INR",
       name: "PurohitSetu Bengaluru",
-      description: `Puja Booking Token - ${finalPujaName}`,
+      description: `${payload.type} - ${payload.pujaName}`,
       image: "/pandit-logo.png",
       prefill: {
-        name: tokenData.yajmanName,
-        contact: tokenData.phone,
+        name: payload.yajmanName,
+        contact: payload.phone,
       },
       notes: {
-        pandit_name: tokenData.panditName || "General / Platform Acharya",
-        puja_name: finalPujaName,
-        service_type: "puja_advance_booking",
+        payment_type: payload.type,
+        yajman_name: payload.yajmanName,
+        yajman_phone: payload.phone,
+        puja_name: payload.pujaName,
+        puja_date: payload.pujaDate || "Not Specified",
+        pandit_name: payload.panditName || "Assigned Vedic Acharya",
       },
       theme: {
         color: "#ea580c",
@@ -831,46 +853,37 @@ export default function PujaInteractiveClient() {
           const paymentId = response?.razorpay_payment_id || "PAY_CONFIRMED";
 
           await supabase.from("token_transactions").insert({
-            pandit_id: tokenData.panditName || "general_booking",
-            pandit_phone: tokenData.phone,
-            pandit_name: tokenData.panditName || "General Acharya",
-            pack_name: `Booking Token: ${finalPujaName}`,
+            pandit_id: payload.panditName || "general_booking",
+            pandit_phone: payload.phone,
+            pandit_name: payload.panditName || "Assigned Acharya",
+            pack_name: `${payload.type}: ${payload.pujaName} (${payload.pujaDate})`,
             amount: amountNum,
             tokens_credited: 0,
             razorpay_payment_id: paymentId,
           });
 
           triggerNewBookingNotification(
-            finalPujaName,
-            "Bengaluru (Token Booking)"
+            `${payload.type}: ${payload.pujaName}`,
+            `Bengaluru (₹${amountNum})`
           );
 
-          setTokenNotice({
+          setPaymentNotice({
             type: "success",
-            text: `Booking token of ₹${amountNum} received successfully! Reference ID: ${paymentId}.`,
-          });
-
-          setTokenData({
-            yajmanName: "",
-            phone: "",
-            panditName: "",
-            pujaName: "General Puja Booking Token",
-            customPuja: "",
-            amount: "501",
+            text: `Payment of ₹${amountNum} completed successfully! Transaction ID: ${paymentId}.`,
           });
         } catch (dbErr: any) {
           console.error(dbErr);
-          setTokenNotice({
+          setPaymentNotice({
             type: "success",
             text: `Payment confirmed (Ref ID: ${response?.razorpay_payment_id}). Thank you!`,
           });
         } finally {
-          setTokenProcessing(false);
+          setPaymentProcessing(false);
         }
       },
       modal: {
         ondismiss: () => {
-          setTokenProcessing(false);
+          setPaymentProcessing(false);
         },
       },
     };
@@ -878,20 +891,57 @@ export default function PujaInteractiveClient() {
     try {
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", (response: any) => {
-        setTokenProcessing(false);
-        setTokenNotice({
+        setPaymentProcessing(false);
+        setPaymentNotice({
           type: "error",
           text: `Payment failed: ${response?.error?.description || "Transaction cancelled."}`,
         });
       });
       rzp.open();
     } catch (err: any) {
-      setTokenProcessing(false);
-      setTokenNotice({
+      setPaymentProcessing(false);
+      setPaymentNotice({
         type: "error",
         text: "Could not open payment gateway: " + err.message,
       });
     }
+  };
+
+  // Submit Handler Tab 1: Advance Token
+  const handleAdvanceSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalPuja =
+      advanceData.pujaName === "Other Custom Ritual"
+        ? advanceData.customPuja || "Custom Ritual"
+        : advanceData.pujaName;
+
+    executeRazorpayPayment({
+      yajmanName: advanceData.yajmanName,
+      phone: advanceData.phone,
+      pujaDate: advanceData.pujaDate,
+      pujaName: finalPuja,
+      amount: advanceData.amount,
+      type: "Advance Booking Token",
+    });
+  };
+
+  // Submit Handler Tab 2: After Puja Completion Settlement
+  const handleCompletionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalPuja =
+      completionData.pujaName === "Other Custom Ritual"
+        ? completionData.customPuja || "Custom Ritual"
+        : completionData.pujaName;
+
+    executeRazorpayPayment({
+      yajmanName: completionData.yajmanName,
+      phone: completionData.phone,
+      pujaDate: completionData.pujaDate,
+      pujaName: finalPuja,
+      panditName: completionData.panditName,
+      amount: completionData.totalAmount,
+      type: "Post Puja Total Settlement",
+    });
   };
 
   return (
@@ -910,7 +960,7 @@ export default function PujaInteractiveClient() {
             onClick={() => setIsTokenModalOpen(true)}
             className="px-5 py-2.5 rounded-xl bg-white border border-orange-300 text-orange-950 font-extrabold text-xs shadow hover:bg-orange-50 transition flex items-center gap-1.5"
           >
-            <span>🪙</span> Puja Booking Token
+            <span>🪙</span> Puja Token &amp; Payment
           </button>
           <button
             type="button"
@@ -992,7 +1042,7 @@ export default function PujaInteractiveClient() {
         </div>
       </section>
 
-      {/* PUJA SERVICES DIRECTORY (Showing badge completely removed) */}
+      {/* PUJA SERVICES DIRECTORY (NO BADGE / CLEAN HEADER) */}
       <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
         <div className="mb-6 border-b border-amber-200 pb-3">
           <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">Sanatan Sanskar Directory</span>
@@ -1390,145 +1440,297 @@ export default function PujaInteractiveClient() {
         </div>
       </footer>
 
-      {/* FLOATING PUJA TOKEN BUTTON (BOTTOM-RIGHT) */}
-      <button
-        type="button"
-        onClick={() => setIsTokenModalOpen(true)}
-        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-black text-xs sm:text-sm px-4 py-3 rounded-full shadow-2xl border-2 border-amber-300 flex items-center gap-2 hover:scale-105 active:scale-95 transition-all duration-200"
-        aria-label="Open Puja Booking Token Modal"
-      >
-        <span className="text-lg">🪙</span>
-        <span>Puja Token (₹)</span>
-      </button>
-
-      {/* RAZORPAY PUJA TOKEN BOOKING MODAL */}
+      {/* COMPREHENSIVE PUJA TOKEN & SETTLEMENT PAYMENT MODAL */}
       {isTokenModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-orange-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-2.5 mb-3">
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg" aria-hidden="true">🪙</span>
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-orange-200 max-h-[92vh] overflow-y-auto">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl" aria-hidden="true">🪙</span>
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-900 leading-tight">Puja Booking Token</h3>
-                  <p className="text-[10px] text-slate-500">Advance Service Fee &amp; Muhurat Confirmation</p>
+                  <h3 className="text-base font-black text-slate-900 leading-tight">Puja Payment &amp; Token</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Verified Payment via Razorpay</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => {
                   setIsTokenModalOpen(false);
-                  setTokenNotice(null);
+                  setPaymentNotice(null);
                 }}
                 className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-xs flex items-center justify-center"
-                aria-label="Close Token Modal"
+                aria-label="Close Modal"
               >
                 ✕
               </button>
             </div>
 
-            {tokenNotice && (
+            {/* Navigation Tabs */}
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-amber-50 rounded-xl mb-4 border border-amber-200 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalTab("advance");
+                  setPaymentNotice(null);
+                }}
+                className={`py-2 rounded-lg transition ${
+                  modalTab === "advance"
+                    ? "bg-orange-700 text-white shadow-xs"
+                    : "text-slate-700 hover:bg-white"
+                }`}
+              >
+                1. Advance Token
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalTab("completion");
+                  setPaymentNotice(null);
+                }}
+                className={`py-2 rounded-lg transition ${
+                  modalTab === "completion"
+                    ? "bg-orange-700 text-white shadow-xs"
+                    : "text-slate-700 hover:bg-white"
+                }`}
+              >
+                2. After Puja Payment
+              </button>
+            </div>
+
+            {paymentNotice && (
               <div
                 className={`p-2.5 rounded-xl text-xs font-semibold mb-3 ${
-                  tokenNotice.type === "success"
+                  paymentNotice.type === "success"
                     ? "bg-green-50 text-green-900 border border-green-200"
                     : "bg-red-50 text-red-900 border border-red-200"
                 }`}
               >
-                {tokenNotice.text}
+                {paymentNotice.text}
               </div>
             )}
 
-            <form onSubmit={handleInitiateTokenPayment} className="space-y-2.5 text-xs">
-              <div>
-                <label htmlFor="token-yajman-name" className="block font-bold text-slate-700 mb-0.5">Yajman Name *</label>
-                <input
-                  id="token-yajman-name"
-                  type="text"
-                  required
-                  placeholder="e.g. Rahul Sharma"
-                  value={tokenData.yajmanName}
-                  onChange={(e) => setTokenData({ ...tokenData, yajmanName: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="token-phone" className="block font-bold text-slate-700 mb-0.5">Mobile Number *</label>
-                <input
-                  id="token-phone"
-                  type="tel"
-                  required
-                  placeholder="10-digit number"
-                  value={tokenData.phone}
-                  onChange={(e) => setTokenData({ ...tokenData, phone: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="token-puja-select" className="block font-bold text-slate-700 mb-0.5">Puja Ritual / Service</label>
-                <select
-                  id="token-puja-select"
-                  value={tokenData.pujaName}
-                  onChange={(e) => setTokenData({ ...tokenData, pujaName: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900"
-                >
-                  {RAW_PUJA_LIST.map((p) => (
-                    <option key={p.id} value={p.name}>{p.name}</option>
-                  ))}
-                  <option value="Other Custom Ritual">Other Custom Ritual</option>
-                </select>
-              </div>
-
-              {tokenData.pujaName === "Other Custom Ritual" && (
+            {/* TAB 1: ADVANCE TOKEN FORM */}
+            {modalTab === "advance" ? (
+              <form onSubmit={handleAdvanceSubmit} className="space-y-3 text-xs">
                 <div>
+                  <label htmlFor="adv-yajman" className="block font-bold text-slate-700 mb-0.5">Yajman Name *</label>
                   <input
+                    id="adv-yajman"
                     type="text"
-                    placeholder="Specify custom ritual..."
-                    value={tokenData.customPuja}
-                    onChange={(e) => setTokenData({ ...tokenData, customPuja: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-900"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={advanceData.yajmanName}
+                    onChange={(e) => setAdvanceData({ ...advanceData, yajmanName: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
                   />
                 </div>
-              )}
 
-              <div>
-                <span className="block font-bold text-slate-700 mb-1">Select Advance Token Amount (₹)</span>
-                <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-                  {BOOKING_TOKEN_PRESETS.map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => setTokenData({ ...tokenData, amount: amt.toString() })}
-                      className={`py-1 rounded-lg font-bold border transition ${
-                        tokenData.amount === amt.toString()
-                          ? "bg-orange-700 text-white border-orange-700"
-                          : "bg-orange-50 text-slate-800 border-orange-200 hover:bg-orange-100"
-                      }`}
-                    >
-                      ₹{amt}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label htmlFor="adv-phone" className="block font-bold text-slate-700 mb-0.5">Phone Number *</label>
+                    <input
+                      id="adv-phone"
+                      type="tel"
+                      required
+                      placeholder="10-digit number"
+                      value={advanceData.phone}
+                      onChange={(e) => setAdvanceData({ ...advanceData, phone: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="adv-date" className="block font-bold text-slate-700 mb-0.5">Puja Date *</label>
+                    <input
+                      id="adv-date"
+                      type="date"
+                      required
+                      value={advanceData.pujaDate}
+                      onChange={(e) => setAdvanceData({ ...advanceData, pujaDate: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                    />
+                  </div>
                 </div>
 
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={tokenData.amount}
-                  onChange={(e) => setTokenData({ ...tokenData, amount: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-900"
-                />
-              </div>
+                <div>
+                  <label htmlFor="adv-puja" className="block font-bold text-slate-700 mb-0.5">Select Sacred Puja *</label>
+                  <select
+                    id="adv-puja"
+                    value={advanceData.pujaName}
+                    onChange={(e) => setAdvanceData({ ...advanceData, pujaName: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900"
+                  >
+                    {RAW_PUJA_LIST.map((p) => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
+                    ))}
+                    <option value="Other Custom Ritual">Other / Custom Ritual</option>
+                  </select>
+                </div>
 
-              <button
-                type="submit"
-                disabled={tokenProcessing}
-                className="w-full mt-2 py-2.5 rounded-xl bg-gradient-to-r from-orange-700 via-amber-700 to-red-700 text-white font-bold shadow disabled:opacity-50"
-              >
-                {tokenProcessing ? "Opening Gateway..." : `Confirm Booking Token ₹${tokenData.amount || 0}`}
-              </button>
-            </form>
+                {advanceData.pujaName === "Other Custom Ritual" && (
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Specify ritual name..."
+                      value={advanceData.customPuja}
+                      onChange={(e) => setAdvanceData({ ...advanceData, customPuja: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-orange-300 text-slate-900"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <span className="block font-bold text-slate-700 mb-1">Select Advance Token Amount (₹)</span>
+                  <div className="grid grid-cols-3 gap-1.5 mb-2">
+                    {BOOKING_TOKEN_PRESETS.map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setAdvanceData({ ...advanceData, amount: amt.toString() })}
+                        className={`py-1.5 rounded-lg font-bold border transition ${
+                          advanceData.amount === amt.toString()
+                            ? "bg-orange-700 text-white border-orange-700"
+                            : "bg-orange-50 text-slate-800 border-orange-200 hover:bg-orange-100"
+                        }`}
+                      >
+                        ₹{amt}
+                      </button>
+                    ))}
+                  </div>
+
+                  <label htmlFor="adv-custom-amt" className="block text-[10px] font-semibold text-slate-500 mb-0.5">Or Enter Custom Amount (₹)</label>
+                  <input
+                    id="adv-custom-amt"
+                    type="number"
+                    min="1"
+                    required
+                    placeholder="Enter custom amount..."
+                    value={advanceData.amount}
+                    onChange={(e) => setAdvanceData({ ...advanceData, amount: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={paymentProcessing}
+                  className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-orange-700 via-amber-700 to-red-700 text-white font-extrabold shadow hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
+                >
+                  {paymentProcessing ? "Opening Gateway..." : `Pay Advance Token ₹${advanceData.amount || 0}`}
+                </button>
+              </form>
+            ) : (
+              /* TAB 2: POST PUJA FINAL SETTLEMENT FORM */
+              <form onSubmit={handleCompletionSubmit} className="space-y-3 text-xs">
+                <div>
+                  <label htmlFor="comp-yajman" className="block font-bold text-slate-700 mb-0.5">Yajman Name *</label>
+                  <input
+                    id="comp-yajman"
+                    type="text"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={completionData.yajmanName}
+                    onChange={(e) => setCompletionData({ ...completionData, yajmanName: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label htmlFor="comp-phone" className="block font-bold text-slate-700 mb-0.5">Phone Number *</label>
+                    <input
+                      id="comp-phone"
+                      type="tel"
+                      required
+                      placeholder="10-digit number"
+                      value={completionData.phone}
+                      onChange={(e) => setCompletionData({ ...completionData, phone: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="comp-date" className="block font-bold text-slate-700 mb-0.5">Puja Date *</label>
+                    <input
+                      id="comp-date"
+                      type="date"
+                      required
+                      value={completionData.pujaDate}
+                      onChange={(e) => setCompletionData({ ...completionData, pujaDate: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="comp-puja" className="block font-bold text-slate-700 mb-0.5">Conducted Puja Ritual *</label>
+                  <select
+                    id="comp-puja"
+                    value={completionData.pujaName}
+                    onChange={(e) => setCompletionData({ ...completionData, pujaName: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900"
+                  >
+                    {RAW_PUJA_LIST.map((p) => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
+                    ))}
+                    <option value="Other Custom Ritual">Other / Custom Ritual</option>
+                  </select>
+                </div>
+
+                {completionData.pujaName === "Other Custom Ritual" && (
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Specify ritual name..."
+                      value={completionData.customPuja}
+                      onChange={(e) => setCompletionData({ ...completionData, customPuja: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-orange-300 text-slate-900"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="comp-pandit" className="block font-bold text-slate-700 mb-0.5">
+                    Conducted By Pandit Name (Acharya) *
+                  </label>
+                  <input
+                    id="comp-pandit"
+                    type="text"
+                    required
+                    placeholder="e.g. Acharya Shrikant Shastri Ji"
+                    value={completionData.panditName}
+                    onChange={(e) => setCompletionData({ ...completionData, panditName: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="comp-total-amt" className="block font-bold text-slate-700 mb-0.5">
+                    Total Final Settlement Amount (₹) *
+                  </label>
+                  <input
+                    id="comp-total-amt"
+                    type="number"
+                    min="1"
+                    required
+                    placeholder="Enter total amount (e.g. 2100, 5100)..."
+                    value={completionData.totalAmount}
+                    onChange={(e) => setCompletionData({ ...completionData, totalAmount: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-orange-300 font-black text-slate-900 bg-orange-50/20 text-sm"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={paymentProcessing}
+                  className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-red-600 via-orange-600 to-amber-700 text-white font-extrabold shadow hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
+                >
+                  {paymentProcessing ? "Opening Gateway..." : `Pay Total Amount ₹${completionData.totalAmount || 0}`}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}
