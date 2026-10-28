@@ -47,7 +47,7 @@ export default function HomePage() {
         </header>
       </div>
 
-      {/* 2. HERO SECTION (LCP ELEMENT - ULTRA FAST STATIC PAINT) */}
+      {/* 2. HERO SECTION (PRIMARY CRAWLER H1) */}
       <section id="home-section" className="bg-[#FFF8EE] pt-8 pb-6 px-4 text-center border-b border-amber-200">
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-4 shadow-xs">

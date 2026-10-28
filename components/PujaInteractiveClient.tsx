@@ -634,6 +634,9 @@ export default function PujaInteractiveClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // TOGGLE TO SHOW 1 PUJA INITIALLY OR EXPAND TO ALL
+  const [showAllPujas, setShowAllPujas] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -710,6 +713,14 @@ export default function PujaInteractiveClient() {
       return matchesSearch && matchesCategory;
     });
   }, [searchQuery, selectedCategory]);
+
+  // If user searched or selected a category, show all matching results; otherwise respect the showAllPujas toggle
+  const visiblePujas = useMemo(() => {
+    if (searchQuery.trim() || selectedCategory !== "All") {
+      return filteredPujas;
+    }
+    return showAllPujas ? filteredPujas : filteredPujas.slice(0, 1);
+  }, [filteredPujas, showAllPujas, searchQuery, selectedCategory]);
 
   const handleSelectPujaToBook = useCallback((pujaTitle: string) => {
     setFormData((prev) => ({ ...prev, pujaName: pujaTitle }));
@@ -1042,17 +1053,26 @@ export default function PujaInteractiveClient() {
         </div>
       </section>
 
-      {/* PUJA SERVICES DIRECTORY (NO BADGE / CLEAN HEADER) */}
+      {/* PUJA SERVICES DIRECTORY (SHOWS 1 INITIALLY, EXPANDS ON TOGGLE) */}
       <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
-        <div className="mb-6 border-b border-amber-200 pb-3">
-          <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">Sanatan Sanskar Directory</span>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
-            Vedic Pujas, Sanskars &amp; Hawan Ceremonies
-          </h2>
+        <div className="mb-6 border-b border-amber-200 pb-3 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
+          <div>
+            <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">Sanatan Sanskar Directory</span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
+              Vedic Pujas, Sanskars &amp; Hawan Ceremonies
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAllPujas((prev) => !prev)}
+            className="text-xs font-bold text-orange-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5"
+          >
+            <span>{showAllPujas ? "▲ Show Less" : "▼ See All Puja Services (39)"}</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-          {filteredPujas.map((puja, index) => (
+          {visiblePujas.map((puja, index) => (
             <div
               key={puja.id}
               className="group bg-white rounded-2xl border border-amber-200 overflow-hidden shadow-xs hover:shadow-md hover:border-orange-400 transition flex flex-col justify-between"
@@ -1063,8 +1083,8 @@ export default function PujaInteractiveClient() {
                   alt={puja.seoKeyword}
                   title={puja.name}
                   fill
-                  priority={index < 2}
-                  loading={index < 2 ? "eager" : "lazy"}
+                  priority={index === 0}
+                  loading={index === 0 ? "eager" : "lazy"}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -1110,6 +1130,19 @@ export default function PujaInteractiveClient() {
             </div>
           ))}
         </div>
+
+        {/* BOTTOM DROPDOWN / TOGGLE BUTTON */}
+        {!searchQuery && selectedCategory === "All" && (
+          <div className="mt-8 text-center">
+            <button
+              type="button"
+              onClick={() => setShowAllPujas((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 text-white font-black text-xs sm:text-sm shadow-md hover:scale-105 active:scale-95 transition"
+            >
+              <span>{showAllPujas ? "▲ Show Less Services" : "▼ See All Puja Services (39)"}</span>
+            </button>
+          </div>
+        )}
       </section>
 
       {/* WHY DEVOTEES CHOOSE PUROHITSETU */}
