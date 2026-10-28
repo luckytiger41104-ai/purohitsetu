@@ -196,6 +196,54 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // 3. GIFT 150 TOKENS DIRECTLY TO PANDIT
+  const handleGiftTokens = async (pandit: Pandit) => {
+    const confirmGift = confirm(`Gift 150 Tokens to ${pandit.full_name || 'Acharya'} (+91 ${pandit.phone})?`);
+    if (!confirmGift) return;
+
+    try {
+      const currentWallet = Number(pandit.wallet_balance || 0);
+      const newBalance = currentWallet + 150;
+
+      const { error: pErr } = await supabase
+        .from('pandits')
+        .update({ wallet_balance: newBalance })
+        .eq('id', pandit.id);
+
+      if (pErr) throw pErr;
+
+      // Log transaction as Admin Gift
+      await supabase.from('token_transactions').insert({
+        pandit_id: pandit.id,
+        pandit_phone: pandit.phone,
+        pandit_name: pandit.full_name || 'Acharya',
+        pack_name: 'Admin Gift Pack',
+        amount: 0,
+        tokens_credited: 150,
+        razorpay_payment_id: 'ADMIN_GIFT_150',
+      });
+
+      setPandits(pandits.map((p) => (p.id === pandit.id ? { ...p, wallet_balance: newBalance } : p)));
+      alert(`Success: 150 Tokens credited to ${pandit.full_name || 'Acharya'}. New balance: ${newBalance} tokens.`);
+    } catch (err: any) {
+      alert('Failed to gift tokens: ' + err.message);
+    }
+  };
+
+  // 4. DELETE TOKEN RECHARGE RECORD
+  const handleDeleteTokenTx = async (txId: number) => {
+    if (!confirm(`Delete token transaction #${txId}? This will remove it from the history table.`)) return;
+
+    try {
+      const { error } = await supabase.from('token_transactions').delete().eq('id', txId);
+      if (error) throw error;
+      setTokenTxs(tokenTxs.filter((t) => t.id !== txId));
+      alert(`Transaction #${txId} deleted successfully.`);
+    } catch (err: any) {
+      alert('Failed to delete transaction: ' + err.message);
+    }
+  };
+
   const handleAdminClaimLead = async (booking: BookingLead) => {
     if (confirm(`Accept booking for "${booking.puja_name}" (${booking.name}) as Admin?`)) {
       const { error } = await supabase
@@ -245,7 +293,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // 3. CANCELLATION FLOW WITH ACCEPTED_VIA REFUND CHECK
   const handleApproveTokenRefund = async (booking: BookingLead) => {
     const targetPhone = booking.assigned_to_phone || booking.accepted_by;
     if (!targetPhone) {
@@ -255,7 +302,6 @@ export default function AdminDashboardPage() {
 
     const cleanPhone = targetPhone.replace(/\D/g, '').slice(-10);
 
-    // Strict Rule: Check if claimed via tokens
     if (booking.accepted_via !== 'token') {
       const confirmZeroRefund = confirm(
         `This ceremony was claimed in FREE MODE (accepted_via: ${booking.accepted_via || 'free'}). No tokens were deducted from the Pandit.\n\nMark this case as resolved with 0 token refund?`
@@ -275,7 +321,6 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    // If accepted via token: Credit 150 Tokens back
     const confirmApprove = confirm(
       `Approve refund for priority ceremony?\n\nThis will restore +150 Tokens to Pandit (+91 ${cleanPhone})'s wallet.`
     );
@@ -311,7 +356,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // 4. SUSPEND PANDIT FOR 7 DAYS ON FALSE CLAIM
   const handleRejectAndSuspendPandit = async (booking: BookingLead) => {
     const targetPhone = booking.assigned_to_phone || booking.accepted_by;
     if (!targetPhone) {
@@ -362,9 +406,13 @@ export default function AdminDashboardPage() {
 
   const toggleVerifyPandit = async (id: string, currentStatus: boolean | undefined) => {
     const newStatus = !currentStatus;
-    await supabase.from('pandits').update({ is_verified: newStatus }).eq('id', id);
+    const { error } = await supabase.from('pandits').update({ is_verified: newStatus }).eq('id', id);
+    if (error) {
+      alert('Could not update verification: ' + error.message);
+      return;
+    }
     setPandits(pandits.map((p) => (p.id === id ? { ...p, is_verified: newStatus } : p)));
-    alert(`Pandit status: ${newStatus ? 'VERIFIED' : 'UNVERIFIED'}`);
+    alert(`Pandit status updated: ${newStatus ? 'VERIFIED' : 'PENDING'}`);
   };
 
   const toggleBlockPandit = async (id: string, currentBlocked: boolean | undefined) => {
@@ -411,7 +459,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <h1 className="text-lg font-bold">PurohitSetu Admin Center</h1>
-              <p className="text-xs text-gray-400">Master Operations & Lead Routing</p>
+              <p className="text-xs text-gray-400">Master Operations &amp; Lead Routing</p>
             </div>
           </div>
           <button
@@ -478,7 +526,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-2">
               <div>
-                <h2 className="text-base font-bold text-gray-900">All Incoming Puja Requests & Assignments</h2>
+                <h2 className="text-base font-bold text-gray-900">All Incoming Puja Requests &amp; Assignments</h2>
                 <p className="text-xs text-gray-500">
                   Accept leads directly if no Pandit claims them, assign to Acharyas, or delete invalid requests.
                 </p>
@@ -653,7 +701,7 @@ export default function AdminDashboardPage() {
                               onClick={() => handleRejectAndSuspendPandit(b)}
                               className="bg-red-600 hover:bg-red-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow cursor-pointer"
                             >
-                              ✕ False Report (Suspend Pandit 7 Days & 0 Refund)
+                              ✕ False Report (Suspend Pandit 7 Days &amp; 0 Refund)
                             </button>
                           </div>
                         </div>
@@ -684,7 +732,7 @@ export default function AdminDashboardPage() {
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex justify-between items-center">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Registered Vedic Acharyas</h2>
-                <p className="text-xs text-gray-500">Approve credentials, monitor strikes, manage access, or permanently delete accounts.</p>
+                <p className="text-xs text-gray-500">Approve credentials, gift tokens, monitor strikes, or manage accounts.</p>
               </div>
             </div>
 
@@ -741,7 +789,15 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t">
+                  {/* GIFT 150 TOKENS BUTTON */}
+                  <button
+                    onClick={() => handleGiftTokens(p)}
+                    className="w-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold py-2 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <span>🎁</span> Gift 150 Tokens (+150 🪙)
+                  </button>
+
+                  <div className="flex gap-2 pt-1 border-t">
                     <button
                       onClick={() => toggleVerifyPandit(p.id, p.is_verified)}
                       className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
@@ -784,7 +840,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
               <h2 className="text-base font-bold text-gray-900">Pandit Token Recharge Log</h2>
-              <p className="text-xs text-gray-500">Every Razorpay payment executed by Acharyas for lead access tokens.</p>
+              <p className="text-xs text-gray-500">Every Razorpay payment executed by Acharyas and admin credit records.</p>
             </div>
 
             {tokenTxs.length === 0 ? (
@@ -801,8 +857,9 @@ export default function AdminDashboardPage() {
                       <th className="p-3">Pack Details</th>
                       <th className="p-3">Tokens Credited</th>
                       <th className="p-3">Amount Paid</th>
-                      <th className="p-3">Razorpay ID</th>
-                      <th className="p-3">Date & Time</th>
+                      <th className="p-3">Transaction ID</th>
+                      <th className="p-3">Date &amp; Time</th>
+                      <th className="p-3 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -810,11 +867,24 @@ export default function AdminDashboardPage() {
                       <tr key={t.id} className="hover:bg-orange-50/30">
                         <td className="p-3 font-bold text-gray-900">{t.pandit_name}</td>
                         <td className="p-3 text-gray-600">{t.pandit_phone}</td>
-                        <td className="p-3"><span className="bg-orange-100 text-orange-900 px-2 py-0.5 rounded-full font-bold">{t.pack_name}</span></td>
+                        <td className="p-3">
+                          <span className="bg-orange-100 text-orange-900 px-2 py-0.5 rounded-full font-bold">
+                            {t.pack_name}
+                          </span>
+                        </td>
                         <td className="p-3 font-bold text-amber-700">+{t.tokens_credited} 🪙</td>
                         <td className="p-3 font-bold text-green-700">₹{t.amount}</td>
                         <td className="p-3 font-mono text-[11px] text-gray-500">{t.razorpay_payment_id || 'Direct'}</td>
                         <td className="p-3 text-gray-500">{new Date(t.created_at).toLocaleString('en-IN')}</td>
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={() => handleDeleteTokenTx(t.id)}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2.5 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer"
+                            title="Delete transaction record"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -828,7 +898,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'yajman' && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <h2 className="text-base font-bold text-gray-900">Yajman Booking & Payment Ledger</h2>
+              <h2 className="text-base font-bold text-gray-900">Yajman Booking &amp; Payment Ledger</h2>
               <p className="text-xs text-gray-500">Tracks Online Advance payments vs Cash On Puja reservations.</p>
             </div>
 
@@ -895,7 +965,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'withdrawals' && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <h2 className="text-base font-bold text-gray-900">Pandit Payout & Withdrawal Requests</h2>
+              <h2 className="text-base font-bold text-gray-900">Pandit Payout &amp; Withdrawal Requests</h2>
               <p className="text-xs text-gray-500">Pay out Acharyas directly via their specified UPI ID and mark completed.</p>
             </div>
 

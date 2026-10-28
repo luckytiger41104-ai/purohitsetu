@@ -166,6 +166,7 @@ export default function PanditDashboardPage() {
   const [earningsBalance, setEarningsBalance] = useState(0);
   const [strikeCount, setStrikeCount] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>('leads');
   const [currentTime, setCurrentTime] = useState(0);
@@ -325,6 +326,7 @@ export default function PanditDashboardPage() {
         if (pData.earnings_balance !== undefined) setEarningsBalance(Number(pData.earnings_balance));
         if (pData.strike_count !== undefined) setStrikeCount(Number(pData.strike_count));
         if (pData.is_blocked !== undefined) setIsBlocked(Boolean(pData.is_blocked));
+        if (pData.is_verified !== undefined) setIsVerified(Boolean(pData.is_verified));
         if (pData.city) {
           setBaseCity(pData.city);
           setEditCity(pData.city);
@@ -910,7 +912,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
             {notifPermissionState !== 'granted' && (
               <button
                 onClick={handleManualNotificationPermission}
-                className="bg-amber-400 hover:bg-amber-300 text-gray-950 px-2 py-1 rounded-lg text-[10px] font-extrabold shadow animate-pulse flex items-center gap-1"
+                className="bg-amber-400 hover:bg-amber-300 text-gray-950 px-2 py-1 rounded-lg text-[10px] font-extrabold shadow animate-pulse flex items-center gap-1 cursor-pointer"
                 title="Enable Push Notifications"
               >
                 <span>🔔</span> Allow Alerts
@@ -919,28 +921,28 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
             {showInstallBtn && (
               <button
                 onClick={handleInstallApp}
-                className="bg-amber-400 text-gray-950 px-2 py-1 rounded-lg text-[10px] font-bold shadow animate-pulse"
+                className="bg-amber-400 text-gray-950 px-2 py-1 rounded-lg text-[10px] font-bold shadow animate-pulse cursor-pointer"
               >
                 📲 App
               </button>
             )}
             <button
               onClick={() => setActiveTab('wallet')}
-              className="bg-white/10 border border-white/20 text-white px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1"
+              className="bg-white/10 border border-white/20 text-white px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
             >
               <span>🪙</span>
               <span>{tokenBalance}</span>
             </button>
             <button
               onClick={() => setActiveTab('wallet')}
-              className="bg-emerald-600 text-white px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow-sm"
+              className="bg-emerald-600 text-white px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow-sm cursor-pointer"
             >
               <span>₹</span>
               <span>{earningsBalance}</span>
             </button>
             <button
               onClick={handleLogout}
-              className="bg-red-700/80 hover:bg-red-700 text-white px-2 py-1 rounded-lg text-[11px] font-semibold transition"
+              className="bg-red-700/80 hover:bg-red-700 text-white px-2 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer"
             >
               Sign Out
             </button>
@@ -952,7 +954,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition shrink-0 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition shrink-0 cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-white text-orange-900 shadow-sm'
                   : 'text-orange-100 hover:bg-white/10'
@@ -977,7 +979,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               <div className="flex items-center gap-2">
                 <button
                   onClick={loadDashboardData}
-                  className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-2.5 py-1 rounded-lg"
+                  className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-2.5 py-1 rounded-lg cursor-pointer"
                 >
                   🔄 Refresh
                 </button>
@@ -1039,7 +1041,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                         ) : (
                           <button
                             onClick={() => handleAcceptLead(lead)}
-                            className="w-full font-bold py-2.5 rounded-xl text-xs shadow transition text-white bg-orange-600 hover:bg-orange-700"
+                            className="w-full font-bold py-2.5 rounded-xl text-xs shadow transition text-white bg-orange-600 hover:bg-orange-700 cursor-pointer"
                           >
                             Claim Priority ({TOKEN_COST} Tokens)
                           </button>
@@ -1047,7 +1049,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                       ) : (
                         <button
                           onClick={() => handleAcceptLead(lead)}
-                          className="w-full font-bold py-2.5 rounded-xl text-xs shadow transition text-white bg-emerald-600 hover:bg-emerald-700"
+                          className="w-full font-bold py-2.5 rounded-xl text-xs shadow transition text-white bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
                         >
                           🎉 Claim Ceremony (Free Mode)
                         </button>
@@ -1070,7 +1072,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               </div>
               <button
                 onClick={loadDashboardData}
-                className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-2.5 py-1 rounded-lg"
+                className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-2.5 py-1 rounded-lg cursor-pointer"
               >
                 🔄 Refresh
               </button>
@@ -1106,7 +1108,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <a
                       href={`tel:${b.phone}`}
-                      className="text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1"
+                      className="text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1 cursor-pointer"
                     >
                       <span>📞</span> Call
                     </a>
@@ -1115,7 +1117,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                     <button
                       type="button"
                       onClick={() => sendPanditProfileToYajmanWhatsApp(b)}
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1 transition"
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1 transition cursor-pointer"
                       title="Share your Acharya profile details on WhatsApp"
                     >
                       <span>💬</span> Send Profile
@@ -1124,14 +1126,14 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                     {/* COMPLETE POOJA VERIFICATION BUTTON */}
                     <button
                       onClick={() => handleOpenVerificationModal(b)}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition"
+                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition cursor-pointer"
                     >
                       ✓ Complete Pooja Verification
                     </button>
                     
                     <button
                       onClick={() => openCancelModal(b)}
-                      className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2.5 px-3 rounded-xl hover:bg-red-100"
+                      className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2.5 px-3 rounded-xl hover:bg-red-100 cursor-pointer"
                       title="Cancel Ceremony"
                     >
                       ✕
@@ -1150,7 +1152,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               <h2 className="text-base font-bold text-gray-900">Cancelled / Missed Leads</h2>
               <button
                 onClick={loadDashboardData}
-                className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-2.5 py-1 rounded-lg"
+                className="text-xs bg-orange-50 text-orange-700 border border-orange-200 font-bold px-2.5 py-1 rounded-lg cursor-pointer"
               >
                 🔄 Refresh
               </button>
@@ -1189,7 +1191,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               </div>
               <button
                 onClick={handleRequestPayout}
-                className="bg-white text-emerald-900 font-bold px-4 py-2 rounded-xl text-xs shadow hover:bg-emerald-50"
+                className="bg-white text-emerald-900 font-bold px-4 py-2 rounded-xl text-xs shadow hover:bg-emerald-50 cursor-pointer"
               >
                 Request Payout
               </button>
@@ -1205,7 +1207,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               </div>
               <button
                 onClick={() => setShowRechargeModal(true)}
-                className="bg-white text-orange-900 font-bold px-4 py-2 rounded-xl text-xs shadow hover:bg-amber-50"
+                className="bg-white text-orange-900 font-bold px-4 py-2 rounded-xl text-xs shadow hover:bg-amber-50 cursor-pointer"
               >
                 + Buy Tokens
               </button>
@@ -1215,7 +1217,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               <div className="bg-white p-4 sm:p-6 rounded-2xl border border-orange-200 shadow-xl space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h3 className="text-base font-bold text-gray-900">Select Token Package</h3>
-                  <button onClick={() => setShowRechargeModal(false)} className="text-gray-400 font-bold p-1">
+                  <button onClick={() => setShowRechargeModal(false)} className="text-gray-400 font-bold p-1 cursor-pointer">
                     ✕
                   </button>
                 </div>
@@ -1232,7 +1234,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                       </div>
                       <button
                         onClick={() => handleBuyTokens(pack.name, pack.amount, pack.tokens)}
-                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-1.5 rounded-lg text-xs"
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-1.5 rounded-lg text-xs cursor-pointer"
                       >
                         Pay ₹{pack.amount}
                       </button>
@@ -1279,13 +1281,17 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-gray-900">{panditName}</h3>
-                    <p className="text-xs text-green-700 font-semibold">✓ Verified Vedic Acharya</p>
+                    {isVerified ? (
+                      <p className="text-xs text-green-700 font-semibold">✓ Verified Vedic Acharya</p>
+                    ) : (
+                      <p className="text-xs text-amber-700 font-semibold">⏳ Pending Verification</p>
+                    )}
                     <p className="text-[11px] text-gray-500 font-mono">+91 {phone}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="bg-orange-100 text-orange-800 font-bold px-3 py-1.5 rounded-xl text-xs"
+                  className="bg-orange-100 text-orange-800 font-bold px-3 py-1.5 rounded-xl text-xs cursor-pointer"
                 >
                   ✏️ Edit
                 </button>
@@ -1367,7 +1373,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                       />
                       <button
                         onClick={() => handleDeleteGalleryImage(index)}
-                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full text-[10px]"
+                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full text-[10px] cursor-pointer"
                       >
                         🗑️
                       </button>
@@ -1461,7 +1467,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                     key={side}
                     type="button"
                     onClick={() => chooseCancelSide(side)}
-                    className={`p-2 rounded-xl border font-bold ${
+                    className={`p-2 rounded-xl border font-bold cursor-pointer ${
                       cancelBy === side
                         ? 'border-orange-600 bg-orange-50 text-orange-900'
                         : 'border-gray-200 text-gray-600'
@@ -1486,14 +1492,14 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
             <div className="flex gap-2 pt-1">
               <button
                 onClick={() => setActiveCancelLead(null)}
-                className="flex-1 border py-2 rounded-xl text-xs font-bold"
+                className="flex-1 border py-2 rounded-xl text-xs font-bold cursor-pointer"
               >
                 Back
               </button>
               <button
                 disabled={cancelSubmitting}
                 onClick={handleConfirmCancellation}
-                className="flex-1 bg-red-600 text-white py-2 rounded-xl text-xs font-bold"
+                className="flex-1 bg-red-600 text-white py-2 rounded-xl text-xs font-bold cursor-pointer"
               >
                 Confirm
               </button>
@@ -1537,7 +1543,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                 type="button"
                 onClick={handleResendOtpInsideModal}
                 disabled={resendingOtp}
-                className="text-orange-700 font-bold hover:underline disabled:opacity-50"
+                className="text-orange-700 font-bold hover:underline disabled:opacity-50 cursor-pointer"
               >
                 {resendingOtp ? 'Resending...' : '📲 Resend OTP via SMS'}
               </button>
@@ -1546,7 +1552,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                 type="button"
                 onClick={handleReportOtpNotSent}
                 disabled={reportedFail}
-                className={`font-bold text-xs ${reportedFail ? 'text-gray-400' : 'text-red-600 hover:underline'}`}
+                className={`font-bold text-xs cursor-pointer ${reportedFail ? 'text-gray-400' : 'text-red-600 hover:underline'}`}
               >
                 {reportedFail ? '✓ Reported to Admin' : '⚠️ OTP Not Sent?'}
               </button>
@@ -1559,13 +1565,13 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                   setEnteredOtp('');
                   setOtpNotice(null);
                 }}
-                className="flex-1 border border-gray-300 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+                className="flex-1 border border-gray-300 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
               >
                 Close
               </button>
               <button
                 onClick={handleVerifyCompletionOtp}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition cursor-pointer"
               >
                 Verify &amp; Complete
               </button>
@@ -1629,13 +1635,13 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setIsEditing(false)}
-                className="flex-1 border py-2 rounded-xl text-xs font-bold"
+                className="flex-1 border py-2 rounded-xl text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveProfile}
-                className="flex-1 bg-orange-600 text-white py-2 rounded-xl text-xs font-bold"
+                className="flex-1 bg-orange-600 text-white py-2 rounded-xl text-xs font-bold cursor-pointer"
               >
                 Save
               </button>
