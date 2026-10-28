@@ -43,18 +43,18 @@ const TOKEN_PACKS = [
   { name: 'Micro Trial', tokens: 35, amount: 50, tag: '' },
   { name: 'Trial Pack', tokens: 75, amount: 100, tag: '' },
   { name: 'Starter Pack', tokens: 110, amount: 150, tag: '' },
-  { name: 'Base Pack', tokens: 150, amount: 200, tag: 'Popular' },
+  { name: 'Base Pack', tokens: 150, amount: 200, tag: '⭐ Popular' },
   { name: 'Purohit Plus', tokens: 225, amount: 300, tag: '' },
   { name: 'Double Pack', tokens: 300, amount: 400, tag: '' },
   { name: 'Bronze Acharya', tokens: 375, amount: 500, tag: '' },
   { name: 'Silver Acharya', tokens: 450, amount: 600, tag: '' },
   { name: 'Gold Acharya', tokens: 600, amount: 800, tag: '' },
-  { name: 'Platinum Pack', tokens: 875, amount: 1000, tag: '🎁 +75 Bonus' },
+  { name: 'Platinum Pack', tokens: 875, amount: 1000, tag: '🎁 +75 FREE TOKENS' },
   { name: 'Diamond Shastri', tokens: 1125, amount: 1500, tag: '' },
-  { name: 'Royal Shastri', tokens: 1750, amount: 2000, tag: '🎁 +150 Bonus' },
-  { name: 'Vedic Samrat', tokens: 2550, amount: 3000, tag: '🎁 +150 Bonus' },
-  { name: 'Brahmarishi Pack', tokens: 3500, amount: 4000, tag: '🎁 +300 Bonus' },
-  { name: 'Maharishi Crown', tokens: 4500, amount: 5000, tag: '👑 +450 Bonus Free' },
+  { name: 'Royal Shastri', tokens: 1750, amount: 2000, tag: '🔥 +150 FREE TOKENS' },
+  { name: 'Vedic Samrat', tokens: 2400, amount: 3000, tag: '' },
+  { name: 'Brahmarishi Pack', tokens: 3500, amount: 4000, tag: '⚡ +300 FREE TOKENS' },
+  { name: 'Maharishi Crown', tokens: 4550, amount: 5000, tag: '👑 +500 FREE TOKENS' },
 ];
 
 const YAJMAN_CANCEL_REASONS = [
@@ -433,12 +433,12 @@ Namaste *${targetLead.yajman_name || 'Yajman Ji'}*,
 Aapki pooja booking (*${targetLead.puja_name}*) accept kar li gayi hai.
 
 👤 *Verified Acharya Profile Details:*
-• *Acharya Name:* ${panditName}
-• *Ritual Experience:* ${experience}
-• *Base City:* ${baseCity}
-• *Direct Contact:* +91 ${phone}
-• *Scheduled Date:* ${targetLead.puja_date}
-• *Time Slot:* ${targetLead.puja_time}
+- *Acharya Name:* ${panditName}
+- *Ritual Experience:* ${experience}
+- *Base City:* ${baseCity}
+- *Direct Contact:* +91 ${phone}
+- *Scheduled Date:* ${targetLead.puja_date}
+- *Time Slot:* ${targetLead.puja_time}
 
 📜 *Acharya Bio:*
 "${bio}"
@@ -1221,20 +1221,31 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                     ✕
                   </button>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[60vh] overflow-y-auto p-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 max-h-[60vh] overflow-y-auto p-1.5 pt-3">
                   {TOKEN_PACKS.map((pack) => (
                     <div
                       key={pack.name}
-                      className="p-3 rounded-xl border border-gray-200 text-center space-y-1.5 flex flex-col justify-between"
+                      className={`relative p-3 rounded-xl border text-center space-y-1.5 flex flex-col justify-between transition ${
+                        pack.tag 
+                          ? 'border-orange-300 bg-gradient-to-b from-orange-50/40 to-white shadow-sm ring-1 ring-orange-200' 
+                          : 'border-gray-200 bg-white'
+                      }`}
                     >
-                      <div>
+                      {/* Top Attractive Offer Tag */}
+                      {pack.tag && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-md tracking-wider whitespace-nowrap animate-pulse">
+                          {pack.tag}
+                        </span>
+                      )}
+
+                      <div className="pt-1">
                         <span className="text-[10px] font-bold text-gray-500 block truncate">{pack.name}</span>
-                        <p className="text-base font-extrabold text-orange-600">{pack.tokens} Tokens</p>
+                        <p className="text-base font-black text-orange-600">{pack.tokens} Tokens</p>
                         <p className="text-xs font-bold text-gray-900">₹{pack.amount}</p>
                       </div>
                       <button
                         onClick={() => handleBuyTokens(pack.name, pack.amount, pack.tokens)}
-                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-1.5 rounded-lg text-xs cursor-pointer"
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-1.5 rounded-lg text-xs cursor-pointer shadow-sm transition"
                       >
                         Pay ₹{pack.amount}
                       </button>
