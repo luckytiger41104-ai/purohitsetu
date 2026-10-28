@@ -49,12 +49,12 @@ const TOKEN_PACKS = [
   { name: 'Bronze Acharya', tokens: 375, amount: 500, tag: '' },
   { name: 'Silver Acharya', tokens: 450, amount: 600, tag: '' },
   { name: 'Gold Acharya', tokens: 600, amount: 800, tag: '' },
-  { name: 'Platinum Pack', tokens: 800, amount: 1000, tag: '🎁 +75 Bonus' },
+  { name: 'Platinum Pack', tokens: 875, amount: 1000, tag: '🎁 +75 Bonus' },
   { name: 'Diamond Shastri', tokens: 1125, amount: 1500, tag: '' },
-  { name: 'Royal Shastri', tokens: 1600, amount: 2000, tag: '🎁 +150 Bonus' },
-  { name: 'Vedic Samrat', tokens: 2400, amount: 3000, tag: '🎁 +150 Bonus' },
-  { name: 'Brahmarishi Pack', tokens: 3200, amount: 4000, tag: '🎁 +300 Bonus' },
-  { name: 'Maharishi Crown', tokens: 4050, amount: 5000, tag: '👑 +450 Bonus Free' },
+  { name: 'Royal Shastri', tokens: 1750, amount: 2000, tag: '🎁 +150 Bonus' },
+  { name: 'Vedic Samrat', tokens: 2550, amount: 3000, tag: '🎁 +150 Bonus' },
+  { name: 'Brahmarishi Pack', tokens: 3500, amount: 4000, tag: '🎁 +300 Bonus' },
+  { name: 'Maharishi Crown', tokens: 4500, amount: 5000, tag: '👑 +450 Bonus Free' },
 ];
 
 const YAJMAN_CANCEL_REASONS = [
