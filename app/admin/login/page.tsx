@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
@@ -16,8 +16,30 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // --- 3 Attempts & 1-Minute Lockout Logic ---
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockTimer, setLockTimer] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (lockTimer > 0) {
+      interval = setInterval(() => {
+        setLockTimer((prev) => {
+          if (prev <= 1) {
+            setFailedAttempts(0); // 1 minute complete hone par counter wapas 0
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [lockTimer]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (lockTimer > 0) return;
+
     setError('');
     setMessage('');
     setLoading(true);
@@ -33,8 +55,20 @@ export default function AdminLoginPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed');
+      
+      if (!res.ok) {
+        const nextAttempts = failedAttempts + 1;
+        setFailedAttempts(nextAttempts);
 
+        if (nextAttempts >= 3) {
+          setLockTimer(60); // 3 attempts ke baad 1 minute ka lock
+          throw new Error('Too many failed attempts! Try again after 1 minute.');
+        } else {
+          throw new Error(`${data.error || 'Login failed'}. (${3 - nextAttempts} attempt(s) remaining)`);
+        }
+      }
+
+      setFailedAttempts(0);
       router.push('/admin');
       router.refresh();
     } catch (err: any) {
@@ -127,9 +161,10 @@ export default function AdminLoginPage() {
               <input
                 type="email"
                 required
+                disabled={lockTimer > 0}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 disabled:opacity-50"
                 placeholder="Enter admin email"
               />
             </div>
@@ -140,18 +175,21 @@ export default function AdminLoginPage() {
               <input
                 type="password"
                 required
+                disabled={lockTimer > 0}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 disabled:opacity-50"
                 placeholder="Enter password"
               />
             </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || lockTimer > 0}
               className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900"
             >
-              {loading ? 'Signing In...' : 'Login'}
+              {lockTimer > 0 
+                ? `Please wait ${lockTimer}s` 
+                : loading ? 'Signing In...' : 'Login'}
             </button>
             <div className="text-center mt-3">
               <button
