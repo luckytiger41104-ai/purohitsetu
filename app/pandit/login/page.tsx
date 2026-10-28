@@ -25,6 +25,11 @@ const readSavedPhone = (): string => {
   return match ? cleanNumber(match[2]) : '';
 };
 
+const hasAcceptedTerms = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('pandit_terms_accepted') === 'true';
+};
+
 const inputBase =
   'w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950';
 
@@ -50,11 +55,21 @@ export default function PanditAuthPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
 
+  // Terms and conditions modal state
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [pendingPhone, setPendingPhone] = useState('');
+
   // Persistent check on app mount
   useEffect(() => {
     const saved = readSavedPhone();
     if (saved.length === 10) {
-      router.replace('/pandit/dashboard');
+      if (!hasAcceptedTerms()) {
+        setPendingPhone(saved);
+        setShowTermsModal(true);
+        setCheckingSession(false);
+      } else {
+        router.replace('/pandit/dashboard');
+      }
     } else {
       setCheckingSession(false);
     }
@@ -73,6 +88,19 @@ export default function PanditAuthPage() {
 
   const finishLogin = (targetPhone: string) => {
     saveSession(targetPhone);
+    if (!hasAcceptedTerms()) {
+      setPendingPhone(targetPhone);
+      setShowTermsModal(true);
+    } else {
+      router.replace('/pandit/dashboard');
+    }
+  };
+
+  const handleAcceptTermsAndProceed = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pandit_terms_accepted', 'true');
+    }
+    setShowTermsModal(false);
     router.replace('/pandit/dashboard');
   };
 
@@ -265,7 +293,7 @@ export default function PanditAuthPage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">PurohitSetu Acharya</h1>
-            <p className="text-[11px] sm:text-xs text-gray-500">Verified Vedic Pandits & Purohits Gateway</p>
+            <p className="text-[11px] sm:text-xs text-gray-500">Verified Vedic Pandits &amp; Purohits Gateway</p>
           </div>
 
           {mode !== 'forgot' && (
@@ -465,6 +493,51 @@ export default function PanditAuthPage() {
           </form>
         )}
       </div>
+
+      {/* MANDATORY TERMS AND CONDITIONS MODAL (UNSKIPPABLE) */}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border-2 border-orange-300 p-6 sm:p-7 space-y-4 max-h-[90vh] flex flex-col justify-between">
+            <div className="text-center space-y-1 border-b pb-3 border-amber-200">
+              <span className="text-2xl">📜</span>
+              <h2 className="text-lg font-black text-gray-900">PurohitSetu Acharya Code of Conduct</h2>
+              <p className="text-xs text-gray-500">Terms &amp; Obligations for Verified Vedic Pandits</p>
+            </div>
+
+            <div className="overflow-y-auto space-y-3 text-xs text-gray-700 pr-1 leading-relaxed">
+              <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
+                <p className="font-bold text-amber-950 mb-1">1. Shastric Vidhi &amp; Ritual Authenticity</p>
+                <p>All rituals must be strictly conducted in accordance with authentic Vedic scriptures and traditions without unnecessary shortcuts.</p>
+              </div>
+
+              <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
+                <p className="font-bold text-amber-950 mb-1">2. Punctuality &amp; Devotee Respect</p>
+                <p>Pandit Ji must reach the Yajman&apos;s venue at least 20–30 minutes prior to the scheduled auspicious Muhurat.</p>
+              </div>
+
+              <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
+                <p className="font-bold text-amber-950 mb-1">3. Strict Transparency &amp; Dignity</p>
+                <p>No extra or unagreed demands should be made during the ceremony. All service arrangements are to be carried out with complete devotion and transparency.</p>
+              </div>
+
+              <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
+                <p className="font-bold text-amber-950 mb-1">4. Direct Devotee Communication</p>
+                <p>Upon accepting a booking, your verified Acharya profile and credentials will be shared with the Yajman for mutual verification and smooth coordination.</p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={handleAcceptTermsAndProceed}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-extrabold text-sm shadow-lg transition active:scale-98 cursor-pointer"
+              >
+                I Understand &amp; Accept Acharya Terms →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

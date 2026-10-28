@@ -419,6 +419,34 @@ export default function PanditDashboardPage() {
     if (phone) loadDashboardData();
   }, [phone, loadDashboardData]);
 
+  /* ---------------- SEND PANDIT PROFILE TO YAJMAN ON WHATSAPP ---------------- */
+  const sendPanditProfileToYajmanWhatsApp = (targetLead: Lead) => {
+    const rawYajmanPhone = cleanPhone(targetLead.phone);
+    if (!rawYajmanPhone || rawYajmanPhone.length !== 10) return;
+
+    const message = 
+`🚩 *PurohitSetu Vedic Confirmation* 🚩
+
+Namaste *${targetLead.yajman_name || 'Yajman Ji'}*,
+Aapki pooja booking (*${targetLead.puja_name}*) accept kar li gayi hai.
+
+👤 *Verified Acharya Profile Details:*
+• *Acharya Name:* ${panditName}
+• *Ritual Experience:* ${experience}
+• *Base City:* ${baseCity}
+• *Direct Contact:* +91 ${phone}
+• *Scheduled Date:* ${targetLead.puja_date}
+• *Time Slot:* ${targetLead.puja_time}
+
+📜 *Acharya Bio:*
+"${bio}"
+
+Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan par pahuchenge. Shubh Aashirvaad!`;
+
+    const waUrl = `https://wa.me/91${rawYajmanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+  };
+
   /* ---------------- Claiming ---------------- */
   const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
     const { data: currentLead } = await supabase
@@ -485,12 +513,14 @@ export default function PanditDashboardPage() {
       await supabase.from('pandits').update({ wallet_balance: remaining }).eq('phone', phone);
       setTokenBalance(remaining);
 
-      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens deducted.`);
+      alert(`Ceremony claimed successfully! ${TOKEN_COST} priority tokens deducted. Opening WhatsApp to send your profile to Yajman...`);
+      sendPanditProfileToYajmanWhatsApp(lead);
     } else {
       const claimed = await claimLead(lead, 'free');
       if (!claimed) return;
 
-      alert(`Ceremony claimed in Open Mode! A ${COMMISSION_PERCENT}% platform fee applies upon completion.`);
+      alert(`Ceremony claimed in Open Mode! A ${COMMISSION_PERCENT}% platform fee applies upon completion. Opening WhatsApp to send your profile to Yajman...`);
+      sendPanditProfileToYajmanWhatsApp(lead);
     }
 
     await loadDashboardData();
@@ -992,7 +1022,7 @@ export default function PanditDashboardPage() {
                       <p className="text-gray-700">📅 <strong>Puja Date:</strong> {lead.puja_date}</p>
                       <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {lead.puja_time}</p>
                       {lead.samagri && (
-                        <p className="text-orange-800 font-bold">🌿 <strong>Samagri:</strong> Complete Hawan & Samagri Kit Included</p>
+                        <p className="text-orange-800 font-bold">🌿 <strong>Samagri:</strong> Complete Hawan &amp; Samagri Kit Included</p>
                       )}
                       <p className="text-gray-500">🔒 <strong>Phone:</strong> {maskPhone(lead.phone)}</p>
                     </div>
@@ -1030,13 +1060,13 @@ export default function PanditDashboardPage() {
           </div>
         )}
 
-        {/* BOOKINGS TAB (ZERO WHATSAPP REDIRECT) */}
+        {/* BOOKINGS TAB */}
         {activeTab === 'bookings' && (
           <div className="space-y-3">
             <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-gray-900">Confirmed Bookings</h2>
-                <p className="text-[11px] text-gray-500">Tap below to trigger SMS verification code upon ritual end</p>
+                <p className="text-[11px] text-gray-500">Direct contact &amp; ceremony closure panel</p>
               </div>
               <button
                 onClick={loadDashboardData}
@@ -1069,17 +1099,27 @@ export default function PanditDashboardPage() {
                     <p className="text-gray-700">📅 <strong>Puja Date:</strong> {b.puja_date}</p>
                     <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {b.puja_time}</p>
                     {b.samagri && (
-                      <p className="text-emerald-900 font-bold">🌿 <strong>Samagri:</strong> Complete Hawan & Samagri Kit Included</p>
+                      <p className="text-emerald-900 font-bold">🌿 <strong>Samagri:</strong> Complete Hawan &amp; Samagri Kit Included</p>
                     )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <a
                       href={`tel:${b.phone}`}
-                      className="text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-sm"
+                      className="text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1"
                     >
-                      📞 Call
+                      <span>📞</span> Call
                     </a>
+
+                    {/* SEND PROFILE TO YAJMAN ON WHATSAPP */}
+                    <button
+                      type="button"
+                      onClick={() => sendPanditProfileToYajmanWhatsApp(b)}
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1 transition"
+                      title="Share your Acharya profile details on WhatsApp"
+                    >
+                      <span>💬</span> Send Profile
+                    </button>
                     
                     {/* COMPLETE POOJA VERIFICATION BUTTON */}
                     <button
@@ -1091,7 +1131,8 @@ export default function PanditDashboardPage() {
                     
                     <button
                       onClick={() => openCancelModal(b)}
-                      className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2.5 px-3 rounded-xl"
+                      className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2.5 px-3 rounded-xl hover:bg-red-100"
+                      title="Cancel Ceremony"
                     >
                       ✕
                     </button>
@@ -1342,13 +1383,13 @@ export default function PanditDashboardPage() {
         {activeTab === 'rules' && (
           <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
             <div className="border-b pb-3">
-              <h2 className="text-base sm:text-lg font-bold text-gray-900">Platform Rules & Policies</h2>
-              <p className="text-[11px] text-gray-500 mt-0.5">Acharya Code of Conduct, Lead Allocation & Service Guidelines</p>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">Platform Rules &amp; Policies</h2>
+              <p className="text-[11px] text-gray-500 mt-0.5">Acharya Code of Conduct, Lead Allocation &amp; Service Guidelines</p>
             </div>
 
             <div className="space-y-3">
               <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50">
-                <h3 className="text-xs font-bold text-amber-950">1. Priority Window & Token Claims</h3>
+                <h3 className="text-xs font-bold text-amber-950">1. Priority Window &amp; Token Claims</h3>
                 <p className="text-xs text-amber-900 mt-1 leading-relaxed">
                   The initial 60 seconds are reserved exclusively for Token holders with 0% platform commission.
                 </p>
@@ -1369,14 +1410,14 @@ export default function PanditDashboardPage() {
               </div>
 
               <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/50">
-                <h3 className="text-xs font-bold text-purple-950">4. Settlement Windows & Account Strikes</h3>
+                <h3 className="text-xs font-bold text-purple-950">4. Settlement Windows &amp; Account Strikes</h3>
                 <p className="text-xs text-purple-900 mt-1 leading-relaxed">
                   Earnings settlements are cleared within 24 hours (48 hours on weekends). Accumulating 2 active strikes temporarily suspends lead allocation.
                 </p>
               </div>
 
               <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50">
-                <h3 className="text-xs font-bold text-rose-950">5. Cancellation, Token Refunds & Anti-Fraud Policy</h3>
+                <h3 className="text-xs font-bold text-rose-950">5. Cancellation, Token Refunds &amp; Anti-Fraud Policy</h3>
                 <ul className="text-xs text-rose-900 mt-1.5 space-y-1 list-disc list-inside leading-relaxed">
                   <li><strong>Priority Lead Cancellation:</strong> If a token-claimed lead is cancelled by the Yajman, 150 priority tokens are credited back to the wallet upon admin review.</li>
                   <li><strong>Free Mode Cancellation:</strong> Ceremonies claimed under Open Free Mode do not carry token refund eligibility.</li>
@@ -1393,7 +1434,7 @@ export default function PanditDashboardPage() {
                 rel="noreferrer"
                 className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
               >
-                Pandit Partner Terms & Operating Policy
+                Pandit Partner Terms &amp; Operating Policy
               </a>
               <a
                 href="/delete-account"
@@ -1526,7 +1567,7 @@ export default function PanditDashboardPage() {
                 onClick={handleVerifyCompletionOtp}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition"
               >
-                Verify & Complete
+                Verify &amp; Complete
               </button>
             </div>
           </div>
