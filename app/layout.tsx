@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -53,18 +52,21 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://checkout.razorpay.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
-        <Script
+        {/* Google tag (gtag.js) */}
+        <script
+          async
           src="https://www.googletagmanager.com/gtag/js?id=G-SSPSJMON0L"
-          strategy="afterInteractive"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-SSPSJMON0L');
-          `}
-        </Script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-SSPSJMON0L');
+            `,
+          }}
+        />
       </head>
       <body className="antialiased bg-[#FFFDF7] text-slate-900">{children}</body>
     </html>
