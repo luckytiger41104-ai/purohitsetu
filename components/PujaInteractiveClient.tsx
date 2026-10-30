@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { triggerNewBookingNotification } from "@/lib/notifyPandits";
 
@@ -630,6 +630,7 @@ const loadRazorpayScript = (): Promise<boolean> => {
 };
 
 export default function PujaInteractiveClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -783,6 +784,8 @@ export default function PujaInteractiveClient() {
         date: "",
         samagri: true,
       });
+
+      router.push("/thank-you");
     } catch (err: any) {
       setStatusMsg({
         type: "error",
