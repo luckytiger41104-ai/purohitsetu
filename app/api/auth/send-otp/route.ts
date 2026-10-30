@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        route: 'q',
+        route: 'otp',
         message: `Your PurohitSetu verification code is ${generatedOtp}. Valid for 5 minutes.`,
         language: 'english',
         flash: 0,
