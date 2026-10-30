@@ -3,12 +3,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { auth } from '@/lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 declare global {
   interface Window {
     Razorpay: any;
     Capacitor?: any;
     OneSignalDeferred?: any[];
+    recaptchaVerifier?: any;
+    confirmationResult?: ConfirmationResult;
   }
 }
 
@@ -529,79 +533,59 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
     setActiveTab('bookings');
   };
 
-  /* ---------------- Complete Pooja Verification Open Trigger ---------------- */
+  /* ---------------- FIREBASE PHONE AUTH VERIFICATION FLOW ---------------- */
+  const initRecaptchaVerifier = () => {
+    if (typeof window === 'undefined') return null;
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+      });
+    }
+    return window.recaptchaVerifier;
+  };
+
   const handleOpenVerificationModal = async (booking: Lead) => {
     setActiveOtpLead(booking);
     setEnteredOtp('');
     setOtpNotice('Sending OTP to Yajman via SMS...');
     setReportedFail(false);
 
-    let activeOtp = booking.completion_otp;
-    if (!activeOtp) {
-      activeOtp = Math.floor(1000 + Math.random() * 9000).toString();
-      await supabase.from('bookings').update({ completion_otp: activeOtp }).eq('id', booking.id);
-    }
-
-    // Trigger SMS to Yajman
     try {
-      const res = await fetch('/api/send-completion-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: booking.phone,
-          otp: activeOtp,
-          yajmanName: booking.yajman_name,
-          pujaName: booking.puja_name,
-        }),
-      });
-      const resData = await res.json();
-      if (resData.success) {
-        setOtpNotice('✓ OTP sent to Yajman via SMS. Please ask Yajman for the 4-digit code.');
-      } else {
-        setOtpNotice('⚠️ SMS delivery delay. If Yajman has not received OTP, click "Resend" or report below.');
+      const rawNumber = cleanPhone(booking.phone);
+      if (rawNumber.length !== 10) {
+        setOtpNotice('⚠️ Yajman phone number invalid. Please check number.');
+        return;
       }
-    } catch {
-      setOtpNotice('⚠️ Network error while dispatching SMS. You can try resending.');
+
+      const appVerifier = initRecaptchaVerifier();
+      const confirmation = await signInWithPhoneNumber(auth, `+91${rawNumber}`, appVerifier);
+      window.confirmationResult = confirmation;
+      setOtpNotice('✓ OTP sent to Yajman via SMS. Please ask Yajman for the 6-digit code.');
+    } catch (err: any) {
+      console.error('Firebase OTP dispatch error:', err);
+      setOtpNotice('⚠️ SMS delivery delay. If Yajman has not received OTP, click "Resend" or report below.');
     }
   };
 
-  /* ---------------- Resend OTP in Modal ---------------- */
   const handleResendOtpInsideModal = async () => {
     if (!activeOtpLead || resendingOtp) return;
     setResendingOtp(true);
     setOtpNotice('Generating new OTP and resending...');
 
     try {
-      const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
-      await supabase.from('bookings').update({ completion_otp: newOtp }).eq('id', activeOtpLead.id);
-
-      const res = await fetch('/api/send-completion-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: activeOtpLead.phone,
-          otp: newOtp,
-          yajmanName: activeOtpLead.yajman_name,
-          pujaName: activeOtpLead.puja_name,
-        }),
-      });
-      const resData = await res.json();
-
-      if (resData.success) {
-        setOtpNotice('✓ Fresh OTP resent to Yajman via SMS.');
-      } else {
-        setOtpNotice('⚠️ SMS could not be sent. Please use "OTP Not Received" to alert Admin.');
-      }
-
-      activeOtpLead.completion_otp = newOtp;
-    } catch {
-      setOtpNotice('⚠️ Resend failed. Please check internet connection.');
+      const rawNumber = cleanPhone(activeOtpLead.phone);
+      const appVerifier = initRecaptchaVerifier();
+      const confirmation = await signInWithPhoneNumber(auth, `+91${rawNumber}`, appVerifier);
+      window.confirmationResult = confirmation;
+      setOtpNotice('✓ Fresh OTP resent to Yajman via SMS.');
+    } catch (err: any) {
+      console.error('Resend error:', err);
+      setOtpNotice('⚠️ SMS could not be sent. Please use "OTP Not Received" to alert Admin.');
     } finally {
       setResendingOtp(false);
     }
   };
 
-  /* ---------------- Report OTP Not Sent to Admin ---------------- */
   const handleReportOtpNotSent = async () => {
     if (!activeOtpLead) return;
     try {
@@ -616,38 +600,44 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
     }
   };
 
-  /* ---------------- Verify Completion OTP ---------------- */
   const handleVerifyCompletionOtp = async () => {
     if (!activeOtpLead) return;
 
     const code = enteredOtp.trim();
-    if (!code) {
-      alert('Please enter the 4-digit verification code.');
+    if (!code || code.length < 6) {
+      alert('Please enter the 6-digit verification code.');
       return;
     }
 
-    if (activeOtpLead.completion_otp && code !== activeOtpLead.completion_otp) {
-      alert('Invalid verification code. Please confirm the 4-digit code with Yajman.');
-      return;
+    try {
+      if (!window.confirmationResult) {
+        alert('Verification session expired. Please click "Resend OTP".');
+        return;
+      }
+
+      await window.confirmationResult.confirm(code);
+
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          status: 'completed',
+          otp_dispatch_status: 'verified_completed',
+        })
+        .eq('id', activeOtpLead.id);
+
+      if (error) {
+        alert('Status update failed: ' + error.message);
+        return;
+      }
+
+      alert('Ceremony verified and marked as completed successfully.');
+      setActiveOtpLead(null);
+      setEnteredOtp('');
+      await loadDashboardData();
+    } catch (err: any) {
+      console.error('Firebase verification error:', err);
+      alert('Invalid verification code. Please confirm the 6-digit code with Yajman.');
     }
-
-    const { error } = await supabase
-      .from('bookings')
-      .update({
-        status: 'completed',
-        otp_dispatch_status: 'verified_completed',
-      })
-      .eq('id', activeOtpLead.id);
-
-    if (error) {
-      alert('Status update failed: ' + error.message);
-      return;
-    }
-
-    alert('Ceremony verified and marked as completed successfully.');
-    setActiveOtpLead(null);
-    setEnteredOtp('');
-    await loadDashboardData();
   };
 
   /* ---------------- Cancellation ---------------- */
@@ -889,6 +879,9 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
 
   return (
     <div className="min-h-screen w-full max-w-full bg-gray-50 pb-24 font-sans text-gray-900 overflow-x-hidden">
+      {/* Invisible reCAPTCHA container for Firebase Phone Auth */}
+      <div id="recaptcha-container"></div>
+
       {strikeCount > 0 && (
         <div className="bg-red-600 text-white px-3 py-2 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
           <span>⚠️ Warning: {strikeCount} Strike(s) Active. Two strikes suspend lead access.</span>
@@ -1231,7 +1224,6 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                           : 'border-gray-200 bg-white'
                       }`}
                     >
-                      {/* Top Attractive Offer Tag */}
                       {pack.tag && (
                         <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-md tracking-wider whitespace-nowrap animate-pulse">
                           {pack.tag}
@@ -1422,7 +1414,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50">
                 <h3 className="text-xs font-bold text-blue-950">3. Verification OTP</h3>
                 <p className="text-xs text-blue-900 mt-1 leading-relaxed">
-                  Upon finishing the ritual, collect the 4-digit completion code directly from the Yajman to verify and close out the ceremony.
+                  Upon finishing the ritual, collect the 6-digit completion code directly from the Yajman to verify and close out the ceremony.
                 </p>
               </div>
 
@@ -1527,7 +1519,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
             <div>
               <h3 className="text-base font-bold text-gray-900">Complete Pooja Verification</h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                SMS has been dispatched to Yajman (<strong>{activeOtpLead.yajman_name}</strong>). Collect the 4-digit code to finish.
+                SMS has been dispatched to Yajman (<strong>{activeOtpLead.yajman_name}</strong>). Collect the 6-digit code to finish.
               </p>
             </div>
 
@@ -1541,10 +1533,10 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={4}
+                maxLength={6}
                 value={enteredOtp}
                 onChange={(e) => setEnteredOtp(e.target.value)}
-                placeholder="Enter 4-digit OTP"
+                placeholder="Enter 6-digit OTP"
                 className="w-full text-center font-mono text-2xl tracking-widest border-2 border-orange-300 rounded-xl py-2.5 focus:border-orange-600 focus:outline-none"
               />
             </div>

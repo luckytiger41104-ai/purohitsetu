@@ -2,6 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+
+declare global {
+  interface Window {
+    recaptchaVerifier?: any;
+    confirmationResult?: ConfirmationResult;
+  }
+}
 
 type Mode = 'login' | 'register' | 'forgot';
 type Step = 'form' | 'otp';
@@ -104,6 +113,17 @@ export default function PanditAuthPage() {
     router.replace('/pandit/dashboard');
   };
 
+  /* ---------- Invisible reCAPTCHA Helper ---------- */
+  const initRecaptchaVerifier = () => {
+    if (typeof window === 'undefined') return null;
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'login-recaptcha-container', {
+        size: 'invisible',
+      });
+    }
+    return window.recaptchaVerifier;
+  };
+
   /* ---------- Password login ---------- */
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +160,7 @@ export default function PanditAuthPage() {
     }
   };
 
-  /* ---------- OTP Send ---------- */
+  /* ---------- Firebase OTP Send (Register & Forgot Password) ---------- */
   const handleSendOtp = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     clearMessages();
@@ -164,27 +184,20 @@ export default function PanditAuthPage() {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: targetPhone, purpose: mode }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setErrorMsg(data.message || 'Failed to send verification code.');
-      } else {
-        setInfoMsg(`Verification code sent to +91 ${targetPhone}. Valid for 5 minutes.`);
-        setStep('otp');
-      }
-    } catch {
-      setErrorMsg('Network error. Please try again.');
+      const appVerifier = initRecaptchaVerifier();
+      const confirmation = await signInWithPhoneNumber(auth, `+91${targetPhone}`, appVerifier);
+      window.confirmationResult = confirmation;
+      setInfoMsg(`Verification code sent to +91 ${targetPhone}. Valid for 5 minutes.`);
+      setStep('otp');
+    } catch (err: any) {
+      console.error('Firebase Auth SMS error:', err);
+      setErrorMsg(err.message || 'Failed to send SMS verification code. Please retry.');
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------- OTP Verify ---------- */
+  /* ---------- Firebase OTP Verify & Account Creation / Reset ---------- */
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     clearMessages();
@@ -192,17 +205,26 @@ export default function PanditAuthPage() {
     const targetPhone = cleanNumber(phone);
     const targetOtp = otp.trim();
 
-    if (targetOtp.length !== 4) {
-      setErrorMsg('Please enter the 4-digit verification code sent via SMS.');
+    if (targetOtp.length !== 6) {
+      setErrorMsg('Please enter the 6-digit verification code sent via SMS.');
+      return;
+    }
+
+    if (!window.confirmationResult) {
+      setErrorMsg('Verification session expired. Please click "Resend SMS Code".');
       return;
     }
 
     setLoading(true);
     try {
+      // 1. Verify OTP with Google Firebase
+      await window.confirmationResult.confirm(targetOtp);
+
+      // 2. Save user profile / update password in DB
       const payload: Record<string, string> = {
         phone: targetPhone,
-        otp: targetOtp,
         password: password.trim(),
+        firebase_verified: 'true',
       };
 
       if (mode === 'register') {
@@ -222,12 +244,13 @@ export default function PanditAuthPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setErrorMsg(data.message || 'Verification failed. Please retry.');
+        setErrorMsg(data.message || 'Account sync failed. Please contact support.');
       } else {
         finishLogin(targetPhone);
       }
-    } catch {
-      setErrorMsg('Network error occurred during verification.');
+    } catch (err: any) {
+      console.error('OTP confirmation failed:', err);
+      setErrorMsg('Invalid verification code or code expired. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -285,6 +308,9 @@ export default function PanditAuthPage() {
 
   return (
     <div className="min-h-screen w-full bg-stone-100 flex flex-col justify-center items-center p-3 sm:p-4 overflow-x-hidden">
+      {/* Invisible container for Firebase reCAPTCHA */}
+      <div id="login-recaptcha-container"></div>
+
       <div className="w-full max-w-sm sm:max-w-md bg-white rounded-3xl shadow-xl border border-stone-200 p-5 sm:p-8 space-y-5 sm:space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -415,7 +441,7 @@ export default function PanditAuthPage() {
             <div className="text-left">
               <h3 className="font-bold text-gray-900 text-sm">Reset Password</h3>
               <p className="text-xs text-gray-500">
-                We will send a 4-digit SMS verification code to your registered mobile.
+                We will send a 6-digit SMS verification code to your registered mobile.
               </p>
             </div>
 
@@ -447,7 +473,7 @@ export default function PanditAuthPage() {
           <form onSubmit={handleVerifyOtp} className="space-y-3.5">
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-bold text-gray-700">Enter Verification Code</label>
+                <label className="text-xs font-bold text-gray-700">Enter 6-digit Verification Code</label>
                 <button
                   type="button"
                   onClick={() => setStep('form')}
@@ -460,8 +486,8 @@ export default function PanditAuthPage() {
                 type="text"
                 inputMode="numeric"
                 required
-                maxLength={4}
-                placeholder="• • • •"
+                maxLength={6}
+                placeholder="• • • • • •"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 className="w-full border-2 border-orange-400 rounded-xl py-2.5 text-center font-mono text-2xl font-bold tracking-widest text-gray-950 bg-white placeholder-gray-400 focus:outline-none focus:border-orange-600 focus:text-gray-950"

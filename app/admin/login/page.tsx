@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+
+declare global {
+  interface Window {
+    adminRecaptchaVerifier?: any;
+    adminConfirmationResult?: ConfirmationResult;
+  }
+}
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -35,6 +44,17 @@ export default function AdminLoginPage() {
     }
     return () => clearInterval(interval);
   }, [lockTimer]);
+
+  /* ---------- Invisible reCAPTCHA Helper ---------- */
+  const initAdminRecaptcha = () => {
+    if (typeof window === 'undefined') return null;
+    if (!window.adminRecaptchaVerifier) {
+      window.adminRecaptchaVerifier = new RecaptchaVerifier(auth, 'admin-recaptcha-container', {
+        size: 'invisible',
+      });
+    }
+    return window.adminRecaptchaVerifier;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,43 +98,68 @@ export default function AdminLoginPage() {
     }
   };
 
+  /* ---------- Firebase OTP Send ---------- */
   const handleSendOtp = async () => {
     setError('');
     setMessage('');
     setLoading(true);
 
-    try {
-      const res = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.trim(), purpose: 'admin_forgot' }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+    const clean = phone.replace(/\D/g, '').slice(-10);
+    if (clean.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number.');
+      setLoading(false);
+      return;
+    }
 
-      setMessage('OTP has been generated. Please check your SMS or phone_otps table.');
+    try {
+      const appVerifier = initAdminRecaptcha();
+      const confirmation = await signInWithPhoneNumber(auth, `+91${clean}`, appVerifier);
+      window.adminConfirmationResult = confirmation;
+
+      setMessage(`6-digit OTP sent to +91 ${clean} via SMS.`);
       setStep('otp');
     } catch (err: any) {
-      setError(err.message);
+      console.error('Firebase OTP error:', err);
+      setError(err.message || 'Failed to send OTP. Please check the phone number and retry.');
     } finally {
       setLoading(false);
     }
   };
 
+  /* ---------- Firebase OTP Verify & Password Reset ---------- */
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
+
+    const clean = phone.replace(/\D/g, '').slice(-10);
+    const code = otp.trim();
+
+    if (code.length !== 6) {
+      setError('Please enter the 6-digit OTP sent via SMS.');
+      return;
+    }
+
+    if (!window.adminConfirmationResult) {
+      setError('Session expired. Please click "Resend OTP".');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // 1. Verify OTP with Google Firebase
+      await window.adminConfirmationResult.confirm(code);
+
+      // 2. Update password on server
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'reset_password',
-          phone: phone.trim(),
-          otp: otp.trim(),
+          phone: clean,
+          otp: code,
+          firebase_verified: true,
           newPassword: newPassword.trim(),
         }),
       });
@@ -126,8 +171,10 @@ export default function AdminLoginPage() {
       setStep('phone');
       setPassword('');
       setOtp('');
+      setNewPassword('');
     } catch (err: any) {
-      setError(err.message);
+      console.error('Password reset error:', err);
+      setError(err.message || 'Invalid or expired OTP. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -135,6 +182,9 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      {/* Invisible container for Firebase reCAPTCHA */}
+      <div id="admin-recaptcha-container"></div>
+
       <div className="bg-slate-800 border border-slate-700 w-full max-w-md p-6 rounded-2xl shadow-xl text-white">
         <h1 className="text-2xl font-bold text-center mb-2">Admin Portal</h1>
         <p className="text-slate-400 text-sm text-center mb-6">
@@ -185,7 +235,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading || lockTimer > 0}
-              className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900"
+              className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900 cursor-pointer"
             >
               {lockTimer > 0 
                 ? `Please wait ${lockTimer}s` 
@@ -199,7 +249,7 @@ export default function AdminLoginPage() {
                   setError('');
                   setMessage('');
                 }}
-                className="text-xs text-amber-400 hover:underline"
+                className="text-xs text-amber-400 hover:underline cursor-pointer"
               >
                 Forgot Password?
               </button>
@@ -218,14 +268,14 @@ export default function AdminLoginPage() {
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 font-mono tracking-wider"
                   placeholder="Enter 10-digit mobile number"
                 />
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  disabled={loading || phone.length !== 10}
-                  className="w-full mt-4 bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900"
+                  disabled={loading || phone.replace(/\D/g, '').length !== 10}
+                  className="w-full mt-4 bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900 cursor-pointer"
                 >
                   {loading ? 'Sending OTP...' : 'Send OTP'}
                 </button>
@@ -235,25 +285,26 @@ export default function AdminLoginPage() {
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label className="text-xs uppercase font-medium text-slate-300">
-                      Enter 4-Digit OTP
+                      Enter 6-Digit OTP
                     </label>
                     <button
                       type="button"
                       disabled={loading}
                       onClick={handleSendOtp}
-                      className="text-xs text-amber-400 hover:underline"
+                      className="text-xs text-amber-400 hover:underline cursor-pointer"
                     >
                       Resend OTP
                     </button>
                   </div>
                   <input
                     type="text"
-                    maxLength={4}
+                    inputMode="numeric"
+                    maxLength={6}
                     required
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 text-center tracking-widest text-lg font-bold"
-                    placeholder="••••"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 text-center tracking-widest text-lg font-bold font-mono"
+                    placeholder="••••••"
                   />
                 </div>
                 <div>
@@ -272,7 +323,7 @@ export default function AdminLoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900"
+                  className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900 cursor-pointer"
                 >
                   {loading ? 'Updating...' : 'Set New Password'}
                 </button>
@@ -287,7 +338,7 @@ export default function AdminLoginPage() {
                   setError('');
                   setMessage('');
                 }}
-                className="text-xs text-slate-400 hover:text-white"
+                className="text-xs text-slate-400 hover:text-white cursor-pointer"
               >
                 ← Back to Login
               </button>

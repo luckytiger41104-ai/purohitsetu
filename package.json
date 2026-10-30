@@ -13,6 +13,7 @@
     "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.5.3",
     "@supabase/supabase-js": "^2.117.3",
+    "firebase": "^13.1.0",
     "next": "16.4.0",
     "razorpay": "^2.9.8",
     "react": "19.3.0",
