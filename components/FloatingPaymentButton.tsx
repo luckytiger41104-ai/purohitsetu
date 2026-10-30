@@ -5,11 +5,6 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { triggerNewBookingNotification } from "@/lib/notifyPandits";
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
 
 const PRESET_TOKEN_AMOUNTS = [101, 251, 501, 1100, 2100, 5100];
 

@@ -7,11 +7,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { triggerNewBookingNotification } from "@/lib/notifyPandits";
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
 
 interface PujaItem {
   id: string;

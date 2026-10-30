@@ -6,16 +6,6 @@ import { supabase } from '@/lib/supabaseClient';
 import { auth } from '@/lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
-declare global {
-  interface Window {
-    Razorpay: any;
-    Capacitor?: any;
-    OneSignalDeferred?: any[];
-    recaptchaVerifier?: any;
-    confirmationResult?: ConfirmationResult;
-  }
-}
-
 interface Lead {
   id: string | number;
   yajman_name: string;
