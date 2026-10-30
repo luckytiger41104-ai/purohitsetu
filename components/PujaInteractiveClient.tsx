@@ -1424,7 +1424,7 @@ export default function PujaInteractiveClient() {
           </a>
         </div>
         <p className="text-xs text-slate-700 font-medium mt-3 flex items-center justify-center gap-1">
-          <span>📍</span> Operational Office: Akshatha Layout, Parappana Agrahara, Electronic City, Bengaluru, Karnataka - 560100
+          <span>📍</span> Operational Office: ekadanta Layout, Parappana Agrahara, Electronic City, Bengaluru, Karnataka - 560100
         </p>
       </section>
 
