@@ -535,11 +535,9 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
         return;
       }
 
-      // Generate 4-digit secure OTP
       const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins expiry
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-      // Upsert into phone_verifications table
       const { error: otpErr } = await supabase
         .from('phone_verifications')
         .upsert({
@@ -550,13 +548,13 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
         }, { onConflict: 'phone' });
 
       if (otpErr) {
-        throw new Error('Could not generate verification code.');
+        throw new Error(otpErr.message);
       }
 
-      setOtpNotice(`✓ Verification code generated successfully. Code: ${generatedOtp} (Give this to Yajman or read over call).`);
+      setOtpNotice(`✓ Verification code generated successfully. Code: ${generatedOtp}`);
     } catch (err: any) {
       console.error('Pooja OTP generation error:', err);
-      setOtpNotice(err.message || '⚠️ Could not generate OTP. Please retry.');
+      setOtpNotice(`⚠️ Error: ${err.message || 'Could not generate OTP.'}`);
     }
   };
 
@@ -579,12 +577,12 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
           purpose: 'pooja_complete',
         }, { onConflict: 'phone' });
 
-      if (otpErr) throw new Error('Could not resend verification code.');
+      if (otpErr) throw new Error(otpErr.message);
 
       setOtpNotice(`✓ Fresh verification code generated: ${generatedOtp}`);
     } catch (err: any) {
       console.error('Resend error:', err);
-      setOtpNotice(err.message || '⚠️ Could not resend. Please retry.');
+      setOtpNotice(`⚠️ Error: ${err.message || 'Could not resend.'}`);
     } finally {
       setResendingOtp(false);
     }
@@ -616,7 +614,6 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
     try {
       const rawNumber = cleanPhone(activeOtpLead.phone);
 
-      // Verify OTP against phone_verifications table
       const { data: verification, error: verErr } = await supabase
         .from('phone_verifications')
         .select('otp, expires_at')
@@ -624,24 +621,22 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
         .maybeSingle();
 
       if (verErr || !verification) {
-        alert('OTP not found or expired. Please click "Resend OTP".');
+        alert('OTP not found or expired. Please click "Regenerate OTP".');
         return;
       }
 
       if (new Date(verification.expires_at).getTime() < Date.now()) {
-        alert('Verification code has expired. Please resend a new OTP.');
+        alert('Verification code has expired. Please regenerate a new OTP.');
         return;
       }
 
       if (verification.otp !== code) {
-        alert('Invalid verification code. Please confirm the 4-digit code with Yajman.');
+        alert('Invalid verification code. Please confirm the 4-digit code.');
         return;
       }
 
-      // Cleanup used OTP
       await supabase.from('phone_verifications').delete().eq('phone', rawNumber);
 
-      // Mark ceremony as completed
       const { error } = await supabase
         .from('bookings')
         .update({
