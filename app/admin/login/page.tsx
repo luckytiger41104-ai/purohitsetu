@@ -17,6 +17,8 @@ export default function AdminLoginPage() {
   const [isForgot, setIsForgot] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -24,6 +26,11 @@ export default function AdminLoginPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // --- Two-Factor Authentication State ---
+  const [is2FAStep, setIs2FAStep] = useState(false);
+  const [twoFactorOtp, setTwoFactorOtp] = useState('');
+  const [maskedPhone, setMaskedPhone] = useState('');
 
   // --- 3 Attempts & 1-Minute Lockout Logic ---
   const [failedAttempts, setFailedAttempts] = useState(0);
@@ -35,7 +42,7 @@ export default function AdminLoginPage() {
       interval = setInterval(() => {
         setLockTimer((prev) => {
           if (prev <= 1) {
-            setFailedAttempts(0); // 1 minute complete hone par counter wapas 0
+            setFailedAttempts(0);
             return 0;
           }
           return prev - 1;
@@ -56,6 +63,7 @@ export default function AdminLoginPage() {
     return window.adminRecaptchaVerifier;
   };
 
+  /* ---------- Step 1: Verify Email + Password & Trigger 2FA via Firebase ---------- */
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (lockTimer > 0) return;
@@ -65,40 +73,103 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
+      // 1. Backend credentials check + 24hr quota verification
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'login', 
-          email: email.trim(), 
-          password: password.trim() 
+        body: JSON.stringify({
+          action: 'pre_login',
+          email: email.trim(),
+          password: password.trim(),
         }),
       });
       const data = await res.json();
-      
-      if (!res.ok) {
+
+      if (!res.ok || !data.success) {
         const nextAttempts = failedAttempts + 1;
         setFailedAttempts(nextAttempts);
 
         if (nextAttempts >= 3) {
-          setLockTimer(60); // 3 attempts ke baad 1 minute ka lock
+          setLockTimer(60);
           throw new Error('Too many failed attempts! Try again after 1 minute.');
         } else {
           throw new Error(`${data.error || 'Login failed'}. (${3 - nextAttempts} attempt(s) remaining)`);
         }
       }
 
+      // 2. Dispatch SMS directly via Firebase Client SDK (Eliminates 502 / MISSING_CLIENT_IDENTIFIER)
+      const appVerifier = initAdminRecaptcha();
+      const confirmation = await signInWithPhoneNumber(auth, `+91${data.phone}`, appVerifier);
+      window.adminConfirmationResult = confirmation;
+
+      setMaskedPhone(data.maskedPhone || 'registered phone');
+      setMessage(`Security OTP sent to ${data.maskedPhone || 'registered phone'} via SMS.`);
+      setIs2FAStep(true);
       setFailedAttempts(0);
-      router.push('/admin');
-      router.refresh();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Authentication failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------- Firebase OTP Send ---------- */
+  /* ---------- Step 2: Verify 2FA OTP & Complete Login ---------- */
+  const handleVerify2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (lockTimer > 0) return;
+
+    setError('');
+    setMessage('');
+    const code = twoFactorOtp.trim();
+
+    if (code.length !== 6) {
+      setError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (!window.adminConfirmationResult) {
+        throw new Error('Verification session expired. Please click Back and try again.');
+      }
+
+      // Confirm OTP with Firebase
+      await window.adminConfirmationResult.confirm(code);
+
+      // Finalize session on backend
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify_2fa',
+          email: email.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to create session.');
+      }
+
+      router.push('/admin');
+      router.refresh();
+    } catch (err: any) {
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+
+      if (nextAttempts >= 3) {
+        setLockTimer(60);
+        setError('Too many invalid OTP attempts! Try again after 1 minute.');
+      } else {
+        setError(err.message || `Invalid verification code. (${3 - nextAttempts} attempt(s) remaining)`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ---------- Firebase OTP Send (Password Recovery) ---------- */
   const handleSendOtp = async () => {
     setError('');
     setMessage('');
@@ -140,6 +211,11 @@ export default function AdminLoginPage() {
       return;
     }
 
+    if (!newPassword.trim()) {
+      setError('Please enter your new password.');
+      return;
+    }
+
     if (!window.adminConfirmationResult) {
       setError('Session expired. Please click "Resend OTP".');
       return;
@@ -148,23 +224,22 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      // 1. Verify OTP with Google Firebase
       await window.adminConfirmationResult.confirm(code);
 
-      // 2. Update password on server
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'reset_password',
           phone: clean,
-          otp: code,
-          firebase_verified: true,
           newPassword: newPassword.trim(),
         }),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Password update failed');
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Password update failed.');
+      }
 
       setMessage('Password updated successfully. Please login.');
       setIsForgot(false);
@@ -188,7 +263,11 @@ export default function AdminLoginPage() {
       <div className="bg-slate-800 border border-slate-700 w-full max-w-md p-6 rounded-2xl shadow-xl text-white">
         <h1 className="text-2xl font-bold text-center mb-2">Admin Portal</h1>
         <p className="text-slate-400 text-sm text-center mb-6">
-          {isForgot ? 'Password Recovery' : 'Sign in to access admin dashboard'}
+          {isForgot
+            ? 'Password Recovery'
+            : is2FAStep
+            ? 'Two-Factor Authentication'
+            : 'Sign in to access admin dashboard'}
         </p>
 
         {error && (
@@ -203,58 +282,126 @@ export default function AdminLoginPage() {
         )}
 
         {!isForgot ? (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs uppercase font-medium text-slate-300 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                disabled={lockTimer > 0}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 disabled:opacity-50"
-                placeholder="Enter admin email"
-              />
-            </div>
-            <div>
-              <label className="block text-xs uppercase font-medium text-slate-300 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                disabled={lockTimer > 0}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 disabled:opacity-50"
-                placeholder="Enter password"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading || lockTimer > 0}
-              className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900 cursor-pointer"
-            >
-              {lockTimer > 0 
-                ? `Please wait ${lockTimer}s` 
-                : loading ? 'Signing In...' : 'Login'}
-            </button>
-            <div className="text-center mt-3">
+          !is2FAStep ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs uppercase font-medium text-slate-300 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  disabled={lockTimer > 0}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 disabled:opacity-50"
+                  placeholder="Enter admin email"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase font-medium text-slate-300 mb-1">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    disabled={lockTimer > 0}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 pr-10 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 disabled:opacity-50"
+                    placeholder="Enter password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer select-none text-base"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? '👁️' : '🙈'}
+                  </button>
+                </div>
+              </div>
+
               <button
-                type="button"
-                onClick={() => {
-                  setIsForgot(true);
-                  setError('');
-                  setMessage('');
-                }}
-                className="text-xs text-amber-400 hover:underline cursor-pointer"
+                type="submit"
+                disabled={loading || lockTimer > 0}
+                className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900 cursor-pointer"
               >
-                Forgot Password?
+                {lockTimer > 0
+                  ? `Please wait ${lockTimer}s`
+                  : loading
+                  ? 'Verifying Credentials...'
+                  : 'Continue'}
               </button>
-            </div>
-          </form>
+
+              <div className="text-center mt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgot(true);
+                    setError('');
+                    setMessage('');
+                  }}
+                  className="text-xs text-amber-400 hover:underline cursor-pointer"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerify2FA} className="space-y-4">
+              <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-700 text-xs text-slate-300 text-center">
+                Security OTP sent via SMS to <span className="text-amber-400 font-semibold">{maskedPhone}</span>.
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase font-medium text-slate-300 mb-1">
+                  Enter 6-Digit Security OTP
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                  disabled={lockTimer > 0}
+                  value={twoFactorOtp}
+                  onChange={(e) => setTwoFactorOtp(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 text-center tracking-widest text-lg font-bold font-mono"
+                  placeholder="••••••"
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || lockTimer > 0}
+                className="w-full bg-amber-500 hover:bg-amber-600 font-semibold py-2.5 rounded-lg transition disabled:opacity-50 text-slate-900 cursor-pointer"
+              >
+                {lockTimer > 0
+                  ? `Please wait ${lockTimer}s`
+                  : loading
+                  ? 'Verifying Security Code...'
+                  : 'Verify & Login'}
+              </button>
+
+              <div className="text-center mt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIs2FAStep(false);
+                    setTwoFactorOtp('');
+                    setError('');
+                    setMessage('');
+                  }}
+                  className="text-xs text-slate-400 hover:text-white cursor-pointer"
+                >
+                  ← Back to Email / Password
+                </button>
+              </div>
+            </form>
+          )
         ) : (
           <div className="space-y-4">
             {step === 'phone' ? (
@@ -307,19 +454,31 @@ export default function AdminLoginPage() {
                     placeholder="••••••"
                   />
                 </div>
+
                 <div>
                   <label className="block text-xs uppercase font-medium text-slate-300 mb-1">
                     New Password
                   </label>
-                  <input
-                    type="password"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                    placeholder="Enter new password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 pr-10 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                      placeholder="Enter new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer select-none text-base"
+                      title={showNewPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showNewPassword ? '👁️' : '🙈'}
+                    </button>
+                  </div>
                 </div>
+
                 <button
                   type="submit"
                   disabled={loading}

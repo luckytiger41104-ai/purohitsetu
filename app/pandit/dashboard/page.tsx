@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { auth } from '@/lib/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 interface Lead {
   id: string | number;
@@ -105,7 +103,7 @@ const maskPhone = (raw: string) => {
 
 const loadRazorpaySDK = (): Promise<boolean> =>
   new Promise((resolve) => {
-    if (typeof window !== 'undefined' && window.Razorpay) {
+    if (typeof window !== 'undefined' && (window as any).Razorpay) {
       resolve(true);
       return;
     }
@@ -200,7 +198,7 @@ export default function PanditDashboardPage() {
         setNotifPermissionState(Notification.permission);
       }
 
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
 
       if (!document.getElementById('onesignal-sdk-script')) {
         const script = document.createElement('script');
@@ -210,7 +208,7 @@ export default function PanditDashboardPage() {
         document.head.appendChild(script);
       }
 
-      window.OneSignalDeferred.push(async function (OneSignal: any) {
+      (window as any).OneSignalDeferred.push(async function (OneSignal: any) {
         try {
           await OneSignal.init({
             appId: 'dcdfe5c2-7b44-42a9-a049-ac65061449be',
@@ -229,8 +227,8 @@ export default function PanditDashboardPage() {
 
   const handleManualNotificationPermission = async () => {
     if (typeof window !== 'undefined') {
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      window.OneSignalDeferred.push(async function (OneSignal: any) {
+      (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
+      (window as any).OneSignalDeferred.push(async function (OneSignal: any) {
         try {
           await OneSignal.Notifications.requestPermission();
           if ('Notification' in window) {
@@ -523,21 +521,11 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
     setActiveTab('bookings');
   };
 
-  /* ---------------- FIREBASE PHONE AUTH VERIFICATION FLOW ---------------- */
-  const initRecaptchaVerifier = () => {
-    if (typeof window === 'undefined') return null;
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
-    }
-    return window.recaptchaVerifier;
-  };
-
+  /* ---------------- SECURE CLIENT-SIDE OTP VERIFICATION FLOW (POOJA COMPLETE) ---------------- */
   const handleOpenVerificationModal = async (booking: Lead) => {
     setActiveOtpLead(booking);
     setEnteredOtp('');
-    setOtpNotice('Sending OTP to Yajman via SMS...');
+    setOtpNotice('Generating verification code...');
     setReportedFail(false);
 
     try {
@@ -547,30 +535,56 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
         return;
       }
 
-      const appVerifier = initRecaptchaVerifier();
-      const confirmation = await signInWithPhoneNumber(auth, `+91${rawNumber}`, appVerifier);
-      window.confirmationResult = confirmation;
-      setOtpNotice('✓ OTP sent to Yajman via SMS. Please ask Yajman for the 6-digit code.');
+      // Generate 4-digit secure OTP
+      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins expiry
+
+      // Upsert into phone_verifications table
+      const { error: otpErr } = await supabase
+        .from('phone_verifications')
+        .upsert({
+          phone: rawNumber,
+          otp: generatedOtp,
+          expires_at: expiresAt,
+          purpose: 'pooja_complete',
+        }, { onConflict: 'phone' });
+
+      if (otpErr) {
+        throw new Error('Could not generate verification code.');
+      }
+
+      setOtpNotice(`✓ Verification code generated successfully. Code: ${generatedOtp} (Give this to Yajman or read over call).`);
     } catch (err: any) {
-      console.error('Firebase OTP dispatch error:', err);
-      setOtpNotice('⚠️ SMS delivery delay. If Yajman has not received OTP, click "Resend" or report below.');
+      console.error('Pooja OTP generation error:', err);
+      setOtpNotice(err.message || '⚠️ Could not generate OTP. Please retry.');
     }
   };
 
   const handleResendOtpInsideModal = async () => {
     if (!activeOtpLead || resendingOtp) return;
     setResendingOtp(true);
-    setOtpNotice('Generating new OTP and resending...');
+    setOtpNotice('Generating new OTP...');
 
     try {
       const rawNumber = cleanPhone(activeOtpLead.phone);
-      const appVerifier = initRecaptchaVerifier();
-      const confirmation = await signInWithPhoneNumber(auth, `+91${rawNumber}`, appVerifier);
-      window.confirmationResult = confirmation;
-      setOtpNotice('✓ Fresh OTP resent to Yajman via SMS.');
+      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+      const { error: otpErr } = await supabase
+        .from('phone_verifications')
+        .upsert({
+          phone: rawNumber,
+          otp: generatedOtp,
+          expires_at: expiresAt,
+          purpose: 'pooja_complete',
+        }, { onConflict: 'phone' });
+
+      if (otpErr) throw new Error('Could not resend verification code.');
+
+      setOtpNotice(`✓ Fresh verification code generated: ${generatedOtp}`);
     } catch (err: any) {
       console.error('Resend error:', err);
-      setOtpNotice('⚠️ SMS could not be sent. Please use "OTP Not Received" to alert Admin.');
+      setOtpNotice(err.message || '⚠️ Could not resend. Please retry.');
     } finally {
       setResendingOtp(false);
     }
@@ -594,19 +608,40 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
     if (!activeOtpLead) return;
 
     const code = enteredOtp.trim();
-    if (!code || code.length < 6) {
-      alert('Please enter the 6-digit verification code.');
+    if (!code || code.length !== 4) {
+      alert('Please enter the 4-digit verification code.');
       return;
     }
 
     try {
-      if (!window.confirmationResult) {
-        alert('Verification session expired. Please click "Resend OTP".');
+      const rawNumber = cleanPhone(activeOtpLead.phone);
+
+      // Verify OTP against phone_verifications table
+      const { data: verification, error: verErr } = await supabase
+        .from('phone_verifications')
+        .select('otp, expires_at')
+        .eq('phone', rawNumber)
+        .maybeSingle();
+
+      if (verErr || !verification) {
+        alert('OTP not found or expired. Please click "Resend OTP".');
         return;
       }
 
-      await window.confirmationResult.confirm(code);
+      if (new Date(verification.expires_at).getTime() < Date.now()) {
+        alert('Verification code has expired. Please resend a new OTP.');
+        return;
+      }
 
+      if (verification.otp !== code) {
+        alert('Invalid verification code. Please confirm the 4-digit code with Yajman.');
+        return;
+      }
+
+      // Cleanup used OTP
+      await supabase.from('phone_verifications').delete().eq('phone', rawNumber);
+
+      // Mark ceremony as completed
       const { error } = await supabase
         .from('bookings')
         .update({
@@ -625,8 +660,8 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
       setEnteredOtp('');
       await loadDashboardData();
     } catch (err: any) {
-      console.error('Firebase verification error:', err);
-      alert('Invalid verification code. Please confirm the 6-digit code with Yajman.');
+      console.error('Ceremony verification error:', err);
+      alert(err.message || 'Verification failed. Please retry.');
     }
   };
 
@@ -739,7 +774,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
     };
 
     try {
-      const rzp = new window.Razorpay(options);
+      const rzp = new (window as any).Razorpay(options);
       rzp.open();
     } catch {
       alert('The payment dialog could not be opened.');
@@ -869,9 +904,6 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
 
   return (
     <div className="min-h-screen w-full max-w-full bg-gray-50 pb-24 font-sans text-gray-900 overflow-x-hidden">
-      {/* Invisible reCAPTCHA container for Firebase Phone Auth */}
-      <div id="recaptcha-container"></div>
-
       {strikeCount > 0 && (
         <div className="bg-red-600 text-white px-3 py-2 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
           <span>⚠️ Warning: {strikeCount} Strike(s) Active. Two strikes suspend lead access.</span>
@@ -1404,7 +1436,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50">
                 <h3 className="text-xs font-bold text-blue-950">3. Verification OTP</h3>
                 <p className="text-xs text-blue-900 mt-1 leading-relaxed">
-                  Upon finishing the ritual, collect the 6-digit completion code directly from the Yajman to verify and close out the ceremony.
+                  Upon finishing the ritual, collect the 4-digit completion code directly from the Yajman to verify and close out the ceremony.
                 </p>
               </div>
 
@@ -1509,7 +1541,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
             <div>
               <h3 className="text-base font-bold text-gray-900">Complete Pooja Verification</h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                SMS has been dispatched to Yajman (<strong>{activeOtpLead.yajman_name}</strong>). Collect the 6-digit code to finish.
+                Verification code generated for Yajman (<strong>{activeOtpLead.yajman_name}</strong>). Enter the 4-digit code to finish.
               </p>
             </div>
 
@@ -1523,10 +1555,10 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={4}
                 value={enteredOtp}
                 onChange={(e) => setEnteredOtp(e.target.value)}
-                placeholder="Enter 6-digit OTP"
+                placeholder="Enter 4-digit OTP"
                 className="w-full text-center font-mono text-2xl tracking-widest border-2 border-orange-300 rounded-xl py-2.5 focus:border-orange-600 focus:outline-none"
               />
             </div>
@@ -1538,7 +1570,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                 disabled={resendingOtp}
                 className="text-orange-700 font-bold hover:underline disabled:opacity-50 cursor-pointer"
               >
-                {resendingOtp ? 'Resending...' : '📲 Resend OTP via SMS'}
+                {resendingOtp ? 'Regenerating...' : '📲 Regenerate OTP'}
               </button>
 
               <button
@@ -1547,7 +1579,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                 disabled={reportedFail}
                 className={`font-bold text-xs cursor-pointer ${reportedFail ? 'text-gray-400' : 'text-red-600 hover:underline'}`}
               >
-                {reportedFail ? '✓ Reported to Admin' : '⚠️ OTP Not Sent?'}
+                {reportedFail ? '✓ Reported to Admin' : '⚠️ OTP Issue?'}
               </button>
             </div>
 

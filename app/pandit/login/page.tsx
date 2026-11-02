@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabaseClient';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 declare global {
   interface Window {
-    recaptchaVerifier?: any;
-    confirmationResult?: ConfirmationResult;
+    panditRecaptchaVerifier?: any;
+    panditConfirmationResult?: ConfirmationResult;
   }
 }
 
@@ -84,6 +85,17 @@ export default function PanditAuthPage() {
     }
   }, [router]);
 
+  /* ---------- Invisible reCAPTCHA Initializer & Resetter ---------- */
+  const initRecaptchaVerifier = () => {
+    if (typeof window === 'undefined') return null;
+    if (!window.panditRecaptchaVerifier) {
+      window.panditRecaptchaVerifier = new RecaptchaVerifier(auth, 'pandit-recaptcha-container', {
+        size: 'invisible',
+      });
+    }
+    return window.panditRecaptchaVerifier;
+  };
+
   const clearMessages = () => {
     setErrorMsg('');
     setInfoMsg('');
@@ -111,17 +123,6 @@ export default function PanditAuthPage() {
     }
     setShowTermsModal(false);
     router.replace('/pandit/dashboard');
-  };
-
-  /* ---------- Invisible reCAPTCHA Helper ---------- */
-  const initRecaptchaVerifier = () => {
-    if (typeof window === 'undefined') return null;
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'login-recaptcha-container', {
-        size: 'invisible',
-      });
-    }
-    return window.recaptchaVerifier;
   };
 
   /* ---------- Password login ---------- */
@@ -160,9 +161,9 @@ export default function PanditAuthPage() {
     }
   };
 
-  /* ---------- Firebase OTP Send (Register & Forgot Password) ---------- */
-  const handleSendOtp = async (e: React.FormEvent | React.MouseEvent) => {
-    e.preventDefault();
+  /* ---------- Official Firebase Client OTP Send ---------- */
+  const handleSendOtp = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
     clearMessages();
 
     const targetPhone = cleanNumber(phone);
@@ -184,20 +185,43 @@ export default function PanditAuthPage() {
 
     setLoading(true);
     try {
+      // Step A: Check duplicate registration directly with Supabase
+      if (mode === 'register') {
+        const { data: existing } = await supabase
+          .from('pandits')
+          .select('id')
+          .eq('phone', targetPhone)
+          .maybeSingle();
+
+        if (existing) {
+          throw new Error('This mobile number is already registered. Please sign in instead.');
+        }
+      }
+
+      // Step B: Reset existing reCAPTCHA instance to allow immediate resends
+      if (window.panditRecaptchaVerifier) {
+        try {
+          window.panditRecaptchaVerifier.clear();
+          window.panditRecaptchaVerifier = undefined;
+        } catch {}
+      }
+
+      // Step C: Dispatch SMS via Firebase Official Client SDK
       const appVerifier = initRecaptchaVerifier();
       const confirmation = await signInWithPhoneNumber(auth, `+91${targetPhone}`, appVerifier);
-      window.confirmationResult = confirmation;
-      setInfoMsg(`Verification code sent to +91 ${targetPhone}. Valid for 5 minutes.`);
+      window.panditConfirmationResult = confirmation;
+
+      setInfoMsg(`Verification code sent to +91 ${targetPhone} via SMS.`);
       setStep('otp');
     } catch (err: any) {
-      console.error('Firebase Auth SMS error:', err);
+      console.error('Send OTP error:', err);
       setErrorMsg(err.message || 'Failed to send SMS verification code. Please retry.');
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------- Firebase OTP Verify & Account Creation / Reset ---------- */
+  /* ---------- Firebase OTP Verify & Submit Profile to DB ---------- */
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     clearMessages();
@@ -210,21 +234,21 @@ export default function PanditAuthPage() {
       return;
     }
 
-    if (!window.confirmationResult) {
+    if (!window.panditConfirmationResult) {
       setErrorMsg('Verification session expired. Please click "Resend SMS Code".');
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Verify OTP with Google Firebase
-      await window.confirmationResult.confirm(targetOtp);
+      // 1. Confirm 6-digit code with Firebase
+      await window.panditConfirmationResult.confirm(targetOtp);
 
-      // 2. Save user profile / update password in DB
-      const payload: Record<string, string> = {
+      // 2. Submit verified profile to Supabase backend
+      const payload: Record<string, any> = {
         phone: targetPhone,
         password: password.trim(),
-        firebase_verified: 'true',
+        firebase_verified: true,
       };
 
       if (mode === 'register') {
@@ -244,13 +268,13 @@ export default function PanditAuthPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setErrorMsg(data.message || 'Account sync failed. Please contact support.');
+        setErrorMsg(data.message || 'Verification failed. Please check the code and retry.');
       } else {
         finishLogin(targetPhone);
       }
     } catch (err: any) {
       console.error('OTP confirmation failed:', err);
-      setErrorMsg('Invalid verification code or code expired. Please retry.');
+      setErrorMsg(err.message || 'Invalid verification code or code expired. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -309,7 +333,7 @@ export default function PanditAuthPage() {
   return (
     <div className="min-h-screen w-full bg-stone-100 flex flex-col justify-center items-center p-3 sm:p-4 overflow-x-hidden">
       {/* Invisible container for Firebase reCAPTCHA */}
-      <div id="login-recaptcha-container"></div>
+      <div id="pandit-recaptcha-container"></div>
 
       <div className="w-full max-w-sm sm:max-w-md bg-white rounded-3xl shadow-xl border border-stone-200 p-5 sm:p-8 space-y-5 sm:space-y-6">
         {/* Header */}
@@ -520,7 +544,7 @@ export default function PanditAuthPage() {
         )}
       </div>
 
-      {/* MANDATORY TERMS AND CONDITIONS MODAL (UNSKIPPABLE) */}
+      {/* MANDATORY TERMS AND CONDITIONS MODAL */}
       {showTermsModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border-2 border-orange-300 p-6 sm:p-7 space-y-4 max-h-[90vh] flex flex-col justify-between">
