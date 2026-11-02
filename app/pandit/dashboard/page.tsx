@@ -17,7 +17,6 @@ interface Lead {
   accepted_via?: 'token' | 'free' | 'admin_assigned';
   accepted_by?: string;
   assigned_to_phone?: string;
-  completion_otp?: string;
   cancellation_reason?: string;
   cancelled_by?: string;
   refund_status?: string;
@@ -173,13 +172,6 @@ export default function PanditDashboardPage() {
   const [editExp, setEditExp] = useState('');
   const [editBio, setEditBio] = useState('');
   const [editUpi, setEditUpi] = useState('');
-
-  // Complete Pooja Verification Modal States
-  const [activeOtpLead, setActiveOtpLead] = useState<Lead | null>(null);
-  const [enteredOtp, setEnteredOtp] = useState('');
-  const [resendingOtp, setResendingOtp] = useState(false);
-  const [otpNotice, setOtpNotice] = useState<string | null>(null);
-  const [reportedFail, setReportedFail] = useState(false);
 
   const [activeCancelLead, setActiveCancelLead] = useState<Lead | null>(null);
   const [cancelBy, setCancelBy] = useState<'yajman' | 'pandit'>('yajman');
@@ -367,7 +359,6 @@ export default function PanditDashboardPage() {
           accepted_via: b.accepted_via,
           accepted_by: b.accepted_by,
           assigned_to_phone: b.assigned_to_phone,
-          completion_otp: b.completion_otp,
           cancellation_reason: b.cancellation_reason,
           cancelled_by: b.cancelled_by,
           refund_status: b.refund_status,
@@ -387,7 +378,7 @@ export default function PanditDashboardPage() {
 
       setConfirmedBookings(
         formatted.filter(
-          (item) => (item.status === 'confirmed' || item.status === 'in_progress') && isMine(item)
+          (item) => (item.status === 'confirmed' || item.status === 'in_progress' || item.status === 'completed') && isMine(item)
         )
       );
 
@@ -445,7 +436,7 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
   const claimLead = async (lead: Lead, via: 'token' | 'free'): Promise<boolean> => {
     const { data: currentLead } = await supabase
       .from('bookings')
-      .select('status, accepted_by, completion_otp')
+      .select('status, accepted_by')
       .eq('id', lead.id)
       .maybeSingle();
 
@@ -455,15 +446,12 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
       return false;
     }
 
-    const completionOtp = currentLead?.completion_otp || Math.floor(1000 + Math.random() * 9000).toString();
-
     const { data, error } = await supabase
       .from('bookings')
       .update({
         status: 'confirmed',
         accepted_by: phone,
         accepted_via: via,
-        completion_otp: completionOtp,
       })
       .eq('id', lead.id)
       .select();
@@ -521,142 +509,29 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
     setActiveTab('bookings');
   };
 
-  /* ---------------- SECURE CLIENT-SIDE OTP VERIFICATION FLOW (POOJA COMPLETE) ---------------- */
-  const handleOpenVerificationModal = async (booking: Lead) => {
-    setActiveOtpLead(booking);
-    setEnteredOtp('');
-    setOtpNotice('Generating verification code...');
-    setReportedFail(false);
+  /* ---------------- DIRECT COMPLETE POOJA (WITHOUT OTP) ---------------- */
+  const handleDirectCompletePooja = async (booking: Lead) => {
+    if (!confirm(`Are you sure you want to mark "${booking.puja_name}" as completed? This will notify Admin.`)) return;
 
     try {
-      const rawNumber = cleanPhone(booking.phone);
-      if (rawNumber.length !== 10) {
-        setOtpNotice('⚠️ Yajman phone number invalid. Please check number.');
-        return;
-      }
-
-      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-      const { error: otpErr } = await supabase
-        .from('phone_verifications')
-        .upsert({
-          phone: rawNumber,
-          otp: generatedOtp,
-          expires_at: expiresAt,
-          purpose: 'pooja_complete',
-        }, { onConflict: 'phone' });
-
-      if (otpErr) {
-        throw new Error(otpErr.message);
-      }
-
-      setOtpNotice(`✓ Verification code generated successfully. Code: ${generatedOtp}`);
-    } catch (err: any) {
-      console.error('Pooja OTP generation error:', err);
-      setOtpNotice(`⚠️ Error: ${err.message || 'Could not generate OTP.'}`);
-    }
-  };
-
-  const handleResendOtpInsideModal = async () => {
-    if (!activeOtpLead || resendingOtp) return;
-    setResendingOtp(true);
-    setOtpNotice('Generating new OTP...');
-
-    try {
-      const rawNumber = cleanPhone(activeOtpLead.phone);
-      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-      const { error: otpErr } = await supabase
-        .from('phone_verifications')
-        .upsert({
-          phone: rawNumber,
-          otp: generatedOtp,
-          expires_at: expiresAt,
-          purpose: 'pooja_complete',
-        }, { onConflict: 'phone' });
-
-      if (otpErr) throw new Error(otpErr.message);
-
-      setOtpNotice(`✓ Fresh verification code generated: ${generatedOtp}`);
-    } catch (err: any) {
-      console.error('Resend error:', err);
-      setOtpNotice(`⚠️ Error: ${err.message || 'Could not resend.'}`);
-    } finally {
-      setResendingOtp(false);
-    }
-  };
-
-  const handleReportOtpNotSent = async () => {
-    if (!activeOtpLead) return;
-    try {
-      await supabase.from('bookings').update({
-        otp_dispatch_status: 'failed_reported_by_pandit',
-      }).eq('id', activeOtpLead.id);
-
-      setReportedFail(true);
-      alert('Issue reported to Admin. The Admin will verify the ceremony from the Admin Panel.');
-    } catch {
-      alert('Could not notify admin right now.');
-    }
-  };
-
-  const handleVerifyCompletionOtp = async () => {
-    if (!activeOtpLead) return;
-
-    const code = enteredOtp.trim();
-    if (!code || code.length !== 4) {
-      alert('Please enter the 4-digit verification code.');
-      return;
-    }
-
-    try {
-      const rawNumber = cleanPhone(activeOtpLead.phone);
-
-      const { data: verification, error: verErr } = await supabase
-        .from('phone_verifications')
-        .select('otp, expires_at')
-        .eq('phone', rawNumber)
-        .maybeSingle();
-
-      if (verErr || !verification) {
-        alert('OTP not found or expired. Please click "Regenerate OTP".');
-        return;
-      }
-
-      if (new Date(verification.expires_at).getTime() < Date.now()) {
-        alert('Verification code has expired. Please regenerate a new OTP.');
-        return;
-      }
-
-      if (verification.otp !== code) {
-        alert('Invalid verification code. Please confirm the 4-digit code.');
-        return;
-      }
-
-      await supabase.from('phone_verifications').delete().eq('phone', rawNumber);
-
       const { error } = await supabase
         .from('bookings')
         .update({
           status: 'completed',
-          otp_dispatch_status: 'verified_completed',
+          otp_dispatch_status: 'direct_completed_by_pandit',
         })
-        .eq('id', activeOtpLead.id);
+        .eq('id', booking.id);
 
       if (error) {
         alert('Status update failed: ' + error.message);
         return;
       }
 
-      alert('Ceremony verified and marked as completed successfully.');
-      setActiveOtpLead(null);
-      setEnteredOtp('');
+      alert('Ceremony marked as completed successfully! Admin panel updated.');
       await loadDashboardData();
     } catch (err: any) {
-      console.error('Ceremony verification error:', err);
-      alert(err.message || 'Verification failed. Please retry.');
+      console.error('Completion error:', err);
+      alert(err.message || 'Failed to complete ceremony. Please retry.');
     }
   };
 
@@ -1093,64 +968,81 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                 <p className="text-xs text-gray-400">No active confirmed bookings found.</p>
               </div>
             ) : (
-              confirmedBookings.map((b) => (
-                <div key={b.id} className="bg-white p-4 sm:p-5 rounded-2xl border border-green-200 shadow-sm space-y-3">
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">{b.puja_name}</h3>
-                      <span className="text-[11px] text-gray-500">
-                        {b.accepted_via === 'token' ? 'Priority (0% commission)' : `Open (${COMMISSION_PERCENT}% platform fee)`}
-                      </span>
+              confirmedBookings.map((b) => {
+                const isCompleted = b.status === 'completed';
+
+                return (
+                  <div key={b.id} className={`bg-white p-4 sm:p-5 rounded-2xl border shadow-sm space-y-3 ${isCompleted ? 'border-emerald-400 bg-emerald-50/20' : 'border-green-200'}`}>
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900">{b.puja_name}</h3>
+                        <span className="text-[11px] text-gray-500">
+                          {b.accepted_via === 'token' ? 'Priority (0% commission)' : `Open (${COMMISSION_PERCENT}% platform fee)`}
+                        </span>
+                      </div>
+                      {isCompleted && (
+                        <span className="bg-emerald-600 text-white text-[11px] font-black px-3 py-1 rounded-full shadow-sm">
+                          ✓ Pooja Completed
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="bg-green-50/70 p-3 rounded-xl border border-green-100 text-xs space-y-1">
+                      <p className="text-gray-800">👤 <strong>Yajman:</strong> {b.yajman_name}</p>
+                      <p className="text-green-800 font-bold">📞 <strong>Direct:</strong> {b.phone}</p>
+                      <p className="text-gray-700">📍 <strong>Address:</strong> {b.location}</p>
+                      <p className="text-gray-700">📅 <strong>Puja Date:</strong> {b.puja_date}</p>
+                      <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {b.puja_time}</p>
+                      {b.samagri && (
+                        <p className="text-emerald-900 font-bold">🌿 <strong>Samagri:</strong> Complete Hawan &amp; Samagri Kit Included</p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <a
+                        href={`tel:${b.phone}`}
+                        className="text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>📞</span> Call
+                      </a>
+
+                      {/* SEND PROFILE TO YAJMAN ON WHATSAPP */}
+                      <button
+                        type="button"
+                        onClick={() => sendPanditProfileToYajmanWhatsApp(b)}
+                        className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1 transition cursor-pointer"
+                        title="Share your Acharya profile details on WhatsApp"
+                      >
+                        <span>💬</span> Send Profile
+                      </button>
+                      
+                      {/* COMPLETE POOJA DIRECT BUTTON (NO OTP) */}
+                      {!isCompleted ? (
+                        <button
+                          onClick={() => handleDirectCompletePooja(b)}
+                          className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition cursor-pointer"
+                        >
+                          ✓ Complete Pooja
+                        </button>
+                      ) : (
+                        <div className="flex-1 bg-emerald-700 text-white font-black py-2.5 rounded-xl text-xs text-center shadow-inner">
+                          🎉 Ceremony Completed Successfully
+                        </div>
+                      )}
+                      
+                      {!isCompleted && (
+                        <button
+                          onClick={() => openCancelModal(b)}
+                          className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2.5 px-3 rounded-xl hover:bg-red-100 cursor-pointer"
+                          title="Cancel Ceremony"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
                   </div>
-
-                  <div className="bg-green-50/70 p-3 rounded-xl border border-green-100 text-xs space-y-1">
-                    <p className="text-gray-800">👤 <strong>Yajman:</strong> {b.yajman_name}</p>
-                    <p className="text-green-800 font-bold">📞 <strong>Direct:</strong> {b.phone}</p>
-                    <p className="text-gray-700">📍 <strong>Address:</strong> {b.location}</p>
-                    <p className="text-gray-700">📅 <strong>Puja Date:</strong> {b.puja_date}</p>
-                    <p className="text-gray-700">⏰ <strong>Time Slot:</strong> {b.puja_time}</p>
-                    {b.samagri && (
-                      <p className="text-emerald-900 font-bold">🌿 <strong>Samagri:</strong> Complete Hawan &amp; Samagri Kit Included</p>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <a
-                      href={`tel:${b.phone}`}
-                      className="text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>📞</span> Call
-                    </a>
-
-                    {/* SEND PROFILE TO YAJMAN ON WHATSAPP */}
-                    <button
-                      type="button"
-                      onClick={() => sendPanditProfileToYajmanWhatsApp(b)}
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 px-3.5 rounded-xl text-xs shadow-sm flex items-center gap-1 transition cursor-pointer"
-                      title="Share your Acharya profile details on WhatsApp"
-                    >
-                      <span>💬</span> Send Profile
-                    </button>
-                    
-                    {/* COMPLETE POOJA VERIFICATION BUTTON */}
-                    <button
-                      onClick={() => handleOpenVerificationModal(b)}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition cursor-pointer"
-                    >
-                      ✓ Complete Pooja Verification
-                    </button>
-                    
-                    <button
-                      onClick={() => openCancelModal(b)}
-                      className="text-xs bg-red-50 text-red-700 border border-red-200 font-bold py-2.5 px-3 rounded-xl hover:bg-red-100 cursor-pointer"
-                      title="Cancel Ceremony"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -1429,9 +1321,9 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
               </div>
 
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50">
-                <h3 className="text-xs font-bold text-blue-950">3. Verification OTP</h3>
+                <h3 className="text-xs font-bold text-blue-950">3. Verification</h3>
                 <p className="text-xs text-blue-900 mt-1 leading-relaxed">
-                  Upon finishing the ritual, collect the 4-digit completion code directly from the Yajman to verify and close out the ceremony.
+                  Upon finishing the ritual, click &quot;Complete Pooja&quot; to update the booking status directly for Admin review.
                 </p>
               </div>
 
@@ -1522,78 +1414,6 @@ Aapka shubh muhurat confirm ho chuka hai. Acharya Ji samay se pahle aapke sthan 
                 className="flex-1 bg-red-600 text-white py-2 rounded-xl text-xs font-bold cursor-pointer"
               >
                 Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* COMPLETE POOJA VERIFICATION MODAL */}
-      {activeOtpLead && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4 text-center">
-            <span className="text-3xl block">🪔</span>
-            <div>
-              <h3 className="text-base font-bold text-gray-900">Complete Pooja Verification</h3>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Verification code generated for Yajman (<strong>{activeOtpLead.yajman_name}</strong>). Enter the 4-digit code to finish.
-              </p>
-            </div>
-
-            {otpNotice && (
-              <div className="p-2.5 rounded-xl bg-orange-50 border border-orange-200 text-xs font-semibold text-orange-900 leading-snug">
-                {otpNotice}
-              </div>
-            )}
-
-            <div>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={4}
-                value={enteredOtp}
-                onChange={(e) => setEnteredOtp(e.target.value)}
-                placeholder="Enter 4-digit OTP"
-                className="w-full text-center font-mono text-2xl tracking-widest border-2 border-orange-300 rounded-xl py-2.5 focus:border-orange-600 focus:outline-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-between text-xs px-1">
-              <button
-                type="button"
-                onClick={handleResendOtpInsideModal}
-                disabled={resendingOtp}
-                className="text-orange-700 font-bold hover:underline disabled:opacity-50 cursor-pointer"
-              >
-                {resendingOtp ? 'Regenerating...' : '📲 Regenerate OTP'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleReportOtpNotSent}
-                disabled={reportedFail}
-                className={`font-bold text-xs cursor-pointer ${reportedFail ? 'text-gray-400' : 'text-red-600 hover:underline'}`}
-              >
-                {reportedFail ? '✓ Reported to Admin' : '⚠️ OTP Issue?'}
-              </button>
-            </div>
-
-            <div className="flex gap-2 pt-2 border-t">
-              <button
-                onClick={() => {
-                  setActiveOtpLead(null);
-                  setEnteredOtp('');
-                  setOtpNotice(null);
-                }}
-                className="flex-1 border border-gray-300 py-2.5 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleVerifyCompletionOtp}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition cursor-pointer"
-              >
-                Verify &amp; Complete
               </button>
             </div>
           </div>
