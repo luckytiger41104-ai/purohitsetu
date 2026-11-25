@@ -50,6 +50,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <head>
+        <meta
+          name="google-site-verification"
+          content="HJIrfGTVGeLRdSlSyzt-oxqY3h_Rp0HkVJHCNpMbpkw"
+        />
         <link rel="preconnect" href="https://checkout.razorpay.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
         {/* Google tag (gtag.js) */}
