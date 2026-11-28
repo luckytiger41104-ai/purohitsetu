@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-export const instant = false;
+export const dynamic = "force-static";
 
 interface LocalityDetails {
   name: string;
@@ -93,7 +93,7 @@ const ALL_LOCALITIES: Record<string, LocalityDetails> = {
     panditCount: "8+ Certified Acharyas",
     reachTime: "Within 25–35 Mins",
     popularApartments: ["Jayanagar 4th Block Homes", "Brigade Petunia", "Prestige Botanique", "Mantri Flora"],
-    localSamagriNote: "Traditional Vedic pronunciation with detailed English and Hindi meaning for younger family members.",
+    localSamagriNote: "Traditional Vedic pronunciation with detailed Hindi meaning for younger family members.",
   },
   hebbal: {
     name: "Hebbal",
@@ -214,6 +214,16 @@ function formatServiceName(slug: string): string {
     .join(" ");
 }
 
+export async function generateStaticParams() {
+  const paths: { location: string; service: string }[] = [];
+  Object.keys(ALL_LOCALITIES).forEach((location) => {
+    Object.keys(SERVICE_NAMES).forEach((service) => {
+      paths.push({ location, service });
+    });
+  });
+  return paths;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -229,8 +239,8 @@ export async function generateMetadata({
   if (!locData) return {};
 
   return {
-    title: `Book Verified ${serviceTitle} in ${locData.name}, Bangalore (${locData.panditCount}) | PurohitSetu`,
-    description: `Book verified North Indian Vedic Pandits for ${serviceTitle} in ${locData.name}, Bengaluru. Serving ${locData.popularApartments.slice(0, 3).join(", ")} with ${locData.reachTime} reach time.`,
+    title: `Book Verified ${serviceTitle} in ${locData.name}, Bangalore - Hindi Pandit | PurohitSetu`,
+    description: `Book verified North Indian Hindi Vedic Pandits for ${serviceTitle} in ${locData.name}, Bengaluru. Serving ${locData.popularApartments.slice(0, 3).join(", ")} with ${locData.reachTime} reach time.`,
     alternates: {
       canonical: `https://www.purohitsetu.in/pandit/${locKey}/${servKey}`,
     },
@@ -267,7 +277,7 @@ export default async function HyperlocalServicePage({
       {
         "@type": "ListItem",
         position: 2,
-        name: `Pandits in ${locData.name}`,
+        name: `Hindi Pandits in ${locData.name}`,
         item: `https://www.purohitsetu.in/pandit/${locKey}`,
       },
       {
@@ -279,11 +289,26 @@ export default async function HyperlocalServicePage({
     ],
   };
 
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: `${serviceTitle} in ${locData.name}, Bengaluru (Hindi Vidhi)`,
+    serviceType: serviceTitle,
+    provider: { "@id": "https://www.purohitsetu.in/#organization" },
+    areaServed: { "@type": "Place", name: `${locData.name}, Bengaluru` },
+    availableLanguage: ["Hindi", "Sanskrit", "Maithili", "Bhojpuri"],
+  };
+
+  const pageSchema = {
+    "@context": "https://schema.org",
+    "@graph": [breadcrumbSchema, serviceSchema],
+  };
+
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-slate-900 font-sans">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageSchema) }}
       />
 
       {/* HEADER */}
@@ -310,7 +335,7 @@ export default async function HyperlocalServicePage({
               href={bookingUrlWithParams}
               className="bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition"
             >
-              Book Pandit
+              Book Hindi Pandit
             </Link>
           </div>
         </div>
@@ -339,7 +364,7 @@ export default async function HyperlocalServicePage({
       <section className="max-w-5xl mx-auto px-4 py-8 text-center">
         <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
           <span className="inline-block bg-orange-100 text-orange-950 border border-orange-300 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
-            🚩 Verified Vedic Service in {locData.name}
+            🚩 Verified Hindi Vedic Service in {locData.name}
           </span>
           <span className="inline-block bg-amber-100 text-amber-950 border border-amber-300 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
             👥 {locData.panditCount}
@@ -369,7 +394,7 @@ export default async function HyperlocalServicePage({
         </div>
       </section>
 
-      {/* LOCAL APARTMENTS & PROTOCOL CARD (UNIQUE HYPERLOCAL VALUE) */}
+      {/* LOCAL APARTMENTS & PROTOCOL CARD */}
       <section className="max-w-5xl mx-auto px-4 mb-4">
         <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 shadow-xs">
           <h2 className="text-xs font-black uppercase tracking-wider text-orange-950 mb-2">
@@ -395,10 +420,10 @@ export default async function HyperlocalServicePage({
             Key Highlights of {serviceTitle}
           </h3>
           <ul className="text-xs text-slate-700 space-y-2 list-disc list-inside leading-relaxed">
-            <li>Conducted strictly according to Vedic scriptures by Gurukul-trained Acharyas.</li>
+            <li>Conducted strictly according to Vedic scriptures by Gurukul-trained North Indian Acharyas.</li>
             <li>Customized muhurat calculation based on your family&apos;s Nakshatra and Rashi.</li>
             <li>Complete Hawan wood (Mango), Gangajal, Navagraha samidha, and pure desi cow ghee provided upon request.</li>
-            <li>Available in Hindi, Sanskrit, Maithili, Bhojpuri, Kannada, and English explanation.</li>
+            <li>Available exclusively in Hindi, Sanskrit, Maithili, and Bhojpuri with clear mantra explanation.</li>
           </ul>
         </div>
       </section>
@@ -430,7 +455,7 @@ export default async function HyperlocalServicePage({
       {/* CROSS-LINKING SILO: ALL 39 PUJAS IN SAME LOCALITY */}
       <section className="max-w-5xl mx-auto px-4 py-6">
         <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">
-          Other Auspicious Pujas Conducted in {locData.name}:
+          Other Auspicious Hindi Pujas Conducted in {locData.name}:
         </h3>
         <div className="flex flex-wrap gap-2">
           {Object.entries(SERVICE_NAMES).map(([sKey, sTitle]) => (
@@ -462,7 +487,6 @@ export default async function HyperlocalServicePage({
           <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
         </div>
 
-        {/* DEVELOPER CREDIT */}
         <div className="mt-3 pt-3 border-t border-orange-700/50 text-[10px] text-orange-200/90 font-medium">
           Created and Designed by <span className="font-bold text-amber-300">Prince Pandey</span> • Mob:{" "}
           <a href="tel:+917667984349" className="hover:text-white underline underline-offset-2 font-bold">

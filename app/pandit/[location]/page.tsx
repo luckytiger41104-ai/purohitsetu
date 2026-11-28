@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-export const instant = false;
+export const dynamic = "force-static";
 
 interface LocalityDetails {
   name: string;
@@ -240,7 +240,7 @@ export async function generateMetadata({
   if (!locData) return {};
 
   return {
-    title: `North Indian Vedic Pandit in ${locData.name}, Bangalore (${locData.panditCount}) | PurohitSetu`,
+    title: `Hindi & North Indian Vedic Pandit in ${locData.name}, Bangalore (${locData.panditCount}) | PurohitSetu`,
     description: `Book verified North Indian, Hindi, Bihari & Maithili Vedic Pandits in ${locData.name}, Bengaluru. ${locData.panditCount} available with ${locData.reachTime} reach time across ${locData.popularApartments.slice(0, 2).join(", ")}.`,
     alternates: {
       canonical: `https://www.purohitsetu.in/pandit/${resolvedParams.location}`,
@@ -282,11 +282,26 @@ export default async function LocalityPage({
     ],
   };
 
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: `Hindi & North Indian Vedic Pandit in ${locData.name}, Bengaluru`,
+    serviceType: "Hindu Vedic Puja & Hawan Services",
+    provider: { "@id": "https://www.purohitsetu.in/#organization" },
+    areaServed: { "@type": "Place", name: `${locData.name}, Bengaluru` },
+    availableLanguage: ["Hindi", "Sanskrit", "Maithili", "Bhojpuri"],
+  };
+
+  const pageSchema = {
+    "@context": "https://schema.org",
+    "@graph": [breadcrumbSchema, serviceSchema],
+  };
+
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-slate-900 font-sans">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageSchema) }}
       />
 
       {/* HEADER */}
@@ -301,7 +316,7 @@ export default async function LocalityPage({
           <div className="flex items-center gap-2">
             <a
               href={`https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(
-                `Namaste, I want to book a Vedic Pandit in ${locData.name}, Bangalore.`
+                `Namaste, I want to book a Hindi Vedic Pandit in ${locData.name}, Bangalore.`
               )}`}
               target="_blank"
               rel="noreferrer"
@@ -313,7 +328,7 @@ export default async function LocalityPage({
               href={bookingUrlForArea}
               className="bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition"
             >
-              Book Pandit
+              Book Hindi Pandit
             </Link>
           </div>
         </div>
@@ -348,10 +363,10 @@ export default async function LocalityPage({
         </div>
 
         <h1 className="text-2xl sm:text-4xl font-black text-slate-900 leading-tight mb-3">
-          North Indian &amp; Vedic Pandit in <span className="text-orange-700">{locData.name}</span>, Bangalore
+          Hindi &amp; North Indian Vedic Pandit in <span className="text-orange-700">{locData.name}</span>, Bangalore
         </h1>
         <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed mb-6">
-          {locData.communityVibe} Experienced Acharyas proficient in Hindi, Maithili, and Bhojpuri for all 39 Vedic rituals.
+          {locData.communityVibe} Experienced Acharyas proficient exclusively in Hindi, Maithili, and Bhojpuri for all 39 Vedic rituals.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -370,7 +385,7 @@ export default async function LocalityPage({
         </div>
       </section>
 
-      {/* UNIQUE LOCALITY INTEL (GOOGLE-FRIENDLY HYPERLOCAL SECTION) */}
+      {/* UNIQUE LOCALITY INTEL */}
       <section className="max-w-5xl mx-auto px-4 mb-6">
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 shadow-xs">
           <h2 className="text-xs font-black uppercase tracking-wider text-orange-950 mb-3 flex items-center gap-1.5">
@@ -402,7 +417,7 @@ export default async function LocalityPage({
         <div className="border-b border-amber-200 pb-2 mb-4 flex justify-between items-end">
           <div>
             <h2 className="text-lg font-black text-slate-900">
-              Sacred Ceremonies Conducted in {locData.name}
+              Hindi Vedic Ceremonies Conducted in {locData.name}
             </h2>
             <p className="text-xs text-slate-600">All rituals performed with 100% Shastric vidhi and genuine hawan samagri.</p>
           </div>
@@ -435,7 +450,7 @@ export default async function LocalityPage({
       {/* CROSS-LINKING SILO: NEARBY LOCALITIES */}
       <section className="max-w-5xl mx-auto px-4 py-8 bg-amber-50/60 rounded-2xl border border-amber-200 my-6">
         <h3 className="text-xs font-extrabold text-orange-950 uppercase tracking-wider mb-2">
-          Also Serving Localities Near {locData.name}
+          Also Serving Hindi Devotees Near {locData.name}
         </h3>
         <p className="text-[11px] text-slate-600 mb-3">
           Our verified North Indian Pandits travel to apartments and individual houses in adjacent zones:
@@ -449,7 +464,7 @@ export default async function LocalityPage({
                 href={`/pandit/${nearSlug}`}
                 className="text-xs bg-white border border-amber-300 text-slate-800 hover:bg-orange-700 hover:text-white px-3 py-1.5 rounded-lg transition font-medium"
               >
-                Pandit in {nearName}
+                Hindi Pandit in {nearName}
               </Link>
             );
           })}
@@ -459,7 +474,7 @@ export default async function LocalityPage({
       {/* ALL BENGALURU LOCALITIES */}
       <section className="max-w-5xl mx-auto px-4 py-6">
         <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">
-          Complete Bengaluru Pandit Directory:
+          Complete Bengaluru Hindi Pandit Directory:
         </h4>
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(ALL_LOCALITIES).map(([key, item]) => (
@@ -481,7 +496,7 @@ export default async function LocalityPage({
       {/* FOOTER */}
       <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-6 px-4 text-center text-xs mt-12">
         <p className="font-medium text-orange-100">
-          © 2026 PurohitSetu Bengaluru • Authentic North Indian &amp; Vedic Purohit Services in {locData.name}
+          © 2026 PurohitSetu Bengaluru • North Indian Hindi &amp; Vedic Purohit Services in {locData.name}
         </p>
         <div className="mt-2 flex justify-center gap-3 text-[11px] text-orange-200">
           <Link href="/" className="hover:underline">Home</Link>
@@ -491,7 +506,6 @@ export default async function LocalityPage({
           <a href={`tel:+91${SUPPORT_PHONE}`} className="hover:underline">Support: +91 {SUPPORT_PHONE}</a>
         </div>
         
-        {/* DEVELOPER CREDIT */}
         <div className="mt-3 pt-3 border-t border-orange-700/50 text-[10px] text-orange-200/90 font-medium">
           Created and Designed by <span className="font-bold text-amber-300">Prince Pandey</span> • Mob:{" "}
           <a href="tel:+917667984349" className="hover:text-white underline underline-offset-2 font-bold">
