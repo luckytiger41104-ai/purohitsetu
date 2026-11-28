@@ -7,7 +7,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { triggerNewBookingNotification } from "@/lib/notifyPandits";
 
-
 interface PujaItem {
   id: string;
   name: string;
@@ -630,7 +629,6 @@ export default function PujaInteractiveClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // TOGGLE TO SHOW 1 PUJA INITIALLY OR EXPAND TO ALL
   const [showAllPujas, setShowAllPujas] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -647,11 +645,9 @@ export default function PujaInteractiveClient() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // MODAL STATE & TABS
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState<"advance" | "completion">("advance");
 
-  // Tab 1: Advance Token State
   const [advanceData, setAdvanceData] = useState({
     yajmanName: "",
     phone: "",
@@ -661,7 +657,6 @@ export default function PujaInteractiveClient() {
     amount: "501",
   });
 
-  // Tab 2: After Puja Completion Settlement State
   const [completionData, setCompletionData] = useState({
     yajmanName: "",
     phone: "",
@@ -710,7 +705,6 @@ export default function PujaInteractiveClient() {
     });
   }, [searchQuery, selectedCategory]);
 
-  // If user searched or selected a category, show all matching results; otherwise respect the showAllPujas toggle
   const visiblePujas = useMemo(() => {
     if (searchQuery.trim() || selectedCategory !== "All") {
       return filteredPujas;
@@ -731,7 +725,7 @@ export default function PujaInteractiveClient() {
       formData.pujaName === "Other Custom Vedic Ritual"
         ? formData.customPujaInput || "Custom Ritual"
         : formData.pujaName;
-    const msg = `Namaste PurohitSetu Team, I want to book a Vedic Pandit for ${finalName} in ${formData.area || "Bengaluru"}. Please assist me with the muhurat and booking.`;
+    const msg = `Namaste PurohitSetu Team, I want to book a North Indian Hindi Vedic Pandit in Bengaluru.\n• Puja: ${finalName}\n• Language: ${formData.language}\n• Area: ${formData.area || "Bengaluru"}\n• Date: ${formData.date || "Please suggest Muhurat"}`;
     window.open(`https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(msg)}`, "_blank");
   }, [formData]);
 
@@ -766,7 +760,7 @@ export default function PujaInteractiveClient() {
 
       setStatusMsg({
         type: "success",
-        text: "Booking request confirmed successfully! A verified Acharya will reach out to you shortly.",
+        text: "Booking request confirmed successfully! A verified Hindi Acharya will reach out to you shortly.",
       });
 
       setFormData({
@@ -791,7 +785,6 @@ export default function PujaInteractiveClient() {
     }
   };
 
-  // COMMON RAZORPAY HANDLER FOR BOTH TABS
   const executeRazorpayPayment = async (payload: {
     yajmanName: string;
     phone: string;
@@ -916,7 +909,6 @@ export default function PujaInteractiveClient() {
     }
   };
 
-  // Submit Handler Tab 1: Advance Token
   const handleAdvanceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalPuja =
@@ -934,7 +926,6 @@ export default function PujaInteractiveClient() {
     });
   };
 
-  // Submit Handler Tab 2: After Puja Completion Settlement
   const handleCompletionSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalPuja =
@@ -955,7 +946,6 @@ export default function PujaInteractiveClient() {
 
   return (
     <>
-      {/* ACTION BAR UNDER HERO WITH PUJA TOKEN BUTTON */}
       <section className="max-w-4xl mx-auto px-4 pt-3 pb-6 text-center">
         <div className="flex flex-wrap items-center justify-center gap-2.5 mb-6">
           <a
@@ -981,7 +971,6 @@ export default function PujaInteractiveClient() {
           </button>
         </div>
 
-        {/* SEARCH AND CATEGORIES */}
         <div className="relative max-w-2xl mx-auto mb-4 shadow-xs">
           <label htmlFor="puja-search-input" className="sr-only">Search Pujas</label>
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-sm" aria-hidden="true">
@@ -1025,12 +1014,11 @@ export default function PujaInteractiveClient() {
         </div>
       </section>
 
-      {/* LOCALITIES BAR */}
       <section id="localities-section" className="bg-amber-100/70 py-4 px-4 border-y border-amber-300">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-1 mb-2 text-center sm:text-left">
             <span className="text-[11px] font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1">
-              <span>📍</span> Dedicated Pandit Coverage Across Bengaluru Zones:
+              <span>📍</span> North Indian Hindi Pandit Coverage Across Bengaluru Zones:
             </span>
             <span className="text-[10px] text-slate-600 font-medium">Click any area for local purohits</span>
           </div>
@@ -1043,7 +1031,7 @@ export default function PujaInteractiveClient() {
                   href={`/pandit/${slug}`}
                   className="text-[10px] font-semibold bg-white hover:bg-orange-700 hover:text-white text-slate-800 px-2.5 py-1 rounded border border-amber-300 transition inline-block"
                 >
-                  Pandit in {loc}
+                  Hindi Pandit in {loc}
                 </Link>
               );
             })}
@@ -1051,13 +1039,12 @@ export default function PujaInteractiveClient() {
         </div>
       </section>
 
-      {/* PUJA SERVICES DIRECTORY (SHOWS 1 INITIALLY, EXPANDS ON TOGGLE) */}
       <section id="services-section" className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
         <div className="mb-6 border-b border-amber-200 pb-3 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
           <div>
             <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">Sanatan Sanskar Directory</span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
-              Vedic Pujas, Sanskars &amp; Hawan Ceremonies
+              Hindi Vedic Pujas, Sanskars &amp; Hawan Ceremonies
             </h2>
           </div>
           <button
@@ -1122,14 +1109,13 @@ export default function PujaInteractiveClient() {
                   onClick={() => handleSelectPujaToBook(puja.name)}
                   className="w-full py-2 rounded-xl font-bold text-xs bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-xs transition active:scale-95"
                 >
-                  Book Ritual Now →
+                  Book Hindi Ritual Now →
                 </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* BOTTOM DROPDOWN / TOGGLE BUTTON */}
         {!searchQuery && selectedCategory === "All" && (
           <div className="mt-8 text-center">
             <button
@@ -1143,55 +1129,53 @@ export default function PujaInteractiveClient() {
         )}
       </section>
 
-      {/* WHY DEVOTEES CHOOSE PUROHITSETU */}
       <section id="why-choose-us" className="bg-gradient-to-br from-amber-50 to-orange-50 border-y border-amber-200 py-12 px-4 sm:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-8">
             <span className="text-orange-700 font-extrabold uppercase tracking-widest text-[10px]">
-              Sanatan Heritage &amp; Trust
+              North Indian Heritage &amp; Trust
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
               Why Devotees Choose PurohitSetu in Bangalore
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
-              Authentic Gurukul-ordained North Indian and South Indian Vedic Pandits across Bengaluru.
+              Exclusively North Indian, Hindi, Maithili, and Bhojpuri speaking Gurukul-trained Vedic Pandits across Bengaluru.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
             <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
               <span className="text-2xl block mb-2">🌿</span>
-              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Authentic Sanskrit Chanting &amp; Shastric Vidhi</h3>
+              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Authentic Hindi &amp; Sanskrit Shastric Vidhi</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Dedicated strictly to genuine Vedic rituals and Hawans. Zero speculative astrology or commercial horoscope gimmicks.
+                Dedicated strictly to genuine North Indian Vedic rituals with clear Hindi explanations and zero superstition.
               </p>
             </div>
             <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
               <span className="text-2xl block mb-2">ॐ</span>
               <h3 className="font-bold text-sm text-slate-900 mb-1.5">North Indian, Hindi, Bihari &amp; Maithili Pandits</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Verified Acharyas from Varanasi, Mithila, Haridwar, and Prayagraj proficient in your family&apos;s authentic customs.
+                Verified Acharyas from Varanasi, Mithila, Haridwar, and Prayagraj proficient in traditional North Indian customs.
               </p>
             </div>
             <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
               <span className="text-2xl block mb-2">🗣️</span>
-              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Multilingual Ceremony Conduct</h3>
+              <h3 className="font-bold text-sm text-slate-900 mb-1.5">Conducted in Hindi &amp; Sanskrit</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Rituals conducted with clear explanation in Hindi, English, Kannada, Telugu, Bhojpuri, or Maithili.
+                All mantras chanted in pure Sanskrit with complete meanings and instructions explained in fluent Hindi.
               </p>
             </div>
             <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
               <span className="text-2xl block mb-2">🔥</span>
               <h3 className="font-bold text-sm text-slate-900 mb-1.5">Complete Hawan &amp; Samagri Management</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Our Pandits arrive equipped with authenticated Mango wood, Navagraha herbs, pure cow ghee, and Gangajal, etc.
+                Our Pandits arrive equipped with authenticated Mango wood, Navagraha herbs, pure cow ghee, and Gangajal.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FAST BOOKING FORM CONTAINER WITH 4-PILL TRUST BAR */}
       <section id="booking-section" className="py-12 px-4 scroll-mt-24">
         <div className="max-w-3xl mx-auto space-y-4">
           
@@ -1214,7 +1198,7 @@ export default function PujaInteractiveClient() {
               <span className="text-xl">🎖️</span>
               <div>
                 <strong className="block text-[11px] font-extrabold text-slate-900">Verified Pandits</strong>
-                <span className="text-[10px] text-slate-500">Experienced &amp; vetted</span>
+                <span className="text-[10px] text-slate-500">North Indian &amp; Vetted</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1232,10 +1216,10 @@ export default function PujaInteractiveClient() {
                 Fast Booking
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-                Book a Verified Vedic Pandit
+                Book a Verified Hindi Vedic Pandit
               </h2>
-              <p className="text-slate-600 text-xs mt-0.5">
-                Fill this quick form or book directly on WhatsApp.
+              <p className="text-orange-800 bg-orange-50 border border-orange-200 rounded-lg px-3 py-1.5 text-[11px] font-bold mt-2 inline-block">
+                ⚠️ Note: Services available exclusively for North Indian / Hindi, Maithili, Bhojpuri &amp; Sanskrit Puja rituals in Bengaluru.
               </p>
             </div>
 
@@ -1348,14 +1332,12 @@ export default function PujaInteractiveClient() {
                     id="user-lang-select"
                     value={formData.language}
                     onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-600 text-xs bg-white text-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-orange-600 text-xs bg-orange-50/40 font-bold text-slate-900"
                   >
-                    <option value="Hindi">Hindi (North Indian)</option>
+                    <option value="Hindi">Hindi (North Indian - Default)</option>
                     <option value="Maithili">Maithili (Mithila)</option>
                     <option value="Bhojpuri">Bhojpuri</option>
                     <option value="Sanskrit">Sanskrit (Pure Vedic)</option>
-                    <option value="Kannada">Kannada</option>
-                    <option value="Telugu">Telugu</option>
                   </select>
                 </div>
               </div>
@@ -1379,7 +1361,7 @@ export default function PujaInteractiveClient() {
                   disabled={loading}
                   className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 via-orange-600 to-amber-700 text-white font-black text-xs sm:text-sm shadow hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50"
                 >
-                  {loading ? "Registering..." : "Book a Pandit →"}
+                  {loading ? "Registering..." : "Book Hindi Pandit →"}
                 </button>
 
                 <button
@@ -1396,7 +1378,6 @@ export default function PujaInteractiveClient() {
         </div>
       </section>
 
-      {/* 24/7 SUPPORT DESK */}
       <section className="py-6 px-4 bg-orange-50/50 text-center">
         <span className="text-[10px] font-extrabold uppercase tracking-widest text-orange-800 block mb-1">
           24/7 Support Desk
@@ -1419,11 +1400,10 @@ export default function PujaInteractiveClient() {
           </a>
         </div>
         <p className="text-xs text-slate-700 font-medium mt-3 flex items-center justify-center gap-1">
-          <span>📍</span> Operational Office: ekadanta Layout, Parappana Agrahara, Electronic City, Bengaluru, Karnataka - 560100
+          <span>📍</span> Operational Office: Ekadanta Layout, Parappana Agrahara, Electronic City, Bengaluru, Karnataka - 560100
         </p>
       </section>
 
-      {/* FOOTER */}
       <footer className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white py-10 px-4 border-t-2 border-amber-400">
         <div className="max-w-6xl mx-auto space-y-6 text-center">
           
@@ -1443,7 +1423,7 @@ export default function PujaInteractiveClient() {
 
           <div className="border-t border-orange-700/60 pt-4 text-left">
             <span className="block text-[11px] font-extrabold uppercase tracking-widest text-amber-300 mb-2.5 text-center">
-              Popular Vedic Searches in Bangalore:
+              Popular North Indian Vedic Searches in Bangalore:
             </span>
             <div className="flex flex-wrap gap-1.5 justify-center">
               {CLICKABLE_SEO_KEYWORDS.map((item) => (
@@ -1459,7 +1439,7 @@ export default function PujaInteractiveClient() {
           </div>
 
           <div className="border-t border-orange-600/70 pt-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-orange-100 gap-2">
-            <p>© 2026 PurohitSetu Bengaluru • Dedicated Vedic Puja Services • Bengaluru</p>
+            <p>© 2026 PurohitSetu Bengaluru • North Indian Hindi Vedic Puja Services</p>
             <div className="bg-black/40 px-3.5 py-1 rounded-full text-white font-semibold border border-white/20">
               Helpline: +91 {SUPPORT_PHONE}
             </div>
@@ -1474,12 +1454,10 @@ export default function PujaInteractiveClient() {
         </div>
       </footer>
 
-      {/* COMPREHENSIVE PUJA TOKEN & SETTLEMENT PAYMENT MODAL */}
       {isTokenModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3" role="dialog" aria-modal="true">
           <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-orange-200 max-h-[92vh] overflow-y-auto">
             
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-xl" aria-hidden="true">🪙</span>
@@ -1501,7 +1479,6 @@ export default function PujaInteractiveClient() {
               </button>
             </div>
 
-            {/* Navigation Tabs */}
             <div className="grid grid-cols-2 gap-1.5 p-1 bg-amber-50 rounded-xl mb-4 border border-amber-200 text-xs font-bold">
               <button
                 type="button"
@@ -1545,7 +1522,6 @@ export default function PujaInteractiveClient() {
               </div>
             )}
 
-            {/* TAB 1: ADVANCE TOKEN FORM */}
             {modalTab === "advance" ? (
               <form onSubmit={handleAdvanceSubmit} className="space-y-3 text-xs">
                 <div>
@@ -1656,7 +1632,6 @@ export default function PujaInteractiveClient() {
                 </button>
               </form>
             ) : (
-              /* TAB 2: POST PUJA FINAL SETTLEMENT FORM */
               <form onSubmit={handleCompletionSubmit} className="space-y-3 text-xs">
                 <div>
                   <label htmlFor="comp-yajman" className="block font-bold text-slate-700 mb-0.5">Yajman Name *</label>
